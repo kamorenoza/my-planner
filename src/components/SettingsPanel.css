@@ -25,6 +25,7 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--space-lg);
+  padding-top: calc(var(--space-lg) + env(safe-area-inset-top));
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -121,6 +122,7 @@
 
 .settings-panel__footer {
   padding: var(--space-lg);
+  padding-bottom: calc(var(--space-lg) + env(safe-area-inset-bottom));
   border-top: 1px solid var(--color-border);
 }
 

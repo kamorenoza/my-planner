@@ -2,13 +2,14 @@
   position: fixed;
   top: 0;
   right: -9px;
-  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: end;
   gap: var(--space-sm);
   padding: var(--space-md) var(--space-sm);
+  padding-bottom: calc(var(--space-md) + env(safe-area-inset-bottom));
   z-index: 900;
 }
 

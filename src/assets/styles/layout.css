@@ -1,14 +1,18 @@
 #root {
   max-width: var(--max-width);
   margin: 0 auto;
-  min-height: 100vh;
+  min-height: 100dvh;
+  height: 100dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
   position: relative;
   background-color: var(--color-bg);
 }
 
 /* Full-screen loading state (auth / sync) */
 .app-loading {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -39,7 +43,10 @@
 .page {
   padding: var(--space-xl) var(--page-padding);
   padding-right: 2.3rem;
-  padding-bottom: calc(var(--nav-height) + var(--space-xl));
+  padding-top: calc(var(--space-xl) + env(safe-area-inset-top));
+  padding-bottom: calc(
+    var(--space-xl) + env(safe-area-inset-bottom) + var(--nav-height)
+  );
 }
 
 .page__header {

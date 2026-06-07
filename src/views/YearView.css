@@ -1,9 +1,11 @@
 .year-view {
-  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   padding: var(--space-md) var(--page-padding);
   padding-right: 2.3rem;
+  padding-top: calc(var(--space-md) + env(safe-area-inset-top));
+  padding-bottom: calc(var(--space-md) + env(safe-area-inset-bottom));
   max-width: var(--max-width);
   margin: 0 auto;
   overflow: hidden;
@@ -93,7 +95,8 @@
 
 .month-card__days {
   flex: 1;
-  align-content: start;
+  align-content: stretch;
+  grid-auto-rows: minmax(0, 1fr);
   min-height: 0;
 }
 
@@ -105,6 +108,7 @@
   align-items: center;
   justify-content: center;
   aspect-ratio: 1;
+  min-height: 0;
 }
 
 .month-card__day--empty {
@@ -116,6 +120,8 @@
   background: var(--color-primary-light);
   color: var(--color-primary-dark);
   font-weight: var(--font-weight-semibold);
+  aspect-ratio: 1;
+  margin: 0 auto;
 }
 
 /* Tablet (iPad 10) */
@@ -125,14 +131,14 @@
   }
 
   .month-card__title {
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-sm);
   }
 
   .month-card__weekday {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
   }
 
   .month-card__day {
-    font-size: 0.8rem;
+    font-size: 0.72rem;
   }
 }

@@ -1,0 +1,54 @@
+/* Theme overrides. The default theme lives in variables.css (:root).
+   A theme is selected via the data-theme attribute on <html>. */
+
+/* Masculine theme – soft, muted slate-blue palette (not too strong). */
+[data-theme="masculino"] {
+  /* Colors - Primary */
+  --color-primary: #5b7a99;
+  --color-primary-soft: #8ba3ba;
+  --color-primary-light: #eaeff4;
+  --color-primary-dark: #3f5a73;
+
+  /* Colors - Accents */
+  --color-accent-green: #4a9e8f;
+  --color-accent-green-light: #e6f2f0;
+  --color-accent-orange: #d99566;
+  --color-accent-orange-light: #fbeee3;
+  --color-accent-red: #d6726b;
+  --color-accent-red-light: #f9e7e6;
+
+  /* Category palette – pink becomes muted red, purple becomes muted blue */
+  --cat-pink: #b85c54;
+  --cat-pink-bg: #f6e8e7;
+  --cat-pink-soft: #efd6d4;
+  --cat-pink-text: #a04a43;
+
+  --cat-purple: #4a6fb5;
+  --cat-purple-bg: #e8edf6;
+  --cat-purple-soft: #d6e0f0;
+  --cat-purple-text: #3a5896;
+
+  /* Soft accent + todo check turn blue/red to match */
+  --accent-soft: #dbe3f0;
+  --todo-check: #cf8a84;
+
+  /* Blue accent stays a calm slate-blue, matching the primary */
+  --accent-blue: #4a6fb5;
+  --accent-blue-bg: #e7edf7;
+  --accent-blue-soft: #d8e2f1;
+
+  /* Mini calendar highlight becomes muted red */
+  --cal-active-bg: #f6e0de;
+  --cal-active-text: #a8514a;
+  --cal-today-bg: #e7b4af;
+  --cal-today-text: #8a3a33;
+
+  /* Colors - Neutrals */
+  --color-bg: #ffffff;
+  --color-surface: #f5f7f9;
+  --color-surface-hover: #eceff3;
+  --color-border: #e2e6ec;
+  --color-text-primary: #1c2533;
+  --color-text-secondary: #5e6b7a;
+  --color-text-muted: #94a0ad;
+}

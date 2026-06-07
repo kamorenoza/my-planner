@@ -1,0 +1,138 @@
+.year-view {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-md) var(--page-padding);
+  padding-right: 2.3rem;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.year-view__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  flex-shrink: 0;
+}
+
+.year-view__back {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-2xl);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  line-height: 1;
+}
+
+.year-view__back:hover {
+  background: var(--color-surface-hover);
+}
+
+.year-view__title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-medium);
+  color: #3d3d4d;
+}
+
+.year-view__grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: var(--space-sm);
+  min-height: 0;
+}
+
+/* Month Card */
+.month-card {
+  background: transparent;
+  border-radius: var(--radius-md);
+  padding: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.month-card:hover {
+  background: var(--color-surface);
+}
+
+.month-card__title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-accent-green);
+  text-align: center;
+  margin-bottom: var(--space-xs);
+  flex-shrink: 0;
+}
+
+.month-card__weekdays,
+.month-card__days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+}
+
+.month-card__weekday {
+  font-size: 0.6rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  text-align: center;
+  padding-bottom: 2px;
+  flex-shrink: 0;
+}
+
+.month-card__days {
+  flex: 1;
+  align-content: start;
+  min-height: 0;
+}
+
+.month-card__day {
+  font-size: 0.65rem;
+  color: #3d3d4d;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+}
+
+.month-card__day--empty {
+  visibility: hidden;
+}
+
+.month-card__day--today {
+  border-radius: var(--radius-full);
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Tablet (iPad 10) */
+@media (min-width: 768px) {
+  .year-view__title {
+    font-size: var(--font-size-2xl);
+  }
+
+  .month-card__title {
+    font-size: var(--font-size-base);
+  }
+
+  .month-card__weekday {
+    font-size: 0.7rem;
+  }
+
+  .month-card__day {
+    font-size: 0.8rem;
+  }
+}

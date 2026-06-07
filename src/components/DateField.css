@@ -1,0 +1,31 @@
+.date-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* The visible formatted label sits on top of the native input */
+.date-field__label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  pointer-events: none;
+}
+
+/* Hide the native rendered date text but keep the picker/calendar icon */
+.date-field__input {
+  width: 100%;
+  color: transparent;
+}
+
+.date-field__input::-webkit-datetime-edit {
+  color: transparent;
+}
+
+.date-field__input::-webkit-calendar-picker-indicator {
+  opacity: 0.6;
+  cursor: pointer;
+}

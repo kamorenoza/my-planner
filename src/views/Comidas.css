@@ -1,0 +1,213 @@
+.comidas__placeholder {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-base);
+}
+
+/* Full-height page that fits the viewport */
+.comidas-page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding-top: var(--space-lg);
+  padding-bottom: var(--space-lg);
+  overflow: hidden;
+}
+
+.comidas-page .page__header {
+  margin-bottom: var(--space-md);
+  flex-shrink: 0;
+}
+
+.comidas__title {
+  font-size: var(--font-size-xl);
+}
+
+.comidas__sections {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  overflow: hidden;
+}
+
+.comidas__section {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
+}
+
+/* When something is expanded, allow scrolling */
+.comidas-page--scroll {
+  overflow-y: auto;
+}
+
+.comidas-page--scroll .comidas__sections {
+  overflow: visible;
+}
+
+.comidas-page--scroll .comidas__section {
+  flex: 0 0 auto;
+}
+
+/* On very short screens, fall back to scrolling */
+@media (max-height: 560px) {
+  .comidas-page {
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+
+  .comidas__sections {
+    overflow: visible;
+  }
+
+  .comidas__section {
+    flex: 0 0 auto;
+  }
+}
+
+.comidas__add-btn {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.comidas__add-btn:hover,
+.comidas__add-btn:active {
+  background: var(--accent-soft);
+}
+
+.comidas__section-title {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: #3d3d4d;
+  margin-bottom: var(--space-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-shrink: 0;
+}
+
+.comidas__section-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.comidas__empty {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.recipe-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: var(--space-sm);
+  align-content: start;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.comidas-page--scroll .recipe-grid {
+  overflow: visible;
+}
+
+@media (max-height: 560px) {
+  .recipe-grid {
+    overflow: visible;
+    flex: 0 0 auto;
+  }
+}
+
+.recipe-card {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.recipe-card:hover,
+.recipe-card:active {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.recipe-card__photo {
+  aspect-ratio: 16 / 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.5);
+  overflow: hidden;
+}
+
+.recipe-card__photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.recipe-card__placeholder {
+  font-size: 1.5rem;
+  opacity: 0.6;
+}
+
+.recipe-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: var(--space-xs) var(--space-sm) var(--space-sm);
+}
+
+.recipe-card__title {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recipe-card__count {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.comidas__more-row {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-md);
+  margin-top: var(--space-xs);
+  flex-shrink: 0;
+}
+
+.comidas__more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xs) var(--space-lg);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.comidas__more:hover,
+.comidas__more:active {
+  color: var(--color-primary);
+}

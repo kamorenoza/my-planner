@@ -1,0 +1,110 @@
+:root {
+  /* Fonts */
+  --font-family: "Poppins", system-ui, -apple-system, sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.75rem;
+  --font-size-4xl: 2rem;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Colors - Primary */
+  --color-primary: #8d76b0;
+  --color-primary-soft: #b0a0cd;
+  --color-primary-light: #ede8f5;
+  --color-primary-dark: #6b5790;
+
+  /* Colors - Accents */
+  --color-accent-green: #4caf93;
+  --color-accent-green-light: #e8f5f0;
+  --color-accent-orange: #f0a05e;
+  --color-accent-orange-light: #fef3e8;
+  --color-accent-red: #e57373;
+  --color-accent-red-light: #fde8e8;
+
+  /* Category palette (themeable: pink / purple change per theme) */
+  --cat-pink: #c25690;
+  --cat-pink-bg: #fbe9f2;
+  --cat-pink-soft: #f8d7e3;
+  --cat-pink-text: #a84672;
+
+  --cat-purple: #8d76b0;
+  --cat-purple-bg: #ede8f5;
+  --cat-purple-soft: #e0d4f5;
+  --cat-purple-text: #6a4ba0;
+
+  /* Soft accent used for badges / card hover backgrounds */
+  --accent-soft: #e3dcf0;
+
+  /* Todo checkbox accent */
+  --todo-check: #f5b8d0;
+
+  /* Blue accent (goal tabs / checks) – pastel blue in the original theme */
+  --accent-blue: #7e9fd4;
+  --accent-blue-bg: #eef2fb;
+  --accent-blue-soft: #dde7f6;
+
+  /* Mini calendar highlight (themeable pink) */
+  --cal-active-bg: #f8d7e3;
+  --cal-active-text: #b03a6e;
+  --cal-today-bg: #f3a9c5;
+  --cal-today-text: #8a2b56;
+
+  /* Colors - Neutrals */
+  --color-bg: #ffffff;
+  --color-surface: #f8f8fa;
+  --color-surface-hover: #f0f0f4;
+  --color-border: #e8e8ec;
+  --color-text-primary: #1a1a2e;
+  --color-text-secondary: #6b6b80;
+  --color-text-muted: #9e9eb0;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.1);
+
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 50%;
+
+  /* Spacing */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+
+  /* Layout */
+  --max-width: 100%;
+  --nav-height: 70px;
+  --page-padding: var(--space-lg);
+}
+
+/* Tablet (iPad 10 ~820px) */
+@media (min-width: 768px) {
+  :root {
+    --font-size-3xl: 2rem;
+    --font-size-4xl: 2.5rem;
+    --page-padding: var(--space-2xl);
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  :root {
+    --max-width: 1200px;
+    --page-padding: var(--space-xl);
+  }
+}

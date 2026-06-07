@@ -1,0 +1,413 @@
+.goal-view {
+  padding-top: var(--space-lg);
+  padding-bottom: var(--space-2xl);
+}
+
+.goal-view__missing {
+  color: var(--color-text-muted);
+  margin: var(--space-lg) 0;
+}
+
+/* Header */
+.goal-view__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+  padding: var(--space-lg);
+  background: var(--color-surface);
+  border-top: 3px solid var(--color-primary);
+  border-radius: var(--radius-lg);
+}
+
+.goal-view__head-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.goal-view__title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  line-height: 1.25;
+}
+
+.goal-view__desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.goal-view__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  margin-top: var(--space-xs);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.goal-view__head-actions {
+  display: flex;
+  gap: var(--space-xs);
+  flex-shrink: 0;
+}
+
+/* Progress */
+.goal-view__progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin: var(--space-lg) 0;
+}
+
+.goal-view__progress-bar {
+  height: 8px;
+}
+
+.goal-view__progress-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+}
+
+/* Tabs */
+.goal-view__tabs {
+  display: flex;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-lg);
+}
+
+.goal-view__tab {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  background: transparent;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-bottom: 2px solid transparent;
+}
+
+.goal-view__tab:hover {
+  color: var(--color-text-secondary);
+}
+
+.goal-view__tab--active {
+  color: var(--accent-blue);
+  border-bottom-color: var(--accent-blue);
+}
+
+.goal-view__tab--active:hover {
+  color: var(--accent-blue);
+}
+
+.goal-view__plan-empty {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* ─── Plan Semanal (Accordions) ─────────────────────────── */
+
+.goal-view__accordions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.week-accordion {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.week-accordion__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  background: #f0f0f0;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.week-accordion__header:hover {
+  background: #e8e8e8;
+}
+
+.week-accordion__arrow {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  width: 12px;
+}
+
+.week-accordion__label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.week-accordion__range {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-left: auto;
+}
+
+.week-accordion__count {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--accent-blue);
+  background: var(--accent-blue-bg);
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+}
+
+.week-accordion__body {
+  padding: var(--space-sm) var(--space-md) var(--space-md);
+  padding-left: calc(12px + var(--space-sm) + var(--space-md));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  background: #fafafa;
+  border-top: 1px solid #e8e8e8;
+}
+
+.week-accordion__add {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--accent-blue);
+  cursor: pointer;
+  padding: var(--space-xs) 0;
+  align-self: flex-start;
+}
+
+.week-accordion__add:hover {
+  text-decoration: underline;
+}
+
+/* Plan item */
+.week-plan-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--accent-blue);
+  border-radius: var(--radius-sm);
+}
+
+.week-plan-item__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.week-plan-item__title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+}
+
+.week-plan-item__desc {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.week-plan-item__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.week-plan-item__link {
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--accent-blue);
+  background: var(--accent-blue-bg);
+  padding: 2px var(--space-sm);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.week-plan-item__link:hover {
+  background: var(--accent-blue-soft);
+}
+
+.week-plan-item__actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+/* ─── Seguimiento (Track Cards) ────────────────────────── */
+
+.goal-view__track-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-md);
+}
+
+.week-track-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background: #f0f0f0;
+  border-radius: var(--radius-lg);
+}
+
+.week-track-card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.week-track-card__label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.week-track-card__range {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.week-track-card__add-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--accent-blue);
+  background: var(--accent-blue-bg);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.week-track-card__add-btn:hover {
+  background: var(--accent-blue-soft);
+}
+
+.week-track-card__input {
+  font-size: var(--font-size-xs);
+  padding: var(--space-xs) var(--space-sm);
+}
+
+.week-track-card__checks {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.week-track-check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.week-track-check__del {
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.week-track-check:hover .week-track-check__del {
+  opacity: 1;
+}
+
+.week-track-card__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: auto;
+  padding-top: var(--space-xs);
+}
+
+.week-track-card__bar .goal-progress {
+  height: 4px;
+}
+
+.week-track-card__bar .goal-progress__fill {
+  height: 100%;
+  background: #9cc4a4;
+  border-radius: var(--radius-sm);
+  transition: width 0.3s ease;
+}
+
+.week-track-card__pct {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+}
+
+/* Shared: subtask checks */
+.subtask__check {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  font-size: 0.6rem;
+  color: #fff;
+  background: #fff;
+  border: 2px solid #ccc;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.subtask__check--done {
+  background: #9cc4a4;
+  border-color: #9cc4a4;
+}
+
+.subtask__text {
+  font-size: var(--font-size-xs);
+  color: var(--color-text);
+}
+
+.subtask__text--done {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+
+/* Checklist add button */
+.subtask-add {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.subtask-add:hover {
+  background: var(--accent-soft);
+}

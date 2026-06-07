@@ -2,8 +2,14 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
+// If your GitHub repository name is different, change this value.
+// GitHub Pages serves the app from https://USER.github.io/<REPO>/
+const REPO = "my-planner";
+const BASE = `/${REPO}/`;
+
 // https://vite.dev/config/
 export default defineConfig({
+  base: BASE,
   plugins: [
     react(),
     VitePWA({
@@ -21,8 +27,8 @@ export default defineConfig({
         background_color: "#ffffff",
         display: "standalone",
         orientation: "portrait",
-        start_url: "/",
-        scope: "/",
+        start_url: BASE,
+        scope: BASE,
         lang: "es",
         icons: [
           { src: "pwa-64x64.png", sizes: "64x64", type: "image/png" },
@@ -38,7 +44,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg,png,ico,woff2}"],
-        navigateFallback: "/index.html",
+        navigateFallback: `${BASE}index.html`,
         runtimeCaching: [
           {
             urlPattern: ({ url }) =>

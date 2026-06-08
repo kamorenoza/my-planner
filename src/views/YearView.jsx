@@ -1,8 +1,10 @@
+import { useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { MONTHS, WEEKDAYS, getMonthDays } from "../utils/calendar";
+import { useIsMobile } from "../utils/useIsMobile";
 import "./YearView.css";
 
-function MonthCard({ year, month, onClick }) {
+function MonthCard({ year, month, onClick, cardRef }) {
   const cells = getMonthDays(year, month);
   const now = new Date();
   const todayDay =
@@ -11,7 +13,7 @@ function MonthCard({ year, month, onClick }) {
       : null;
 
   return (
-    <div className="month-card" onClick={onClick}>
+    <div className="month-card" onClick={onClick} ref={cardRef}>
       <h3 className="month-card__title">{MONTHS[month]}</h3>
       <div className="month-card__weekdays">
         {WEEKDAYS.map((wd, i) => (
@@ -40,6 +42,17 @@ function YearView() {
   const { year } = useParams();
   const navigate = useNavigate();
   const yearNumber = Number(year);
+  const isMobile = useIsMobile();
+  const currentMonthRef = useRef(null);
+
+  const now = new Date();
+  const currentMonth = now.getFullYear() === yearNumber ? now.getMonth() : null;
+
+  useEffect(() => {
+    if (isMobile && currentMonthRef.current) {
+      currentMonthRef.current.scrollIntoView({ block: "start" });
+    }
+  }, [isMobile]);
 
   return (
     <div className="year-view">
@@ -59,6 +72,7 @@ function YearView() {
             key={month}
             year={yearNumber}
             month={month}
+            cardRef={month === currentMonth ? currentMonthRef : null}
             onClick={() => navigate(`/year/${yearNumber}/month/${month}`)}
           />
         ))}

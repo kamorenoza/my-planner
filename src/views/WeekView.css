@@ -1,9 +1,10 @@
 .week-view {
+  height: 100vh;
   height: 100dvh;
   display: flex;
   flex-direction: column;
   padding: var(--space-md) var(--page-padding);
-  padding-right: 2.3rem;
+  padding-right: var(--app-pad-right);
   padding-top: calc(var(--space-md) + env(safe-area-inset-top));
   padding-bottom: calc(var(--space-md) + env(safe-area-inset-bottom));
   max-width: var(--max-width);
@@ -46,7 +47,7 @@
 }
 
 .week-view__title {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
   color: #3d3d4d;
 }
@@ -475,10 +476,327 @@
 /* Tablet (iPad 10) */
 @media (min-width: 768px) {
   .week-view__title {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-sm);
   }
 
   .week-view__top {
     grid-template-columns: 260px 1fr;
+  }
+}
+
+/* Mobile: habits table + horizontal-scroll week timeline */
+@media (max-width: 767px) {
+  .week-view--mobile {
+    --wk-row-h: 40px;
+    --wk-head-h: 46px;
+    --wk-side-h: 92px;
+    --wk-col-w: 150px;
+    --wk-gutter-w: 40px;
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+    padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom));
+  }
+
+  .week-view--mobile .week-view__back {
+    width: 34px;
+    height: 34px;
+    font-size: var(--font-size-xl);
+  }
+
+  .week-view__nav {
+    margin-left: auto;
+    display: flex;
+    gap: var(--space-xs);
+    align-self: center;
+  }
+
+  .week-view__nav-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-xl);
+    color: var(--color-text-secondary);
+    background: var(--color-surface);
+    line-height: 1;
+  }
+
+  .week-view__nav-btn:active {
+    background: var(--color-surface-hover);
+  }
+
+  .week-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .habits--mobile .habits__title {
+    font-size: var(--font-size-sm);
+  }
+
+  .habits-m__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    margin-top: var(--space-sm);
+  }
+
+  .habits-m__item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .habits-m__name {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: #3d3d4d;
+  }
+
+  .habits-m__remove {
+    font-size: var(--font-size-lg);
+    line-height: 1;
+    color: var(--color-text-muted);
+  }
+
+  .habits-m__remove:active {
+    color: var(--color-accent-red);
+  }
+
+  .habits-m__days,
+  .habits-m__checks {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: var(--space-xs);
+    justify-items: center;
+  }
+
+  .habits-m__weekday {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-muted);
+  }
+
+  .habits-m__weekday--today {
+    color: var(--color-primary);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .habits-m__checks .habits__check {
+    width: 28px;
+    height: 28px;
+  }
+
+  .week-mobile__board {
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    border-top: 1px solid var(--color-border);
+    padding-bottom: var(--space-lg);
+  }
+
+  .week-mobile__gutter {
+    position: sticky;
+    left: -1px;
+    z-index: 3;
+    flex-shrink: 0;
+    width: var(--wk-gutter-w);
+    background: var(--color-bg);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .week-mobile__gutter-spacer {
+    height: calc(var(--wk-head-h) + var(--wk-side-h));
+    flex-shrink: 0;
+  }
+
+  .week-mobile__hours {
+    position: relative;
+  }
+
+  .week-mobile__hour {
+    height: var(--wk-row-h);
+    position: relative;
+  }
+
+  .week-mobile__hour--last {
+    height: 0;
+  }
+
+  .week-mobile__hour-label {
+    position: absolute;
+    top: -6px;
+    right: 4px;
+    font-size: 0.6rem;
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-muted);
+  }
+
+  .week-mobile__daycol {
+    flex-shrink: 0;
+    width: var(--wk-col-w);
+    border-left: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .week-mobile__dayhead {
+    height: var(--wk-head-h);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .week-mobile__dayhead--today {
+    background: var(--color-primary-light);
+  }
+
+  .week-mobile__dayname {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-primary);
+  }
+
+  .week-mobile__daynum {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    color: #3d3d4d;
+  }
+
+  .week-mobile__dayside {
+    height: var(--wk-side-h);
+    flex-shrink: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 4px;
+  }
+
+  .week-mobile__reminders {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: #f1f5fb;
+    border-radius: var(--radius-sm);
+    padding: 4px 6px;
+  }
+
+  .week-mobile__reminder {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .week-mobile__reminder-emoji {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    flex-shrink: 0;
+    font-size: var(--font-size-xs);
+  }
+
+  .week-mobile__reminder-text {
+    flex: 1;
+    font-size: var(--font-size-xs);
+    color: #3d3d4d;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .week-mobile__todos {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: var(--color-surface);
+    border-radius: var(--radius-sm);
+    padding: 4px 6px;
+  }
+
+  .week-mobile__todo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--font-size-xs);
+    color: #3d3d4d;
+    line-height: 1.2;
+  }
+
+  .week-mobile__todo-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--todo-check);
+    flex-shrink: 0;
+  }
+
+  .week-mobile__todo-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .week-mobile__todo--done .week-mobile__todo-text {
+    text-decoration: line-through;
+    color: var(--color-text-muted);
+  }
+
+  .week-mobile__todo--done .week-mobile__todo-dot {
+    background: var(--color-text-muted);
+  }
+
+  .week-mobile__schedule {
+    position: relative;
+    height: calc(var(--wk-row-h) * 16);
+    flex-shrink: 0;
+  }
+
+  .week-mobile__line {
+    height: var(--wk-row-h);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .week-mobile__events {
+    position: absolute;
+    inset: 0;
+  }
+
+  .week-mobile__event {
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    border-radius: var(--radius-sm);
+    padding: 2px 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    overflow: hidden;
+  }
+
+  .week-mobile__event-title {
+    font-size: 0.65rem;
+    font-weight: var(--font-weight-semibold);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .week-mobile__event-time {
+    font-size: 0.6rem;
+    opacity: 0.85;
   }
 }

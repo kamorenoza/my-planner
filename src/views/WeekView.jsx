@@ -10,6 +10,7 @@ import {
   getWeekDates,
 } from "../utils/calendar";
 import { getEventType, formatTime } from "../utils/events";
+import { DAY_START_MIN, DAY_END_MIN } from "../utils/events";
 import { EventFields } from "../components/EventModal";
 import EmojiImg from "../components/EmojiImg";
 import Breadcrumbs from "../components/Breadcrumbs";
@@ -24,6 +25,7 @@ import {
   habitsKey,
   checksKey,
 } from "../utils/storage";
+import { useIsMobile } from "../utils/useIsMobile";
 import "./WeekView.css";
 
 const INITIAL_HABITS = [{ id: "h1", name: "Ejercicio" }];
@@ -74,6 +76,7 @@ function HabitsTable({
   onRename,
   onAdd,
   onRemove,
+  mobile,
 }) {
   const [editingId, setEditingId] = useState(null);
   const [draft, setDraft] = useState("");
@@ -104,6 +107,130 @@ function HabitsTable({
     onRemove(confirmHabit.id);
     setConfirmHabit(null);
   };
+
+  if (mobile) {
+    return (
+      <div className="habits habits--mobile">
+        <div className="habits__head-bar">
+          <h3 className="habits__title">Hábitos</h3>
+          <button className="habits__add-btn" onClick={() => setAdding(true)}>
+            + Agregar
+          </button>
+        </div>
+        <div className="habits-m__list">
+          {habits.map((habit) => (
+            <div key={habit.id} className="habits-m__item">
+              <div className="habits-m__name">
+                {editingId === habit.id ? (
+                  <input
+                    className="habits__input"
+                    value={draft}
+                    autoFocus
+                    onChange={(e) => setDraft(e.target.value)}
+                    onBlur={() => commitEdit(habit.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") commitEdit(habit.id);
+                      if (e.key === "Escape") {
+                        setEditingId(null);
+                        setDraft("");
+                      }
+                    }}
+                  />
+                ) : (
+                  <>
+                    <span
+                      className="habits__name-text"
+                      onClick={() => startEdit(habit)}
+                      title="Editar"
+                    >
+                      {habit.name}
+                    </span>
+                    <button
+                      className="habits-m__remove"
+                      onClick={() => setConfirmHabit(habit)}
+                      aria-label={`Eliminar ${habit.name}`}
+                    >
+                      ×
+                    </button>
+                  </>
+                )}
+              </div>
+              <div className="habits-m__days">
+                {WEEKDAYS.map((wd, i) => (
+                  <span
+                    key={i}
+                    className={`habits-m__weekday${
+                      i === todayIndex ? " habits-m__weekday--today" : ""
+                    }`}
+                  >
+                    {wd}
+                  </span>
+                ))}
+              </div>
+              <div className="habits-m__checks">
+                {WEEKDAYS.map((_, i) => (
+                  <button
+                    key={i}
+                    className={`habits__check${
+                      checks[`${habit.id}-${i}`] ? " habits__check--on" : ""
+                    }`}
+                    onClick={() => onToggle(habit.id, i)}
+                    aria-label={`Marcar ${habit.name}`}
+                  >
+                    {checks[`${habit.id}-${i}`] ? "✓" : ""}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+          {adding && (
+            <div className="habits-m__item">
+              <input
+                className="habits__input"
+                value={newName}
+                autoFocus
+                placeholder="Nuevo hábito"
+                onChange={(e) => setNewName(e.target.value)}
+                onBlur={commitAdd}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") commitAdd();
+                  if (e.key === "Escape") {
+                    setNewName("");
+                    setAdding(false);
+                  }
+                }}
+              />
+            </div>
+          )}
+        </div>
+
+        {confirmHabit && (
+          <div className="modal-overlay" onClick={() => setConfirmHabit(null)}>
+            <div className="modal" onClick={(e) => e.stopPropagation()}>
+              <h3 className="modal__title">Eliminar hábito</h3>
+              <p className="modal__text">
+                ¿Seguro que quieres eliminar “{confirmHabit.name}”?
+              </p>
+              <div className="modal__actions">
+                <button
+                  className="modal__btn modal__btn--cancel"
+                  onClick={() => setConfirmHabit(null)}
+                >
+                  Cancelar
+                </button>
+                <button
+                  className="modal__btn modal__btn--danger"
+                  onClick={confirmRemove}
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="habits">
@@ -207,7 +334,7 @@ function HabitsTable({
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3 className="modal__title">Eliminar hábito</h3>
             <p className="modal__text">
-              ¿Seguro que quieres eliminar "{confirmHabit.name}"?
+              ¿Seguro que quieres eliminar “{confirmHabit.name}”?
             </p>
             <div className="modal__actions">
               <button
@@ -313,6 +440,156 @@ function AddDayModal({ dateKey: dk, onClose, onSaved }) {
   );
 }
 
+function WeekMobile({
+  weekDates,
+  navigate,
+  refresh,
+  habits,
+  checks,
+  todayIndex,
+  onToggle,
+  onRename,
+  onAdd,
+  onRemove,
+}) {
+  const hourLabel = (h) => {
+    const period = h < 12 ? "am" : "pm";
+    const hr = h % 12 === 0 ? 12 : h % 12;
+    return `${hr}${period}`;
+  };
+  const hours = Array.from({ length: 16 }, (_, i) => i + 6); // 6 -> 21
+  const total = DAY_END_MIN - DAY_START_MIN;
+
+  return (
+    <div className="week-mobile">
+      <HabitsTable
+        habits={habits}
+        checks={checks}
+        todayIndex={todayIndex}
+        onToggle={onToggle}
+        onRename={onRename}
+        onAdd={onAdd}
+        onRemove={onRemove}
+        mobile
+      />
+
+      <div className="week-mobile__board" data-refresh={refresh}>
+        <div className="week-mobile__gutter">
+          <div className="week-mobile__gutter-spacer" />
+          <div className="week-mobile__hours">
+            {hours.map((h) => (
+              <div key={h} className="week-mobile__hour">
+                <span className="week-mobile__hour-label">{hourLabel(h)}</span>
+              </div>
+            ))}
+            <div className="week-mobile__hour week-mobile__hour--last">
+              <span className="week-mobile__hour-label">{hourLabel(22)}</span>
+            </div>
+          </div>
+        </div>
+
+        {weekDates.map((date, i) => {
+          const dk = dateKey(date);
+          const todos = load(todosKey(dk), []).filter(
+            (t) => !t.date || t.date === dk,
+          );
+          const events = load(eventsKey(dk), [])
+            .filter((e) => !e.date || e.date === dk)
+            .slice()
+            .sort((a, b) => a.start - b.start);
+          const reminders = load(remindersKey(dk), []).filter(
+            (r) => !r.date || r.date === dk,
+          );
+          const isToday = i === todayIndex;
+          const dayUrl = `/year/${date.getUTCFullYear()}/month/${date.getUTCMonth()}/day/${date.getUTCDate()}`;
+
+          return (
+            <div key={i} className="week-mobile__daycol">
+              <button
+                className={`week-mobile__dayhead${
+                  isToday ? " week-mobile__dayhead--today" : ""
+                }`}
+                onClick={() => navigate(dayUrl)}
+              >
+                <span className="week-mobile__dayname">{WEEKDAYS_FULL[i]}</span>
+                <span className="week-mobile__daynum">{date.getUTCDate()}</span>
+              </button>
+
+              <div className="week-mobile__dayside">
+                {reminders.length > 0 && (
+                  <div className="week-mobile__reminders">
+                    {reminders.map((reminder) => (
+                      <div key={reminder.id} className="week-mobile__reminder">
+                        <EmojiImg
+                          emoji={reminder.emoji}
+                          code={reminder.emojiCode}
+                          className="week-mobile__reminder-emoji"
+                        />
+                        <span className="week-mobile__reminder-text">
+                          {reminder.text}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {todos.length > 0 && (
+                  <div className="week-mobile__todos">
+                    {todos.map((todo) => (
+                      <div
+                        key={todo.id}
+                        className={`week-mobile__todo${
+                          todo.done ? " week-mobile__todo--done" : ""
+                        }`}
+                      >
+                        <span className="week-mobile__todo-dot" />
+                        <span className="week-mobile__todo-text">
+                          {todo.text}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="week-mobile__schedule">
+                {hours.map((h) => (
+                  <div key={h} className="week-mobile__line" />
+                ))}
+                <div className="week-mobile__events">
+                  {events.map((event) => {
+                    const type = getEventType(event.type);
+                    const top = ((event.start - DAY_START_MIN) / total) * 100;
+                    const height = ((event.end - event.start) / total) * 100;
+                    return (
+                      <div
+                        key={event.id}
+                        className="week-mobile__event"
+                        style={{
+                          top: `${top}%`,
+                          height: `${height}%`,
+                          background: type.color,
+                          color: type.text,
+                        }}
+                      >
+                        <span className="week-mobile__event-title">
+                          {event.title}
+                        </span>
+                        <span className="week-mobile__event-time">
+                          {formatTime(event.start)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function WeekView() {
   const { year, week } = useParams();
   const navigate = useNavigate();
@@ -330,6 +607,14 @@ function WeekView() {
   const weekDates = getWeekDates(yearNumber, weekNumber);
   const refMonth = weekDates[0].getUTCMonth();
 
+  const isMobile = useIsMobile();
+
+  const goWeek = (delta) => {
+    const next = weekNumber + delta;
+    if (next < 1) return;
+    navigate(`/year/${yearNumber}/week/${next}`);
+  };
+
   const now = new Date();
   const todayIndex = weekDates.findIndex(
     (date) =>
@@ -337,6 +622,7 @@ function WeekView() {
       date.getUTCMonth() === now.getMonth() &&
       date.getUTCDate() === now.getDate(),
   );
+
   const toggle = (habitId, dayIndex) => {
     const key = `${habitId}-${dayIndex}`;
     setChecks((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -353,6 +639,73 @@ function WeekView() {
   const removeHabit = (id) => {
     setHabits((prev) => prev.filter((h) => h.id !== id));
   };
+
+  if (isMobile) {
+    return (
+      <div className="week-view week-view--mobile">
+        <div className="week-view__header">
+          <button
+            className="week-view__back"
+            onClick={() => navigate(`/year/${yearNumber}/month/${refMonth}`)}
+            aria-label="Volver"
+          >
+            ‹
+          </button>
+          <div className="week-view__heading">
+            <h1 className="week-view__title">
+              Semana {weekNumber} · {yearNumber}
+            </h1>
+            <Breadcrumbs
+              items={[
+                { label: String(yearNumber), to: `/year/${yearNumber}` },
+                {
+                  label: MONTHS[refMonth],
+                  to: `/year/${yearNumber}/month/${refMonth}`,
+                },
+              ]}
+            />
+          </div>
+          <div className="week-view__nav">
+            <button
+              className="week-view__nav-btn"
+              onClick={() => goWeek(-1)}
+              aria-label="Semana anterior"
+            >
+              ‹
+            </button>
+            <button
+              className="week-view__nav-btn"
+              onClick={() => goWeek(1)}
+              aria-label="Semana siguiente"
+            >
+              ›
+            </button>
+          </div>
+        </div>
+
+        <WeekMobile
+          weekDates={weekDates}
+          navigate={navigate}
+          refresh={refresh}
+          habits={habits}
+          checks={checks}
+          todayIndex={todayIndex}
+          onToggle={toggle}
+          onRename={renameHabit}
+          onAdd={addHabit}
+          onRemove={removeHabit}
+        />
+
+        {addModalKey && (
+          <AddDayModal
+            dateKey={addModalKey}
+            onClose={() => setAddModalKey(null)}
+            onSaved={() => setRefresh((n) => n + 1)}
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="week-view">

@@ -42,7 +42,7 @@
 
 .page {
   padding: var(--space-xl) var(--page-padding);
-  padding-right: 2.3rem;
+  padding-right: var(--app-pad-right);
   padding-top: calc(var(--space-xl) + env(safe-area-inset-top));
   padding-bottom: calc(
     var(--space-xl) + env(safe-area-inset-bottom) + var(--nav-height)

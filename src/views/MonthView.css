@@ -1,9 +1,10 @@
 .month-view {
+  height: 100vh;
   height: 100dvh;
   display: flex;
   flex-direction: column;
   padding: var(--space-md) var(--page-padding);
-  padding-right: 2.3rem;
+  padding-right: var(--app-pad-right);
   padding-top: calc(var(--space-md) + env(safe-area-inset-top));
   padding-bottom: calc(var(--space-md) + env(safe-area-inset-bottom));
   max-width: var(--max-width);
@@ -288,7 +289,7 @@
 /* Tablet (iPad 10) */
 @media (min-width: 768px) {
   .month-view__title {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-base);
   }
 
   .month-view__weekday {
@@ -297,5 +298,200 @@
 
   .month-view__day-number {
     font-size: var(--font-size-base);
+  }
+}
+
+/* Mobile: mini calendar on top + selected-day section below */
+@media (max-width: 767px) {
+  .month-view {
+    height: 100dvh;
+    overflow: hidden;
+    padding-bottom: calc(var(--space-md) + env(safe-area-inset-bottom));
+  }
+
+  .month-view__nav {
+    margin-left: auto;
+    display: flex;
+    gap: var(--space-xs);
+    align-self: center;
+  }
+
+  .month-view__nav-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-xl);
+    color: var(--color-text-secondary);
+    background: var(--color-surface);
+    line-height: 1;
+  }
+
+  .month-view__back {
+    width: 34px;
+    height: 34px;
+    font-size: var(--font-size-xl);
+  }
+
+  .month-view__nav-btn:active {
+    background: var(--color-surface-hover);
+  }
+
+  .month-view__mobile {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .month-mobile__weeks {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    gap: var(--space-xs);
+    overflow-x: auto;
+    padding-bottom: var(--space-xs);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .month-mobile__week-pill {
+    flex-shrink: 0;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+    background: var(--color-surface);
+    padding: 4px var(--space-md);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition:
+      background 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .month-mobile__week-pill--today {
+    background: var(--color-primary-light);
+    color: var(--color-primary-dark);
+  }
+
+  .month-mobile__week-pill--active {
+    background: var(--color-primary);
+    color: white;
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .month-mobile__calendar {
+    flex-shrink: 0;
+    background: var(--color-bg);
+    padding-bottom: var(--space-sm);
+  }
+
+  .month-mobile__list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom));
+  }
+
+  .month-mobile__weekdays,
+  .month-mobile__days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+
+  .month-mobile__weekday {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-accent-green);
+    text-align: center;
+    padding-bottom: var(--space-xs);
+  }
+
+  .month-mobile__day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-sm);
+    color: #3d3d4d;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+  }
+
+  .month-mobile__day--empty {
+    visibility: hidden;
+  }
+
+  .month-mobile__day--today {
+    background: var(--color-primary-light);
+    color: var(--color-primary-dark);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .month-mobile__day--selected {
+    background: var(--color-primary);
+    color: white;
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .month-view__mobile .day-column {
+    flex: 0 0 auto;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm);
+    cursor: pointer;
+  }
+
+  .month-view__mobile .day-column--today {
+    background: var(--color-primary-light);
+  }
+
+  .month-view__mobile .day-column__body {
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+
+  .month-mobile__day-header {
+    margin-bottom: var(--space-sm);
+    flex-shrink: 0;
+  }
+
+  .month-mobile__day-title {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-regular);
+    color: #3d3d4d;
+    text-transform: capitalize;
+  }
+
+  .month-view__mobile .day-column__todo {
+    font-size: var(--font-size-sm);
+  }
+
+  .month-view__mobile .day-column__reminder-text {
+    font-size: var(--font-size-sm);
+  }
+
+  .month-view__mobile .day-column__event-title {
+    font-size: var(--font-size-sm);
+  }
+
+  .month-view__mobile .day-column__add {
+    margin-top: var(--space-sm);
+  }
+
+  .month-mobile__empty {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    text-align: center;
+    padding: var(--space-md) 0;
   }
 }

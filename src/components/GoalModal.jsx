@@ -43,28 +43,8 @@ export function GoalModal({ goal, onClose, onSave }) {
     ...goal,
     milestones: goal ? goal.milestones.map((m) => ({ ...m })) : [],
   }));
-  const [newMilestone, setNewMilestone] = useState("");
 
   const set = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
-
-  const addMilestone = () => {
-    const text = newMilestone.trim();
-    if (!text) return;
-    setForm((prev) => ({
-      ...prev,
-      milestones: [
-        ...prev.milestones,
-        { id: `m-${Date.now()}`, text, done: false },
-      ],
-    }));
-    setNewMilestone("");
-  };
-
-  const removeMilestone = (id) =>
-    setForm((prev) => ({
-      ...prev,
-      milestones: prev.milestones.filter((m) => m.id !== id),
-    }));
 
   const canSave = form.title.trim();
 
@@ -138,44 +118,6 @@ export function GoalModal({ goal, onClose, onSave }) {
             onChange={(e) => set("targetDate", e.target.value)}
           />
         </label>
-
-        <div className="field">
-          <span className="field__label">Hitos / pasos</span>
-          {form.milestones.map((m) => (
-            <div key={m.id} className="ingredient-row">
-              <span className="goal-milestone-text">{m.text}</span>
-              <button
-                type="button"
-                className="ingredient-row__remove"
-                onClick={() => removeMilestone(m.id)}
-                aria-label="Quitar"
-              >
-                ×
-              </button>
-            </div>
-          ))}
-          <div className="ingredient-row">
-            <input
-              className="field__input"
-              value={newMilestone}
-              onChange={(e) => setNewMilestone(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addMilestone();
-                }
-              }}
-              placeholder="Agregar hito"
-            />
-            <button
-              type="button"
-              className="ingredient-add"
-              onClick={addMilestone}
-            >
-              +
-            </button>
-          </div>
-        </div>
 
         <div className="modal__actions">
           <button className="modal__btn modal__btn--cancel" onClick={onClose}>

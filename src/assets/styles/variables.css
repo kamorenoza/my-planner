@@ -90,6 +90,13 @@
   --max-width: 100%;
   --nav-height: 70px;
   --page-padding: var(--space-lg);
+  --app-pad-right: 3rem;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --app-pad-right: var(--page-padding);
+  }
 }
 
 /* Tablet (iPad 10 ~820px) */

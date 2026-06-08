@@ -27,6 +27,7 @@ import {
   recipesKey,
   load,
 } from "../utils/storage";
+import { useIsMobile } from "../utils/useIsMobile";
 import "./DayView.css";
 
 const HOURS = Array.from({ length: 16 }, (_, i) => i + 6); // 6 -> 21 (blocks), 22 label added separately
@@ -92,7 +93,9 @@ function EventBlock({ event, expanded, onToggle, onEdit }) {
         <>
           <span className="event-block__type">{type.label}</span>
           {event.place && (
-            <span className="event-block__place">📍 {event.place}</span>
+            <span className="event-block__place">
+              :round_pushpin: {event.place}
+            </span>
           )}
           {event.comments && (
             <span className="event-block__comments">{event.comments}</span>
@@ -197,7 +200,7 @@ function Schedule({ events, defaultDate, onAdd, onUpdate, onDelete }) {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3 className="modal__title">Eliminar evento</h3>
             <p className="modal__text">
-              ¿Seguro que quieres eliminar "{confirmDelete.title}"?
+              ¿Seguro que quieres eliminar “{confirmDelete.title}”?
             </p>
             <div className="modal__actions">
               <button
@@ -388,6 +391,7 @@ function Reminders({ storageKey, date }) {
   const remove = (id) => {
     setItems((prev) => prev.filter((it) => it.id !== id));
   };
+
   return (
     <div className="reminders">
       <div className="reminders__head-bar">
@@ -477,7 +481,9 @@ function MealPicker({ tag, recipes, onPick, onClose }) {
                   {recipe.photo ? (
                     <img src={recipe.photo} alt={recipe.title} />
                   ) : (
-                    <span className="meal-picker__thumb-icon">🍽️</span>
+                    <span className="meal-picker__thumb-icon">
+                      :knife_fork_plate:
+                    </span>
                   )}
                 </span>
                 <span className="meal-picker__info">
@@ -555,7 +561,9 @@ function Meals({ storageKey }) {
                         {recipe.photo ? (
                           <img src={recipe.photo} alt={recipe.title} />
                         ) : (
-                          <span className="meal-mini__icon">🍽️</span>
+                          <span className="meal-mini__icon">
+                            :knife_fork_plate:
+                          </span>
                         )}
                       </span>
                       <span className="meal-mini__title">{recipe.title}</span>
@@ -634,6 +642,15 @@ function DayView() {
     setEvents((prev) => prev.filter((e) => e.id !== id));
   };
 
+  const isMobile = useIsMobile();
+
+  const goDay = (delta) => {
+    const d = new Date(Date.UTC(yearNumber, monthNumber, dayNumber + delta));
+    navigate(
+      `/year/${d.getUTCFullYear()}/month/${d.getUTCMonth()}/day/${d.getUTCDate()}`,
+    );
+  };
+
   return (
     <div className="day-view">
       <div className="day-view__header">
@@ -663,42 +680,83 @@ function DayView() {
             ]}
           />
         </div>
-        <div className="day-view__days">
-          {getMonthDays(yearNumber, monthNumber)
-            .filter((d) => d !== null)
-            .map((d) => (
-              <button
-                key={d}
-                className={`month-pill month-pill--mini${d === dayNumber ? " month-pill--active" : ""}`}
-                onClick={() =>
-                  navigate(`/year/${yearNumber}/month/${monthNumber}/day/${d}`)
-                }
-              >
-                {d}
-              </button>
-            ))}
-        </div>
+        {isMobile ? (
+          <div className="day-view__nav">
+            <button
+              className="day-view__nav-btn"
+              onClick={() => goDay(-1)}
+              aria-label="Día anterior"
+            >
+              ‹
+            </button>
+            <button
+              className="day-view__nav-btn"
+              onClick={() => goDay(1)}
+              aria-label="Día siguiente"
+            >
+              ›
+            </button>
+          </div>
+        ) : (
+          <div className="day-view__days">
+            {getMonthDays(yearNumber, monthNumber)
+              .filter((d) => d !== null)
+              .map((d) => (
+                <button
+                  key={d}
+                  className={`month-pill month-pill--mini${d === dayNumber ? " month-pill--active" : ""}`}
+                  onClick={() =>
+                    navigate(
+                      `/year/${yearNumber}/month/${monthNumber}/day/${d}`,
+                    )
+                  }
+                >
+                  {d}
+                </button>
+              ))}
+          </div>
+        )}
       </div>
 
-      <div className="day-view__columns">
-        <div className="day-view__col day-view__col--schedule">
-          <Schedule
-            events={events}
-            defaultDate={defaultDate}
-            onAdd={addEvent}
-            onUpdate={updateEvent}
-            onDelete={deleteEvent}
-          />
-        </div>
-        <div className="day-view__col day-view__col--side">
-          <Todo storageKey={todosKey(defaultDate)} date={defaultDate} />
+      {isMobile ? (
+        <div className="day-view__mobile">
           <Reminders
             storageKey={remindersKey(defaultDate)}
             date={defaultDate}
           />
+          <Todo storageKey={todosKey(defaultDate)} date={defaultDate} />
+          <div className="day-view__col--schedule">
+            <Schedule
+              events={events}
+              defaultDate={defaultDate}
+              onAdd={addEvent}
+              onUpdate={updateEvent}
+              onDelete={deleteEvent}
+            />
+          </div>
           <Meals storageKey={mealsKey(defaultDate)} />
         </div>
-      </div>
+      ) : (
+        <div className="day-view__columns">
+          <div className="day-view__col day-view__col--schedule">
+            <Schedule
+              events={events}
+              defaultDate={defaultDate}
+              onAdd={addEvent}
+              onUpdate={updateEvent}
+              onDelete={deleteEvent}
+            />
+          </div>
+          <div className="day-view__col day-view__col--side">
+            <Todo storageKey={todosKey(defaultDate)} date={defaultDate} />
+            <Reminders
+              storageKey={remindersKey(defaultDate)}
+              date={defaultDate}
+            />
+            <Meals storageKey={mealsKey(defaultDate)} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

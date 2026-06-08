@@ -3,7 +3,7 @@
   display: flex;
   flex-direction: column;
   padding: var(--space-md) var(--page-padding);
-  padding-right: 2.3rem;
+  padding-right: var(--app-pad-right);
   padding-top: calc(var(--space-md) + env(safe-area-inset-top));
   padding-bottom: calc(var(--space-md) + env(safe-area-inset-bottom));
   max-width: var(--max-width);
@@ -42,7 +42,7 @@
 }
 
 .day-view__title {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
   color: #3d3d4d;
 }
@@ -55,7 +55,6 @@
   justify-content: flex-end;
   gap: var(--space-xs);
   margin-left: var(--space-md);
-  margin-top: var(--space-xs);
 }
 
 .day-view__columns {
@@ -287,8 +286,8 @@
 }
 
 .todo__check {
-  width: 17px;
-  height: 17px;
+  width: 21px;
+  height: 21px;
   flex-shrink: 0;
   border-radius: var(--radius-sm);
   background: var(--color-bg);
@@ -296,7 +295,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   color: white;
   transition: all 0.15s ease;
 }
@@ -316,7 +315,7 @@
 
 .todo__text {
   flex: 1;
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   color: #3d3d4d;
   cursor: text;
 }
@@ -671,6 +670,123 @@ img.reminder-card__emoji {
 /* Tablet (iPad 10) */
 @media (min-width: 768px) {
   .day-view__title {
+    font-size: var(--font-size-sm);
+  }
+
+  /* Bigger day pills */
+  .day-view__days .month-pill--mini {
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 12px;
+  }
+
+  /* Bigger todo */
+  .todo__check {
+    width: 24px;
+    height: 24px;
+    font-size: 0.9rem;
+  }
+
+  .todo__text,
+  .todo__input {
+    font-size: var(--font-size-base);
+  }
+
+  /* Bigger meals labels and cards */
+  .meals__title {
+    font-size: var(--font-size-base);
+  }
+
+  .meal-card__label {
+    font-size: var(--font-size-sm);
+    width: 64px;
+  }
+
+  .meal-mini {
+    width: 92px;
+  }
+
+  .meal-mini__title {
+    font-size: 0.72rem;
+  }
+
+  .meal-add {
+    width: 92px;
+    min-height: 60px;
     font-size: var(--font-size-xl);
+  }
+}
+
+/* Mobile: stacked sections (reminders, todos, schedule, meals) + day arrows */
+@media (max-width: 767px) {
+  .day-view {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+    padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom));
+  }
+
+  .day-view__title {
+    font-size: var(--font-size-sm);
+  }
+
+  .day-view__back {
+    width: 34px;
+    height: 34px;
+    font-size: var(--font-size-xl);
+  }
+
+  .day-view__nav {
+    margin-left: auto;
+    display: flex;
+    gap: var(--space-xs);
+    align-self: center;
+  }
+
+  .day-view__nav-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-xl);
+    color: var(--color-text-secondary);
+    background: var(--color-surface);
+    line-height: 1;
+  }
+
+  .day-view__nav-btn:active {
+    background: var(--color-surface-hover);
+  }
+
+  .day-view__mobile {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .day-view__mobile .day-view__col--schedule {
+    height: 640px;
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+  }
+
+  .day-view__mobile .schedule {
+    padding: var(--space-md) var(--space-sm);
+  }
+
+  /* Meals: label as a bigger header, recipe cards below */
+  .day-view__mobile .meal-card {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .day-view__mobile .meal-card__label {
+    width: auto;
+    padding-top: 0;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-regular);
+    color: var(--color-text-secondary);
   }
 }

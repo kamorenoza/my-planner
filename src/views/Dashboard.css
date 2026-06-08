@@ -39,3 +39,10 @@
     grid-template-columns: repeat(4, 1fr);
   }
 }
+
+/* Mobile: cards stacked one below the other */
+@media (max-width: 767px) {
+  .dashboard__grid {
+    grid-template-columns: 1fr;
+  }
+}

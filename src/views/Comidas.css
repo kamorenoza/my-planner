@@ -8,6 +8,8 @@
   height: 100dvh;
   display: flex;
   flex-direction: column;
+  padding-left: var(--app-padding);
+  padding-right: var(--app-pad-right);
   padding-top: calc(var(--space-lg) + env(safe-area-inset-top));
   padding-bottom: calc(var(--space-lg) + env(safe-area-inset-bottom));
   overflow: hidden;
@@ -210,4 +212,30 @@
 .comidas__more:hover,
 .comidas__more:active {
   color: var(--color-primary);
+}
+
+/* Mobile: scrollable page, recipe cards two per row */
+@media (max-width: 767px) {
+  .comidas-page {
+    height: auto;
+    min-height: 100dvh;
+    overflow-y: auto;
+    padding-bottom: calc(
+      var(--nav-height) + var(--space-2xl) + env(safe-area-inset-bottom)
+    );
+  }
+
+  .comidas__sections {
+    overflow: visible;
+  }
+
+  .comidas__section {
+    flex: 0 0 auto;
+  }
+
+  .recipe-grid {
+    grid-template-columns: repeat(2, 1fr);
+    overflow: visible;
+    flex: 0 0 auto;
+  }
 }

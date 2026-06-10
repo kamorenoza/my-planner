@@ -57,53 +57,59 @@ function isHoliday(reminder) {
   return reminder && reminder.holiday === true;
 }
 
-// Build the 8:00 daily summary text from today's planner data.
-function buildDailySummary(planner, dateKey) {
+// Build the 8:00 daily messages: events, reminders and tasks, each as its own
+// notification and only when there is something to show.
+// Returns an array of { title, body }.
+function buildDailyMessages(planner, dateKey) {
   const events = parseList(planner, `events-${dateKey}`).sort(
     (a, b) => a.start - b.start,
   );
-  const reminders = parseList(planner, `reminders-${dateKey}`);
+  const reminders = parseList(planner, `reminders-${dateKey}`).filter(
+    (r) => !isHoliday(r),
+  );
   const todos = parseList(planner, `todos-${dateKey}`).filter((t) => !t.done);
 
-  const lines = [];
+  const messages = [];
+
   if (events.length) {
-    lines.push(
-      `:date: ${events.length} evento${events.length > 1 ? "s" : ""}: ` +
-        events
-          .slice(0, 3)
-          .map((e) => `${e.title} (${formatTime(e.start)})`)
-          .join(", "),
-    );
-  }
-  const realReminders = reminders.filter((r) => !isHoliday(r));
-  const holidays = reminders.filter(isHoliday);
-  if (holidays.length) lines.push(`:tada: Festivo: ${holidays[0].text}`);
-  if (realReminders.length) {
-    lines.push(
-      `:bell: ${realReminders.length} recordatorio${realReminders.length > 1 ? "s" : ""}`,
-    );
-  }
-  if (todos.length) {
-    lines.push(
-      `:white_check_mark: ${todos.length} tarea${todos.length > 1 ? "s" : ""} pendiente${todos.length > 1 ? "s" : ""}`,
-    );
+    messages.push({
+      title: "Eventos para hoy",
+      body: events.map((e) => `- ${e.title} ${formatTime(e.start)}`).join("\n"),
+    });
   }
 
-  if (lines.length === 0) return null;
-  return { title: "Tu día de hoy", body: lines.join("\n") };
+  if (reminders.length) {
+    messages.push({
+      title: "Recordatorios para hoy",
+      body: reminders.map((r) => `- ${r.text}`).join("\n"),
+    });
+  }
+
+  if (todos.length) {
+    messages.push({
+      title: "Tareas para hoy",
+      body: todos.map((t) => `- ${t.text}`).join("\n"),
+    });
+  }
+
+  return messages;
 }
 
-// Send a message to every token of a user, pruning invalid ones afterwards.
-async function sendToUser(uid, tokensMap, notification) {
+// Send a data-only message to every token of a user, pruning invalid ones.
+// Data-only (no `notification` field) avoids the duplicate where iOS auto-shows
+// the notification AND the service worker shows it again in onBackgroundMessage.
+async function sendToUser(uid, tokensMap, message) {
   const tokens = Object.keys(tokensMap || {});
   if (tokens.length === 0) return;
 
   const res = await getMessaging().sendEachForMulticast({
     tokens,
-    notification,
+    data: {
+      title: String(message.title || ""),
+      body: String(message.body || ""),
+    },
     webpush: {
       fcmOptions: { link: "/" },
-      notification: { icon: "/pwa-192x192.png" },
     },
   });
 
@@ -171,13 +177,13 @@ export const sendPlannerNotifications = onSchedule(
       const messages = [];
 
       // 8:00 daily summary — fire once in the interval window starting at the
-      // configured hour.
+      // configured hour. Sends a reminders message and/or a tasks message.
       const dailyKey = `daily-${dateKey}`;
       if (hour === dailyHour && minutes - dailyHour * 60 < RUN_INTERVAL_MIN) {
         if (!newSent[dailyKey]) {
-          const summary = buildDailySummary(planner, dateKey);
-          if (summary) {
-            messages.push(summary);
+          const daily = buildDailyMessages(planner, dateKey);
+          if (daily.length) {
+            daily.forEach((m) => messages.push(m));
             newSent[dailyKey] = true;
           }
         }
@@ -191,8 +197,8 @@ export const sendPlannerNotifications = onSchedule(
           const evKey = `evt-${dateKey}-${ev.id}`;
           if (!newSent[evKey]) {
             messages.push({
-              title: `Pronto: ${ev.title}`,
-              body: `Empieza a las ${formatTime(ev.start)}${ev.place ? ` · ${ev.place}` : ""}`,
+              title: `Evento: ${ev.title}`,
+              body: `Empieza a las ${formatTime(ev.start)}`,
             });
             newSent[evKey] = true;
           }

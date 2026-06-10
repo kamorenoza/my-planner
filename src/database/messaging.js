@@ -113,7 +113,10 @@ export async function listenForegroundMessages() {
   const messaging = await getMessagingInstance();
   if (!messaging) return () => {};
   return onMessage(messaging, (payload) => {
-    const { title, body } = payload.notification || {};
+    const data = payload.data || {};
+    const note = payload.notification || {};
+    const title = note.title || data.title;
+    const body = note.body || data.body;
     if (title && Notification.permission === "granted") {
       new Notification(title, { body, icon: `${BASE}pwa-192x192.png` });
     }

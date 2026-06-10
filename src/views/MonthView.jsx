@@ -10,7 +10,11 @@ import {
   getISOWeek,
 } from "../utils/calendar";
 import { getEventType, formatTime } from "../utils/events";
-import { isHolidayReminder, dayHasHoliday } from "../utils/holidaysCO";
+import {
+  isHolidayReminder,
+  dayHasHoliday,
+  sortRemindersHolidayFirst,
+} from "../utils/holidaysCO";
 import EmojiImg from "../components/EmojiImg";
 import Breadcrumbs from "../components/Breadcrumbs";
 import { EventFields } from "../components/EventModal";
@@ -113,8 +117,8 @@ function MonthDayCard({ year, month, day, todayDay, onOpen, onAdd, cardRef }) {
     .filter((e) => !e.date || e.date === dk)
     .slice()
     .sort((a, b) => a.start - b.start);
-  const reminders = load(remindersKey(dk), []).filter(
-    (r) => !r.date || r.date === dk,
+  const reminders = sortRemindersHolidayFirst(
+    load(remindersKey(dk), []).filter((r) => !r.date || r.date === dk),
   );
   const todos = load(todosKey(dk), []).filter((t) => !t.date || t.date === dk);
   const visibleTodos = todos.slice(0, 3);
@@ -492,8 +496,10 @@ function MonthView() {
                         .sort((a, b) => a.start - b.start)
                     : [];
                   const reminders = dk
-                    ? load(remindersKey(dk), []).filter(
-                        (r) => !r.date || r.date === dk,
+                    ? sortRemindersHolidayFirst(
+                        load(remindersKey(dk), []).filter(
+                          (r) => !r.date || r.date === dk,
+                        ),
                       )
                     : [];
                   const isHoliday = reminders.some(isHolidayReminder);

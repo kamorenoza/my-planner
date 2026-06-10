@@ -13,7 +13,10 @@ import {
   getRepeatLabel,
   formatTime,
 } from "../utils/events";
-import { isHolidayReminder } from "../utils/holidaysCO";
+import {
+  isHolidayReminder,
+  sortRemindersHolidayFirst,
+} from "../utils/holidaysCO";
 import EventModal from "../components/EventModal";
 import EmojiImg from "../components/EmojiImg";
 import PlateIcon from "../components/PlateIcon";
@@ -28,6 +31,8 @@ import {
   mealsKey,
   remindersKey,
   recipesKey,
+  habitsKey,
+  checksKey,
   load,
 } from "../utils/storage";
 import { saveNewEvent, editEvent, removeEvent } from "../utils/recurrence";
@@ -41,6 +46,10 @@ const MEALS = [
   { id: "almuerzo", label: "Almuerzo" },
   { id: "cena", label: "Cena" },
 ];
+
+// Must match the default habits seeded by WeekView so both views share the
+// same global 'habits' store.
+const INITIAL_HABITS = [{ id: "h1", name: "Ejercicio" }];
 
 function formatHour(hour) {
   const period = hour < 12 ? "am" : "pm";
@@ -323,13 +332,20 @@ function Schedule({ events, defaultDate, onAdd, onUpdate, onDelete }) {
   );
 }
 
-function Todo({ storageKey, date }) {
+function Todo({ storageKey, date, year, week, weekdayIndex }) {
   const [items, setItems] = usePersistedState(storageKey, []);
+  const [habits] = usePersistedState(habitsKey(), INITIAL_HABITS);
+  const [checks, setChecks] = usePersistedState(checksKey(year, week), {});
   const [adding, setAdding] = useState(false);
   const [newText, setNewText] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [draft, setDraft] = useState("");
   const [confirmItem, setConfirmItem] = useState(null);
+
+  const toggleHabit = (habitId) => {
+    const key = `${habitId}-${weekdayIndex}`;
+    setChecks((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const commitAdd = () => {
     const text = newText.trim();
@@ -378,6 +394,26 @@ function Todo({ storageKey, date }) {
         </button>
       </div>
       <div className="todo__list">
+        {habits.map((habit) => {
+          const checked = !!checks[`${habit.id}-${weekdayIndex}`];
+          return (
+            <div key={habit.id} className="todo__item todo__item--habit">
+              <button
+                className={`todo__check${checked ? " todo__check--on" : ""}`}
+                onClick={() => toggleHabit(habit.id)}
+                aria-label={`Marcar ${habit.name}`}
+              >
+                {checked ? "✓" : ""}
+              </button>
+              <span
+                className={`todo__text${checked ? " todo__text--done" : ""}`}
+              >
+                {habit.name}
+              </span>
+              <span className="todo__habit-tag">Hábito</span>
+            </div>
+          );
+        })}
         {items.map((item) => (
           <div key={item.id} className="todo__item">
             <button
@@ -440,7 +476,7 @@ function Todo({ storageKey, date }) {
             />
           </div>
         )}
-        {items.length === 0 && !adding && (
+        {items.length === 0 && habits.length === 0 && !adding && (
           <p className="todo__empty">Sin tareas todavía</p>
         )}
       </div>
@@ -492,6 +528,7 @@ function Reminders({ items, setItems, date }) {
   };
 
   const dayHasHolidayHere = items.some(isHolidayReminder);
+  const sortedItems = sortRemindersHolidayFirst(items);
 
   return (
     <div className="reminders">
@@ -502,39 +539,40 @@ function Reminders({ items, setItems, date }) {
         </button>
       </div>
       <div className="reminders__list">
-        {items.map((item) => {
-          const holiday = isHolidayReminder(item);
-          return (
-            <div
-              key={item.id}
-              className={`reminder-card${holiday ? " reminder-card--holiday" : ""}`}
-            >
-              <EmojiImg
-                emoji={item.emoji}
-                code={item.emojiCode}
-                className="reminder-card__emoji"
-              />
-              <span
-                className="reminder-card__text"
-                onClick={() =>
-                  holiday ? setConfirmItem(item) : openEdit(item)
-                }
-                title={holiday ? "Festivo" : "Editar"}
-              >
-                {holiday ? `Festivo: ${item.text}` : item.text}
-              </span>
-              <button
-                className="reminder-card__remove"
-                onClick={() => setConfirmItem(item)}
-                aria-label="Eliminar"
-              >
-                ×
-              </button>
-            </div>
-          );
-        })}
-        {items.length === 0 && (
+        {items.length === 0 ? (
           <p className="reminders__empty">Sin recordatorios todavía</p>
+        ) : (
+          sortedItems.map((item) => {
+            const holiday = isHolidayReminder(item);
+            return (
+              <div
+                key={item.id}
+                className={`reminder-card${holiday ? " reminder-card--holiday" : ""}`}
+              >
+                <EmojiImg
+                  emoji={item.emoji}
+                  code={item.emojiCode}
+                  className="reminder-card__emoji"
+                />
+                <span
+                  className="reminder-card__text"
+                  onClick={() =>
+                    holiday ? setConfirmItem(item) : openEdit(item)
+                  }
+                  title={holiday ? "Festivo" : "Editar"}
+                >
+                  {holiday ? `Festivo: ${item.text}` : item.text}
+                </span>
+                <button
+                  className="reminder-card__remove"
+                  onClick={() => setConfirmItem(item)}
+                  aria-label="Eliminar"
+                >
+                  ×
+                </button>
+              </div>
+            );
+          })
         )}
       </div>
 
@@ -782,7 +820,7 @@ function DayView() {
       >
         <button
           className="day-view__back"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate(`/year/${yearNumber}/week/${weekNumber}`)}
           aria-label="Volver"
         >
           ‹
@@ -861,7 +899,13 @@ function DayView() {
             setItems={setReminders}
             date={defaultDate}
           />
-          <Todo storageKey={todosKey(defaultDate)} date={defaultDate} />
+          <Todo
+            storageKey={todosKey(defaultDate)}
+            date={defaultDate}
+            year={yearNumber}
+            week={weekNumber}
+            weekdayIndex={weekdayIndex}
+          />
           <div className="day-view__col--schedule">
             <Schedule
               events={events}
@@ -885,7 +929,13 @@ function DayView() {
             />
           </div>
           <div className="day-view__col day-view__col--side">
-            <Todo storageKey={todosKey(defaultDate)} date={defaultDate} />
+            <Todo
+              storageKey={todosKey(defaultDate)}
+              date={defaultDate}
+              year={yearNumber}
+              week={weekNumber}
+              weekdayIndex={weekdayIndex}
+            />
             <Reminders
               items={reminders}
               setItems={setReminders}

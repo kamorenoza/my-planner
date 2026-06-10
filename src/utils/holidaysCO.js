@@ -112,6 +112,17 @@ export function isHolidayReminder(reminder) {
   return Boolean(reminder && reminder.holiday);
 }
 
+// Return a copy of the reminders list with holiday reminders placed first,
+// preserving the original relative order within each group. Used so festivos
+// always appear at the top of every view.
+export function sortRemindersHolidayFirst(reminders) {
+  return reminders
+    .slice()
+    .sort(
+      (a, b) => (isHolidayReminder(a) ? 0 : 1) - (isHolidayReminder(b) ? 0 : 1),
+    );
+}
+
 // True when the given day already has a holiday reminder stored.
 export function dayHasHoliday(year, month, day) {
   const dk = dateKeyFromParts(year, month, day);

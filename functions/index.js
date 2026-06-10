@@ -1,4 +1,6 @@
 import { onSchedule } from "firebase-functions/v2/scheduler";
+import { onRequest } from "firebase-functions/v2/https";
+import { defineSecret } from "firebase-functions/params";
 import { logger } from "firebase-functions";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
@@ -7,8 +9,11 @@ import { getMessaging } from "firebase-admin/messaging";
 initializeApp();
 const db = getFirestore();
 
+// Shared secret so only you can read your planner from the widget.
+const WIDGET_KEY = defineSecret("WIDGET_KEY");
+
 // How often the scheduler runs (minutes). Must match the schedule below.
-const RUN_INTERVAL_MIN = 15;
+const RUN_INTERVAL_MIN = 10;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -176,24 +181,25 @@ export const sendPlannerNotifications = onSchedule(
       const updates = {};
       const messages = [];
 
-      // 8:00 daily summary — fire once in the interval window starting at the
-      // configured hour. Sends a reminders message and/or a tasks message.
+      // 8:00 daily summary — send on the first run at/after the configured
+      // hour (within that hour) if not already sent today.
       const dailyKey = `daily-${dateKey}`;
-      if (hour === dailyHour && minutes - dailyHour * 60 < RUN_INTERVAL_MIN) {
-        if (!newSent[dailyKey]) {
-          const daily = buildDailyMessages(planner, dateKey);
-          if (daily.length) {
-            daily.forEach((m) => messages.push(m));
-            newSent[dailyKey] = true;
-          }
+      if (hour === dailyHour && !newSent[dailyKey]) {
+        const daily = buildDailyMessages(planner, dateKey);
+        if (daily.length) {
+          daily.forEach((m) => messages.push(m));
         }
+        // Mark as sent even if there was nothing, so we don't keep checking
+        // all hour long.
+        newSent[dailyKey] = true;
       }
 
-      // Event reminders — `leadMin` minutes before each event start.
+      // Event reminders — send on the first run where the event starts within
+      // `leadMin` minutes (and hasn't started yet), once per event.
       const events = parseList(planner, `events-${dateKey}`);
       events.forEach((ev) => {
         const until = ev.start - minutes;
-        if (until <= leadMin && until > leadMin - RUN_INTERVAL_MIN) {
+        if (until <= leadMin && until > 0) {
           const evKey = `evt-${dateKey}-${ev.id}`;
           if (!newSent[evKey]) {
             messages.push({
@@ -223,5 +229,44 @@ export const sendPlannerNotifications = onSchedule(
 
     await Promise.all(jobs);
     logger.info(`Notification run complete: ${jobs.length} user(s) notified.`);
+  },
+);
+
+// ---------------------------------------------------------------------------
+// HTTP endpoint for the home-screen widget (Scriptable, etc.)
+// ---------------------------------------------------------------------------
+
+// Returns today's events, reminders and pending todos for a user as JSON.
+// Auth is a simple uid + shared-secret check, enough for a personal widget.
+export const todayPlanner = onRequest(
+  { region: "us-central1", secrets: [WIDGET_KEY], cors: true },
+  async (req, res) => {
+    const uid = String(req.query.uid || "");
+    const key = String(req.query.key || "");
+
+    if (!uid || key !== WIDGET_KEY.value()) {
+      res.status(401).json({ error: "unauthorized" });
+      return;
+    }
+
+    const snap = await db.doc(`users/${uid}`).get();
+    const data = snap.data() || {};
+    const planner = data.planner || {};
+    const timezone = data.timezone || "America/Bogota";
+    const { dateKey } = localParts(new Date(), timezone);
+
+    const events = parseList(planner, `events-${dateKey}`)
+      .sort((a, b) => a.start - b.start)
+      .map((e) => ({ title: e.title, time: formatTime(e.start) }));
+    const reminders = parseList(planner, `reminders-${dateKey}`).map((r) => ({
+      text: r.text,
+      holiday: isHoliday(r),
+    }));
+    const todos = parseList(planner, `todos-${dateKey}`)
+      .filter((t) => !t.done)
+      .map((t) => ({ text: t.text }));
+
+    res.set("Cache-Control", "no-store");
+    res.json({ dateKey, events, reminders, todos });
   },
 );

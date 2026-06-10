@@ -11,7 +11,11 @@ import {
 } from "../utils/calendar";
 import { getEventType, formatTime } from "../utils/events";
 import { DAY_START_MIN, DAY_END_MIN } from "../utils/events";
-import { isHolidayReminder, dayHasHoliday } from "../utils/holidaysCO";
+import {
+  isHolidayReminder,
+  dayHasHoliday,
+  sortRemindersHolidayFirst,
+} from "../utils/holidaysCO";
 import { EventFields } from "../components/EventModal";
 import { saveNewEvent } from "../utils/recurrence";
 import EmojiImg from "../components/EmojiImg";
@@ -498,15 +502,20 @@ function WeekMobile({
             .filter((e) => !e.date || e.date === dk)
             .slice()
             .sort((a, b) => a.start - b.start);
-          const reminders = load(remindersKey(dk), []).filter(
-            (r) => !r.date || r.date === dk,
+          const reminders = sortRemindersHolidayFirst(
+            load(remindersKey(dk), []).filter((r) => !r.date || r.date === dk),
           );
           const isToday = i === todayIndex;
           const isHoliday = reminders.some(isHolidayReminder);
           const dayUrl = `/year/${date.getUTCFullYear()}/month/${date.getUTCMonth()}/day/${date.getUTCDate()}`;
 
           return (
-            <div key={i} className="week-mobile__daycol">
+            <div
+              key={i}
+              className="week-mobile__daycol"
+              onClick={() => navigate(dayUrl)}
+              role="button"
+            >
               <button
                 className={`week-mobile__dayhead${
                   isToday ? " week-mobile__dayhead--today" : ""
@@ -577,10 +586,13 @@ function WeekMobile({
                     const type = getEventType(event.type);
                     const top = ((event.start - DAY_START_MIN) / total) * 100;
                     const height = ((event.end - event.start) / total) * 100;
+                    const compact = event.end - event.start <= 30;
                     return (
                       <div
                         key={event.id}
-                        className="week-mobile__event"
+                        className={`week-mobile__event${
+                          compact ? " week-mobile__event--compact" : ""
+                        }`}
                         style={{
                           top: `${top}%`,
                           height: `${height}%`,
@@ -729,7 +741,7 @@ function WeekView() {
       <div className="week-view__header">
         <button
           className="week-view__back"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate(`/year/${yearNumber}/month/${refMonth}`)}
           aria-label="Volver"
         >
           ‹
@@ -790,8 +802,8 @@ function WeekView() {
             .filter((e) => !e.date || e.date === dk)
             .slice()
             .sort((a, b) => a.start - b.start);
-          const reminders = load(remindersKey(dk), []).filter(
-            (r) => !r.date || r.date === dk,
+          const reminders = sortRemindersHolidayFirst(
+            load(remindersKey(dk), []).filter((r) => !r.date || r.date === dk),
           );
           const visibleTodos = todos.slice(0, 3);
           const now = new Date();

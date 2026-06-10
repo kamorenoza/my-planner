@@ -813,6 +813,22 @@
     overflow: hidden;
   }
 
+  .week-mobile__event--compact {
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    padding: 0 5px;
+  }
+
+  .week-mobile__event--compact .week-mobile__event-title {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .week-mobile__event--compact .week-mobile__event-time {
+    flex-shrink: 0;
+  }
+
   .week-mobile__event-title {
     font-size: 0.65rem;
     font-weight: var(--font-weight-semibold);

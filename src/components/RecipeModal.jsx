@@ -8,9 +8,9 @@ export const MEAL_TAGS = [
 ];
 
 export const TAG_COLORS = {
-  desayuno: { color: "#c87f1e", bg: "#fbeede" },
-  almuerzo: { color: "#3f8f5c", bg: "#e6f3ea" },
-  cena: { color: "#5a6db0", bg: "#e8ecf8" },
+  desayuno: { color: "#C87F1E", bg: "#FBEEDE" },
+  almuerzo: { color: "#3F8F5C", bg: "#E6F3EA" },
+  cena: { color: "#5A6DB0", bg: "#E8ECF8" },
   postre: { color: "var(--cat-pink)", bg: "var(--cat-pink-bg)" },
 };
 
@@ -89,7 +89,7 @@ export function RecipeModal({ recipe, onClose, onSave }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay">
       <div className="modal modal--form" onClick={(e) => e.stopPropagation()}>
         <h2 className="modal__title">
           {recipe ? "Editar receta" : "Nueva receta"}

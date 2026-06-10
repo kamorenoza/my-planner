@@ -10,10 +10,13 @@ import {
   DAY_START_MIN,
   DAY_END_MIN,
   getEventType,
+  getRepeatLabel,
   formatTime,
 } from "../utils/events";
+import { isHolidayReminder } from "../utils/holidaysCO";
 import EventModal from "../components/EventModal";
 import EmojiImg from "../components/EmojiImg";
+import PlateIcon from "../components/PlateIcon";
 import ReminderModal from "../components/ReminderModal";
 import Breadcrumbs from "../components/Breadcrumbs";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -27,6 +30,7 @@ import {
   recipesKey,
   load,
 } from "../utils/storage";
+import { saveNewEvent, editEvent, removeEvent } from "../utils/recurrence";
 import { useIsMobile } from "../utils/useIsMobile";
 import "./DayView.css";
 
@@ -51,13 +55,15 @@ function EventBlock({ event, expanded, onToggle, onEdit }) {
   const top = ((event.start - DAY_START_MIN) / total) * 100;
   const height = (duration / total) * 100;
 
+  // Compact: short events (<= 30 min) shown on a single centered line
+  const compact = !expanded && duration <= 30;
   // Info detail shown automatically based on duration
-  const showTime = duration > 30 || expanded;
+  const showTime = !compact && (duration > 30 || expanded);
   const showDetails = duration >= 90 || expanded;
 
   return (
     <div
-      className={`event-block${expanded ? " event-block--expanded" : ""}`}
+      className={`event-block${expanded ? " event-block--expanded" : ""}${compact ? " event-block--compact" : ""}`}
       style={{
         top: `${top}%`,
         height: expanded ? "auto" : `${height}%`,
@@ -72,6 +78,11 @@ function EventBlock({ event, expanded, onToggle, onEdit }) {
     >
       <div className="event-block__head">
         <span className="event-block__title">{event.title}</span>
+        {compact && (
+          <span className="event-block__time event-block__time--inline">
+            {formatTime(event.start)} - {formatTime(event.end)}
+          </span>
+        )}
         <button
           className="event-block__edit"
           style={{ color: type.text }}
@@ -92,6 +103,11 @@ function EventBlock({ event, expanded, onToggle, onEdit }) {
       {showDetails && (
         <>
           <span className="event-block__type">{type.label}</span>
+          {event.seriesId && (
+            <span className="event-block__repeat">
+              ⟳ {getRepeatLabel(event.repeat)}
+            </span>
+          )}
           {event.place && (
             <span className="event-block__place">
               :round_pushpin: {event.place}
@@ -111,6 +127,7 @@ function Schedule({ events, defaultDate, onAdd, onUpdate, onDelete }) {
   const [editingEvent, setEditingEvent] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [scopePrompt, setScopePrompt] = useState(null);
 
   const toggleExpand = (id) =>
     setExpandedId((prev) => (prev === id ? null : id));
@@ -132,12 +149,27 @@ function Schedule({ events, defaultDate, onAdd, onUpdate, onDelete }) {
     setShowModal(true);
   };
 
+  const handleSave = (event) => {
+    if (editingEvent) {
+      if (editingEvent.seriesId) {
+        // Recurring event: ask whether to apply to one or all occurrences.
+        setScopePrompt({ mode: "edit", event });
+        return;
+      }
+      onUpdate(event);
+    } else {
+      onAdd(event);
+    }
+    setShowModal(false);
+    setEditingEvent(null);
+  };
+
   const requestDelete = () => {
     setConfirmDelete(editingEvent);
   };
 
-  const confirmRemove = () => {
-    onDelete(confirmDelete.id);
+  const confirmRemove = (scope) => {
+    onDelete(confirmDelete.id, scope);
     setConfirmDelete(null);
     setShowModal(false);
     setEditingEvent(null);
@@ -181,12 +213,7 @@ function Schedule({ events, defaultDate, onAdd, onUpdate, onDelete }) {
         <EventModal
           defaultDate={defaultDate}
           event={editingEvent}
-          onSave={(event) => {
-            if (editingEvent) onUpdate(event);
-            else onAdd(event);
-            setShowModal(false);
-            setEditingEvent(null);
-          }}
+          onSave={handleSave}
           onClose={() => {
             setShowModal(false);
             setEditingEvent(null);
@@ -195,27 +222,100 @@ function Schedule({ events, defaultDate, onAdd, onUpdate, onDelete }) {
         />
       )}
 
+      {scopePrompt && (
+        <div className="modal-overlay">
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="modal__title">Evento que se repite</h3>
+            <p className="modal__text">
+              ¿Quieres aplicar los cambios solo a este evento o a todos los de
+              la serie?
+            </p>
+            <div className="modal__actions modal__actions--stack">
+              <button
+                className="modal__btn modal__btn--primary"
+                onClick={() => {
+                  onUpdate(scopePrompt.event, "one");
+                  setScopePrompt(null);
+                  setShowModal(false);
+                  setEditingEvent(null);
+                }}
+              >
+                Solo este evento
+              </button>
+              <button
+                className="modal__btn modal__btn--primary"
+                onClick={() => {
+                  onUpdate(scopePrompt.event, "all");
+                  setScopePrompt(null);
+                  setShowModal(false);
+                  setEditingEvent(null);
+                }}
+              >
+                Todos los eventos
+              </button>
+              <button
+                className="modal__btn modal__btn--cancel"
+                onClick={() => setScopePrompt(null)}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {confirmDelete && (
         <div className="modal-overlay" onClick={() => setConfirmDelete(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3 className="modal__title">Eliminar evento</h3>
             <p className="modal__text">
-              ¿Seguro que quieres eliminar “{confirmDelete.title}”?
+              {confirmDelete.seriesId
+                ? `“${confirmDelete.title}” se repite. ¿Qué quieres eliminar?`
+                : `¿Seguro que quieres eliminar “${confirmDelete.title}”?`}
             </p>
-            <div className="modal__actions">
-              <button
-                className="modal__btn modal__btn--cancel"
-                onClick={() => setConfirmDelete(null)}
-              >
-                Cancelar
-              </button>
-              <button
-                className="modal__btn modal__btn--danger"
-                onClick={confirmRemove}
-              >
-                Eliminar
-              </button>
-            </div>
+            {confirmDelete.seriesId ? (
+              <div className="modal__actions modal__actions--stack">
+                <button
+                  className="modal__btn modal__btn--danger"
+                  onClick={() => confirmRemove("one")}
+                >
+                  Eliminar este evento
+                </button>
+                <button
+                  className="modal__btn modal__btn--danger"
+                  onClick={() => confirmRemove("future")}
+                >
+                  Eliminar de este en adelante
+                </button>
+                <button
+                  className="modal__btn modal__btn--danger"
+                  onClick={() => confirmRemove("all")}
+                >
+                  Eliminar todos
+                </button>
+                <button
+                  className="modal__btn modal__btn--cancel"
+                  onClick={() => setConfirmDelete(null)}
+                >
+                  Cancelar
+                </button>
+              </div>
+            ) : (
+              <div className="modal__actions">
+                <button
+                  className="modal__btn modal__btn--cancel"
+                  onClick={() => setConfirmDelete(null)}
+                >
+                  Cancelar
+                </button>
+                <button
+                  className="modal__btn modal__btn--danger"
+                  onClick={() => confirmRemove()}
+                >
+                  Eliminar
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -360,8 +460,7 @@ function Todo({ storageKey, date }) {
   );
 }
 
-function Reminders({ storageKey, date }) {
-  const [items, setItems] = usePersistedState(storageKey, []);
+function Reminders({ items, setItems, date }) {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [confirmItem, setConfirmItem] = useState(null);
@@ -392,6 +491,8 @@ function Reminders({ storageKey, date }) {
     setItems((prev) => prev.filter((it) => it.id !== id));
   };
 
+  const dayHasHolidayHere = items.some(isHolidayReminder);
+
   return (
     <div className="reminders">
       <div className="reminders__head-bar">
@@ -401,29 +502,37 @@ function Reminders({ storageKey, date }) {
         </button>
       </div>
       <div className="reminders__list">
-        {items.map((item) => (
-          <div key={item.id} className="reminder-card">
-            <EmojiImg
-              emoji={item.emoji}
-              code={item.emojiCode}
-              className="reminder-card__emoji"
-            />
-            <span
-              className="reminder-card__text"
-              onClick={() => openEdit(item)}
-              title="Editar"
+        {items.map((item) => {
+          const holiday = isHolidayReminder(item);
+          return (
+            <div
+              key={item.id}
+              className={`reminder-card${holiday ? " reminder-card--holiday" : ""}`}
             >
-              {item.text}
-            </span>
-            <button
-              className="reminder-card__remove"
-              onClick={() => setConfirmItem(item)}
-              aria-label="Eliminar"
-            >
-              ×
-            </button>
-          </div>
-        ))}
+              <EmojiImg
+                emoji={item.emoji}
+                code={item.emojiCode}
+                className="reminder-card__emoji"
+              />
+              <span
+                className="reminder-card__text"
+                onClick={() =>
+                  holiday ? setConfirmItem(item) : openEdit(item)
+                }
+                title={holiday ? "Festivo" : "Editar"}
+              >
+                {holiday ? `Festivo: ${item.text}` : item.text}
+              </span>
+              <button
+                className="reminder-card__remove"
+                onClick={() => setConfirmItem(item)}
+                aria-label="Eliminar"
+              >
+                ×
+              </button>
+            </div>
+          );
+        })}
         {items.length === 0 && (
           <p className="reminders__empty">Sin recordatorios todavía</p>
         )}
@@ -432,6 +541,7 @@ function Reminders({ storageKey, date }) {
       {showModal && (
         <ReminderModal
           reminder={editing}
+          canMarkHoliday={!dayHasHolidayHere}
           onSave={saveReminder}
           onClose={() => {
             setShowModal(false);
@@ -442,8 +552,16 @@ function Reminders({ storageKey, date }) {
 
       {confirmItem && (
         <ConfirmDialog
-          title="Eliminar recordatorio"
-          message={`¿Seguro que deseas eliminar "${confirmItem.text}"?`}
+          title={
+            isHolidayReminder(confirmItem)
+              ? "Eliminar festivo"
+              : "Eliminar recordatorio"
+          }
+          message={
+            isHolidayReminder(confirmItem)
+              ? `¿Quieres eliminar el festivo "${confirmItem.text}"?`
+              : `¿Seguro que deseas eliminar "${confirmItem.text}"?`
+          }
           onConfirm={() => {
             remove(confirmItem.id);
             setConfirmItem(null);
@@ -458,7 +576,7 @@ function Reminders({ storageKey, date }) {
 function MealPicker({ tag, recipes, onPick, onClose }) {
   const accent = TAG_COLORS[tag];
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay">
       <div className="modal modal--form" onClick={(e) => e.stopPropagation()}>
         <h2 className="modal__title">Elegir receta</h2>
         {recipes.length === 0 ? (
@@ -481,9 +599,7 @@ function MealPicker({ tag, recipes, onPick, onClose }) {
                   {recipe.photo ? (
                     <img src={recipe.photo} alt={recipe.title} />
                   ) : (
-                    <span className="meal-picker__thumb-icon">
-                      :knife_fork_plate:
-                    </span>
+                    <PlateIcon className="meal-picker__thumb-icon" />
                   )}
                 </span>
                 <span className="meal-picker__info">
@@ -561,9 +677,7 @@ function Meals({ storageKey }) {
                         {recipe.photo ? (
                           <img src={recipe.photo} alt={recipe.title} />
                         ) : (
-                          <span className="meal-mini__icon">
-                            :knife_fork_plate:
-                          </span>
+                          <PlateIcon className="meal-mini__icon" />
                         )}
                       </span>
                       <span className="meal-mini__title">{recipe.title}</span>
@@ -625,21 +739,29 @@ function DayView() {
   const defaultDate = `${yearNumber}-${String(monthNumber + 1).padStart(2, "0")}-${String(dayNumber).padStart(2, "0")}`;
 
   const [events, setEvents] = usePersistedState(eventsKey(defaultDate), []);
+  const [reminders, setReminders] = usePersistedState(
+    remindersKey(defaultDate),
+    [],
+  );
+  const holidayReminder = reminders.find(isHolidayReminder);
+
+  const refreshEvents = () => setEvents(load(eventsKey(defaultDate), []));
 
   const addEvent = (event) => {
-    setEvents((prev) => [...prev, event].sort((a, b) => a.start - b.start));
+    saveNewEvent(event);
+    refreshEvents();
   };
 
-  const updateEvent = (event) => {
-    setEvents((prev) =>
-      prev
-        .map((e) => (e.id === event.id ? event : e))
-        .sort((a, b) => a.start - b.start),
-    );
+  const updateEvent = (event, scope) => {
+    const original = events.find((e) => e.id === event.id) || event;
+    editEvent(original, event, scope);
+    refreshEvents();
   };
 
-  const deleteEvent = (id) => {
-    setEvents((prev) => prev.filter((e) => e.id !== id));
+  const deleteEvent = (id, scope) => {
+    const original = events.find((e) => e.id === id);
+    if (original) removeEvent(original, scope);
+    refreshEvents();
   };
 
   const isMobile = useIsMobile();
@@ -653,7 +775,11 @@ function DayView() {
 
   return (
     <div className="day-view">
-      <div className="day-view__header">
+      <div
+        className={`day-view__header${
+          holidayReminder ? " day-view__header--holiday" : ""
+        }`}
+      >
         <button
           className="day-view__back"
           onClick={() => navigate(-1)}
@@ -666,6 +792,16 @@ function DayView() {
             {WEEKDAYS_FULL[weekdayIndex]} · {dayNumber} de {MONTHS[monthNumber]}{" "}
             {yearNumber}
           </h1>
+          {holidayReminder && (
+            <span className="day-view__holiday-badge">
+              <EmojiImg
+                emoji={holidayReminder.emoji || ":tada:"}
+                code={holidayReminder.emojiCode || "1f389"}
+                className="day-view__holiday-emoji"
+              />
+              Festivo: {holidayReminder.text}
+            </span>
+          )}
           <Breadcrumbs
             items={[
               { label: String(yearNumber), to: `/year/${yearNumber}` },
@@ -721,7 +857,8 @@ function DayView() {
       {isMobile ? (
         <div className="day-view__mobile">
           <Reminders
-            storageKey={remindersKey(defaultDate)}
+            items={reminders}
+            setItems={setReminders}
             date={defaultDate}
           />
           <Todo storageKey={todosKey(defaultDate)} date={defaultDate} />
@@ -750,7 +887,8 @@ function DayView() {
           <div className="day-view__col day-view__col--side">
             <Todo storageKey={todosKey(defaultDate)} date={defaultDate} />
             <Reminders
-              storageKey={remindersKey(defaultDate)}
+              items={reminders}
+              setItems={setReminders}
               date={defaultDate}
             />
             <Meals storageKey={mealsKey(defaultDate)} />

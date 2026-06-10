@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useIsMobile } from "../utils/useIsMobile";
+import { getISOWeek, MONTHS_SHORT } from "../utils/calendar";
 import SettingsPanel from "./SettingsPanel";
 import "./SideMenu.css";
 
@@ -76,25 +78,70 @@ function SideMenu() {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuth();
+  const isMobile = useIsMobile();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [jumpOpen, setJumpOpen] = useState(false);
 
-  const goToday = () => {
-    const now = new Date();
-    navigate(
-      `/year/${now.getFullYear()}/month/${now.getMonth()}/day/${now.getDate()}`,
-    );
+  const now = new Date();
+  const curYear = now.getFullYear();
+  const curMonth = now.getMonth();
+  const curDay = now.getDate();
+  const curWeek = getISOWeek(curYear, curMonth, curDay);
+  const monthLabel = MONTHS_SHORT[curMonth].toUpperCase();
+
+  const goDay = () => {
+    setJumpOpen(false);
+    navigate(`/year/${curYear}/month/${curMonth}/day/${curDay}`);
+  };
+  const goWeek = () => {
+    setJumpOpen(false);
+    navigate(`/year/${curYear}/week/${curWeek}`);
+  };
+  const goMonth = () => {
+    setJumpOpen(false);
+    navigate(`/year/${curYear}/month/${curMonth}`);
   };
 
   return (
     <nav className="side-menu" aria-label="Menú principal">
-      <button
-        className="side-menu__item side-menu__today"
-        onClick={goToday}
-        aria-label="Hoy"
-        title="Ir al día de hoy"
-      >
-        HOY
-      </button>
+      <div className="side-menu__jump">
+        {isMobile && (
+          <button
+            className="side-menu__fab"
+            onClick={() => setJumpOpen((o) => !o)}
+            aria-label="Ir a hoy"
+            aria-expanded={jumpOpen}
+          >
+            {jumpOpen ? "×" : "HOY"}
+          </button>
+        )}
+        <div className={`side-menu__jump-actions${jumpOpen ? " is-open" : ""}`}>
+          <button
+            className="side-menu__jump-btn"
+            onClick={goDay}
+            aria-label="Ir al día de hoy"
+            title="Día de hoy"
+          >
+            {isMobile ? "DIA" : "HOY"}
+          </button>
+          <button
+            className="side-menu__jump-btn"
+            onClick={goWeek}
+            aria-label="Ir a la semana actual"
+            title="Semana actual"
+          >
+            SEM
+          </button>
+          <button
+            className="side-menu__jump-btn"
+            onClick={goMonth}
+            aria-label="Ir al mes actual"
+            title="Mes actual"
+          >
+            {monthLabel}
+          </button>
+        </div>
+      </div>
       {ITEMS.map((item) => {
         const active = item.match(location.pathname);
         return (
@@ -129,6 +176,12 @@ function SideMenu() {
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
         </svg>
       </button>
+      {isMobile && jumpOpen && (
+        <div
+          className="side-menu__jump-backdrop"
+          onClick={() => setJumpOpen(false)}
+        />
+      )}
       {settingsOpen && (
         <SettingsPanel
           onClose={() => setSettingsOpen(false)}

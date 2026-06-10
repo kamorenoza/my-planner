@@ -10,6 +10,7 @@ import {
   getISOWeek,
 } from "../utils/calendar";
 import { getEventType, formatTime } from "../utils/events";
+import { isHolidayReminder, dayHasHoliday } from "../utils/holidaysCO";
 import EmojiImg from "../components/EmojiImg";
 import Breadcrumbs from "../components/Breadcrumbs";
 import { EventFields } from "../components/EventModal";
@@ -23,6 +24,13 @@ import {
   remindersKey,
   todosKey,
 } from "../utils/storage";
+import { saveNewEvent } from "../utils/recurrence";
+import {
+  getDayMarks,
+  stripeGradient,
+  MARK_SIZE,
+  LINE_HEIGHT,
+} from "../utils/dayMarks";
 import { useIsMobile } from "../utils/useIsMobile";
 import "./MonthView.css";
 
@@ -39,12 +47,7 @@ function AddMonthModal({ year, month, onClose, onSaved, day }) {
   );
 
   const saveEvent = (event) => {
-    const key = eventsKey(event.date);
-    const events = load(key, []);
-    save(
-      key,
-      [...events, event].sort((a, b) => a.start - b.start),
-    );
+    saveNewEvent(event);
     onSaved();
     onClose();
   };
@@ -60,7 +63,7 @@ function AddMonthModal({ year, month, onClose, onSaved, day }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay">
       <div className="modal modal--form" onClick={(e) => e.stopPropagation()}>
         <h3 className="modal__title">Agregar a {MONTHS[month]}</h3>
         <div className="modal-tabs">
@@ -90,7 +93,13 @@ function AddMonthModal({ year, month, onClose, onSaved, day }) {
               <span className="field__label">Fecha</span>
               <DateField value={reminderDate} onChange={setReminderDate} />
             </label>
-            <ReminderFields onSave={saveReminder} onClose={onClose} />
+            <ReminderFields
+              onSave={saveReminder}
+              onClose={onClose}
+              canMarkHoliday={
+                !load(remindersKey(reminderDate), []).some(isHolidayReminder)
+              }
+            />
           </>
         )}
       </div>
@@ -113,6 +122,7 @@ function MonthDayCard({ year, month, day, todayDay, onOpen, onAdd, cardRef }) {
   const date = new Date(Date.UTC(year, month, day));
   const weekdayIndex = (date.getUTCDay() + 6) % 7;
   const isToday = day === todayDay;
+  const isHoliday = reminders.some(isHolidayReminder);
   const isEmpty =
     reminders.length === 0 && todos.length === 0 && events.length === 0;
 
@@ -123,7 +133,11 @@ function MonthDayCard({ year, month, day, todayDay, onOpen, onAdd, cardRef }) {
       onClick={() => onOpen(day)}
     >
       <div className="month-mobile__day-header">
-        <span className="month-mobile__day-title">
+        <span
+          className={`month-mobile__day-title${
+            isHoliday ? " month-mobile__day-title--holiday" : ""
+          }`}
+        >
           {WEEKDAYS_FULL[weekdayIndex]} {day} de {MONTHS[month]}
         </span>
       </div>
@@ -131,14 +145,23 @@ function MonthDayCard({ year, month, day, todayDay, onOpen, onAdd, cardRef }) {
         {reminders.length > 0 && (
           <div className="day-column__reminders">
             {reminders.map((reminder) => (
-              <div key={reminder.id} className="day-column__reminder">
+              <div
+                key={reminder.id}
+                className={`day-column__reminder${
+                  isHolidayReminder(reminder)
+                    ? " day-column__reminder--holiday"
+                    : ""
+                }`}
+              >
                 <EmojiImg
                   emoji={reminder.emoji}
                   code={reminder.emojiCode}
                   className="day-column__reminder-emoji"
                 />
                 <span className="day-column__reminder-text">
-                  {reminder.text}
+                  {isHolidayReminder(reminder)
+                    ? `Festivo: ${reminder.text}`
+                    : reminder.text}
                 </span>
               </div>
             ))}
@@ -271,20 +294,49 @@ function MonthMobile({ year, month, navigate, refresh, onAdd }) {
           ))}
         </div>
         <div className="month-mobile__days">
-          {cells.map((day, i) => (
-            <button
-              key={i}
-              className={`month-mobile__day${
-                day ? "" : " month-mobile__day--empty"
-              }${day && day === todayDay ? " month-mobile__day--today" : ""}${
-                day && day === selectedDay ? " month-mobile__day--selected" : ""
-              }`}
-              onClick={() => day && selectDay(day)}
-              disabled={!day}
-            >
-              {day || ""}
-            </button>
-          ))}
+          {cells.map((day, i) => {
+            const marks = day ? getDayMarks(year, month, day) : [];
+            return (
+              <button
+                key={i}
+                className={`month-mobile__day${
+                  day ? "" : " month-mobile__day--empty"
+                }${day && day === todayDay ? " month-mobile__day--today" : ""}${
+                  day && day === selectedDay
+                    ? " month-mobile__day--selected"
+                    : ""
+                }${
+                  day && dayHasHoliday(year, month, day)
+                    ? " month-mobile__day--holiday"
+                    : ""
+                }`}
+                onClick={() => day && selectDay(day)}
+                disabled={!day}
+              >
+                <span className="month-mobile__day-num">{day || ""}</span>
+                {marks.length === 1 && (
+                  <span
+                    className="month-mobile__mark"
+                    style={{
+                      background: marks[0],
+                      width: `${MARK_SIZE}px`,
+                      height: `${MARK_SIZE}px`,
+                    }}
+                  />
+                )}
+                {marks.length > 1 && (
+                  <span
+                    className="month-mobile__mark month-mobile__mark--line"
+                    style={{
+                      background: stripeGradient(marks),
+                      width: `${marks.length * MARK_SIZE}px`,
+                      height: `${LINE_HEIGHT}px`,
+                    }}
+                  />
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -444,6 +496,7 @@ function MonthView() {
                         (r) => !r.date || r.date === dk,
                       )
                     : [];
+                  const isHoliday = reminders.some(isHolidayReminder);
                   return (
                     <div
                       key={i}
@@ -462,6 +515,10 @@ function MonthView() {
                               day === todayDay
                                 ? " month-view__day-number--today"
                                 : ""
+                            }${
+                              isHoliday
+                                ? " month-view__day-number--holiday"
+                                : ""
                             }`}
                           >
                             {day}
@@ -471,7 +528,11 @@ function MonthView() {
                               {reminders.slice(0, 2).map((reminder) => (
                                 <div
                                   key={reminder.id}
-                                  className="month-view__reminder"
+                                  className={`month-view__reminder${
+                                    isHolidayReminder(reminder)
+                                      ? " month-view__reminder--holiday"
+                                      : ""
+                                  }`}
                                 >
                                   <EmojiImg
                                     emoji={reminder.emoji}
@@ -479,7 +540,9 @@ function MonthView() {
                                     className="month-view__reminder-emoji"
                                   />
                                   <span className="month-view__reminder-text">
-                                    {reminder.text}
+                                    {isHolidayReminder(reminder)
+                                      ? `Festivo: ${reminder.text}`
+                                      : reminder.text}
                                   </span>
                                 </div>
                               ))}

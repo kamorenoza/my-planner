@@ -201,6 +201,24 @@
   margin-bottom: var(--space-sm);
 }
 
+/* "Mark as holiday" toggle inside the reminder form */
+.reminder-holiday {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.reminder-holiday input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--holiday);
+  cursor: pointer;
+}
+
 .modal__text {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
@@ -211,6 +229,12 @@
   display: flex;
   justify-content: flex-end;
   gap: var(--space-sm);
+}
+
+.modal__actions--stack {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: stretch;
 }
 
 .modal__btn {
@@ -408,6 +432,30 @@ select.field__input {
   opacity: 1;
   border-width: 1px;
   border-style: solid;
+}
+
+/* Weekday selector for custom event repeat */
+.weekday-pills {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.weekday-pill {
+  flex: 1;
+  height: 36px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  transition: all 0.15s ease;
+}
+
+.weekday-pill--active {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
 }
 
 /* Icon button danger variant */

@@ -109,19 +109,67 @@
   align-items: center;
   justify-content: center;
   min-height: 0;
+  position: relative;
+}
+
+.month-card__num {
+  position: relative;
+  z-index: 1;
+}
+
+/* Reminder/event indicator below the day number. Absolute so it never
+   affects the cell height. */
+.month-card__mark {
+  position: absolute;
+  bottom: 1px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: var(--radius-full);
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.65;
+}
+
+.month-card__mark--line {
+  border-radius: 2px;
 }
 
 .month-card__day--empty {
   visibility: hidden;
 }
 
+.month-card__day--holiday,
 .month-card__day--today {
-  border-radius: var(--radius-full);
-  background: var(--color-primary-light);
-  color: var(--color-primary-dark);
   font-weight: var(--font-weight-semibold);
-  aspect-ratio: 1;
-  margin: 0 auto;
+}
+
+.month-card__day--holiday::before,
+.month-card__day--today::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1.7em;
+  height: 1.7em;
+  transform: translate(-50%, -50%);
+  border-radius: var(--radius-full);
+  z-index: 0;
+}
+
+.month-card__day--holiday {
+  color: var(--holiday);
+}
+
+.month-card__day--holiday::before {
+  background: var(--holiday-bg);
+}
+
+.month-card__day--today {
+  color: var(--color-primary-dark);
+}
+
+.month-card__day--today::before {
+  background: var(--color-primary-light);
 }
 
 /* Tablet (iPad 10) */

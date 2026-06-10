@@ -20,14 +20,34 @@ const AuthContext = createContext(null);
 // so we never mix or upload one account's planner under another account.
 const PLANNER_OWNER_KEY = "planner-owner";
 
+// Set right before a real "Sign in with Google" attempt so we can tell a brand
+// new login (show the sync screen, pull cloud first) apart from a session that
+// Firebase simply restored from local persistence (render instantly).
+const FRESH_LOGIN_KEY = "fresh-login";
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  // Bumped only when a background cloud pull brings data that differs from what
+  // is already in localStorage, forcing the routed views to reload it.
+  const [dataVersion, setDataVersion] = useState(0);
   // Holds the teardown for the active session's listeners (watch + backup).
   const cleanupRef = useRef(null);
 
   useEffect(() => {
+    // Start watching for session eviction and auto-backing up local changes.
+    const attach = (uid, sessionId) => {
+      const stopWatch = watchSession(uid, sessionId, () => {
+        doLogout();
+      });
+      const stopBackup = startAutoBackup(uid);
+      cleanupRef.current = () => {
+        stopWatch();
+        stopBackup();
+      };
+    };
+
     const unsub = onAuth(async (fbUser) => {
       // Tear down listeners from any previous session.
       if (cleanupRef.current) {
@@ -42,45 +62,55 @@ export function AuthProvider({ children }) {
         return;
       }
 
-      setSyncing(true);
       const sessionId = createSessionId();
+      const freshLogin = sessionStorage.getItem(FRESH_LOGIN_KEY) === "1";
+      sessionStorage.removeItem(FRESH_LOGIN_KEY);
+      const prevOwner = localStorage.getItem(PLANNER_OWNER_KEY);
+      const foreign = Boolean(prevOwner && prevOwner !== fbUser.uid);
 
-      try {
-        // If the local planner belongs to a different user (or is unknown
-        // from a previous account), drop it so this account never sees or
-        // uploads someone else's data.
-        const prevOwner = localStorage.getItem(PLANNER_OWNER_KEY);
-        if (prevOwner && prevOwner !== fbUser.uid) {
-          clearPlannerData();
+      if (freshLogin || foreign) {
+        // Brand new login, or a different account on this device: show the sync
+        // screen and pull the cloud planner before rendering.
+        setSyncing(true);
+        try {
+          if (foreign) clearPlannerData();
+          await registerSession(fbUser.uid, sessionId);
+          const { applied } = await pullBackup(fbUser.uid);
+          if (!applied) await pushBackup(fbUser.uid);
+          localStorage.setItem(PLANNER_OWNER_KEY, fbUser.uid);
+        } catch {
+          // Network/permission issue – continue with local data.
         }
-
-        // Claim this device as the only active session.
-        await registerSession(fbUser.uid, sessionId);
-        // Download the cloud planner into localStorage for a fluid local UX.
-        const applied = await pullBackup(fbUser.uid);
-        // No cloud backup yet: seed it with whatever local data is left (only
-        // this user's, since foreign data was cleared above).
-        if (!applied) await pushBackup(fbUser.uid);
-        // Mark this device's planner as owned by the current user.
-        localStorage.setItem(PLANNER_OWNER_KEY, fbUser.uid);
-      } catch {
-        // Network/permission issue – continue with local data.
+        attach(fbUser.uid, sessionId);
+        setUser(fbUser);
+        setSyncing(false);
+        setLoading(false);
+        return;
       }
 
-      // Force-logout if another device claims the session afterwards.
-      const stopWatch = watchSession(fbUser.uid, sessionId, () => {
-        doLogout();
-      });
-      // Auto-backup to the cloud on every local change.
-      const stopBackup = startAutoBackup(fbUser.uid);
-      cleanupRef.current = () => {
-        stopWatch();
-        stopBackup();
-      };
-
+      // Restored session for the same account: trust localStorage and render
+      // immediately so startup is instant. Claim the session, watch for
+      // eviction and refresh from the cloud in the background.
+      localStorage.setItem(PLANNER_OWNER_KEY, fbUser.uid);
       setUser(fbUser);
-      setSyncing(false);
       setLoading(false);
+      setSyncing(false);
+      (async () => {
+        let registered = false;
+        try {
+          // Claim this device first (this is what evicts other devices), then
+          // start watching so we don't evict ourselves with our own id.
+          await registerSession(fbUser.uid, sessionId);
+          registered = true;
+          attach(fbUser.uid, sessionId);
+          const { applied, changed } = await pullBackup(fbUser.uid);
+          if (changed) setDataVersion((v) => v + 1);
+          else if (!applied) await pushBackup(fbUser.uid);
+        } catch {
+          // Offline: keep using local data; still watch for eviction.
+          if (!registered) attach(fbUser.uid, sessionId);
+        }
+      })();
     });
 
     return () => {
@@ -89,11 +119,21 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
+  // Wrap login so we can flag it as a real sign-in (vs a restored session).
+  const login = () => {
+    sessionStorage.setItem(FRESH_LOGIN_KEY, "1");
+    return loginWithGoogle().catch((err) => {
+      sessionStorage.removeItem(FRESH_LOGIN_KEY);
+      throw err;
+    });
+  };
+
   const value = {
     user,
     loading,
     syncing,
-    login: loginWithGoogle,
+    dataVersion,
+    login,
     logout: doLogout,
   };
 

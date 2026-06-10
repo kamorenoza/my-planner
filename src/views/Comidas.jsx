@@ -6,6 +6,7 @@ import {
   TAG_COLORS,
 } from "../components/RecipeModal";
 import ConfirmDialog from "../components/ConfirmDialog";
+import PlateIcon from "../components/PlateIcon";
 import "./Comidas.css";
 
 const SECTIONS = [
@@ -47,7 +48,7 @@ function RecipeCard({ recipe, accent, onClick }) {
         {recipe.photo ? (
           <img src={recipe.photo} alt={recipe.title} />
         ) : (
-          <span className="recipe-card__placeholder">🍽️</span>
+          <PlateIcon className="recipe-card__placeholder" />
         )}
       </div>
       <div className="recipe-card__body">

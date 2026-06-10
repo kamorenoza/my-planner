@@ -5,10 +5,11 @@
 
 /* Full-height page that fits the viewport */
 .comidas-page {
+  height: 100vh;
   height: 100dvh;
   display: flex;
   flex-direction: column;
-  padding-left: var(--app-padding);
+  padding-left: var(--page-padding);
   padding-right: var(--app-pad-right);
   padding-top: calc(var(--space-lg) + env(safe-area-inset-top));
   padding-bottom: calc(var(--space-lg) + env(safe-area-inset-bottom));
@@ -166,8 +167,10 @@
 }
 
 .recipe-card__placeholder {
-  font-size: 1.5rem;
-  opacity: 0.6;
+  width: 34px;
+  height: 34px;
+  color: var(--color-text-muted);
+  opacity: 0.7;
 }
 
 .recipe-card__body {

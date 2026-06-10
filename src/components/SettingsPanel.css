@@ -70,6 +70,45 @@
   margin-bottom: var(--space-md);
 }
 
+.settings-field + .settings-field {
+  margin-top: var(--space-xl);
+}
+
+.settings-field__hint {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-md);
+  line-height: 1.4;
+}
+
+.settings-field__error {
+  font-size: var(--font-size-xs);
+  color: var(--color-accent-red, #c0473f);
+  margin-top: var(--space-sm);
+  line-height: 1.4;
+}
+
+.settings-notif-btn {
+  width: 100%;
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  background: var(--color-primary);
+  color: #fff;
+  transition:
+    opacity 0.15s ease,
+    background 0.15s ease;
+}
+
+.settings-notif-btn--on {
+  background: var(--color-accent-green, #4f9d77);
+}
+
+.settings-notif-btn:disabled {
+  opacity: 0.6;
+}
+
 .settings-themes {
   display: flex;
   gap: var(--space-md);

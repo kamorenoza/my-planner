@@ -35,15 +35,29 @@ export function watchSession(uid, sessionId, onEvicted) {
 }
 
 // Download the cloud planner snapshot into localStorage.
-// Returns true if a snapshot existed and was applied, false otherwise.
+// Returns { applied, changed }:
+//   applied = a non-empty cloud snapshot existed and was written locally
+//   changed = the cloud snapshot differed from what was already in localStorage
 export async function pullBackup(uid) {
   const snap = await getDoc(userDoc(uid));
   const data = snap.data();
   if (data && data.planner && Object.keys(data.planner).length > 0) {
+    const before = getAllPlannerData();
     setAllPlannerData(data.planner);
-    return true;
+    return { applied: true, changed: !plannerEquals(before, data.planner) };
   }
-  return false;
+  return { applied: false, changed: false };
+}
+
+// Shallow-compare two planner snapshots ({ key: rawJsonString }).
+function plannerEquals(a, b) {
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return false;
+  for (const key of aKeys) {
+    if (a[key] !== b[key]) return false;
+  }
+  return true;
 }
 
 // Upload the current localStorage planner snapshot to the cloud.

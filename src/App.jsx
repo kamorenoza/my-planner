@@ -11,6 +11,8 @@ import GoalView from "./views/GoalView";
 import Login from "./views/Login";
 import SideMenu from "./components/SideMenu";
 import { useAuth } from "./context/AuthContext";
+import { seedHolidays } from "./utils/holidaysCO";
+import { listenForegroundMessages } from "./database/messaging";
 
 const LAST_ROUTE_KEY = "last-route";
 
@@ -54,7 +56,26 @@ function LastRouteTracker() {
 }
 
 function App() {
-  const { user, loading, syncing } = useAuth();
+  const { user, loading, syncing, dataVersion } = useAuth();
+
+  // Seed Colombian holidays once the user is in, regardless of the entry route,
+  // so 2026 (and the current year) get their holidays automatically. Re-runs
+  // after a background cloud sync (dataVersion) so a pull can't strip them.
+  useEffect(() => {
+    if (!user) return;
+    seedHolidays(2026);
+    seedHolidays(new Date().getFullYear());
+  }, [user, dataVersion]);
+
+  // Show push notifications that arrive while the app is open.
+  useEffect(() => {
+    if (!user) return;
+    let unsub = () => {};
+    listenForegroundMessages().then((fn) => {
+      unsub = fn;
+    });
+    return () => unsub();
+  }, [user]);
 
   if (loading) return <LoadingScreen message="Cargando…" />;
   if (!user) return <Login />;
@@ -64,7 +85,7 @@ function App() {
   return (
     <>
       <LastRouteTracker />
-      <Routes>
+      <Routes key={dataVersion}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/comidas" element={<Comidas />} />
         <Route path="/metas" element={<Metas />} />

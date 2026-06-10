@@ -11,7 +11,9 @@ import {
 } from "../utils/calendar";
 import { getEventType, formatTime } from "../utils/events";
 import { DAY_START_MIN, DAY_END_MIN } from "../utils/events";
+import { isHolidayReminder, dayHasHoliday } from "../utils/holidaysCO";
 import { EventFields } from "../components/EventModal";
+import { saveNewEvent } from "../utils/recurrence";
 import EmojiImg from "../components/EmojiImg";
 import Breadcrumbs from "../components/Breadcrumbs";
 import {
@@ -52,12 +54,15 @@ function MiniCalendar({ year, month, weekNumber }) {
         {cells.map((day, i) => {
           const inWeek = day && getISOWeek(year, month, day) === weekNumber;
           const isToday = day && day === todayDay;
+          const holiday = day && dayHasHoliday(year, month, day);
           return (
             <span
               key={i}
               className={`mini-calendar__day${day ? "" : " mini-calendar__day--empty"}${
                 inWeek ? " mini-calendar__day--active" : ""
-              }${isToday ? " mini-calendar__day--today" : ""}`}
+              }${isToday ? " mini-calendar__day--today" : ""}${
+                holiday ? " mini-calendar__day--holiday" : ""
+              }`}
             >
               {day || ""}
             </span>
@@ -362,11 +367,7 @@ function AddDayModal({ dateKey: dk, onClose, onSaved }) {
   const [todoText, setTodoText] = useState("");
 
   const saveEvent = (event) => {
-    const events = load(eventsKey(dk), []);
-    save(
-      eventsKey(dk),
-      [...events, event].sort((a, b) => a.start - b.start),
-    );
+    saveNewEvent(event);
     onSaved();
     onClose();
   };
@@ -384,7 +385,7 @@ function AddDayModal({ dateKey: dk, onClose, onSaved }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay">
       <div className="modal modal--form" onClick={(e) => e.stopPropagation()}>
         <div className="modal-tabs">
           <button
@@ -501,6 +502,7 @@ function WeekMobile({
             (r) => !r.date || r.date === dk,
           );
           const isToday = i === todayIndex;
+          const isHoliday = reminders.some(isHolidayReminder);
           const dayUrl = `/year/${date.getUTCFullYear()}/month/${date.getUTCMonth()}/day/${date.getUTCDate()}`;
 
           return (
@@ -512,21 +514,36 @@ function WeekMobile({
                 onClick={() => navigate(dayUrl)}
               >
                 <span className="week-mobile__dayname">{WEEKDAYS_FULL[i]}</span>
-                <span className="week-mobile__daynum">{date.getUTCDate()}</span>
+                <span
+                  className={`week-mobile__daynum${
+                    isHoliday ? " week-mobile__daynum--holiday" : ""
+                  }`}
+                >
+                  {date.getUTCDate()}
+                </span>
               </button>
 
               <div className="week-mobile__dayside">
                 {reminders.length > 0 && (
                   <div className="week-mobile__reminders">
                     {reminders.map((reminder) => (
-                      <div key={reminder.id} className="week-mobile__reminder">
+                      <div
+                        key={reminder.id}
+                        className={`week-mobile__reminder${
+                          isHolidayReminder(reminder)
+                            ? " week-mobile__reminder--holiday"
+                            : ""
+                        }`}
+                      >
                         <EmojiImg
                           emoji={reminder.emoji}
                           code={reminder.emojiCode}
                           className="week-mobile__reminder-emoji"
                         />
                         <span className="week-mobile__reminder-text">
-                          {reminder.text}
+                          {isHolidayReminder(reminder)
+                            ? `Festivo: ${reminder.text}`
+                            : reminder.text}
                         </span>
                       </div>
                     ))}
@@ -782,6 +799,7 @@ function WeekView() {
             now.getFullYear() === date.getUTCFullYear() &&
             now.getMonth() === date.getUTCMonth() &&
             now.getDate() === date.getUTCDate();
+          const isHoliday = reminders.some(isHolidayReminder);
 
           return (
             <div
@@ -798,7 +816,7 @@ function WeekView() {
                 <span
                   className={`day-column__number${
                     isToday ? " day-column__number--today" : ""
-                  }`}
+                  }${isHoliday ? " day-column__number--holiday" : ""}`}
                 >
                   {date.getUTCDate()}
                 </span>
@@ -807,14 +825,23 @@ function WeekView() {
                 {reminders.length > 0 && (
                   <div className="day-column__reminders">
                     {reminders.map((reminder) => (
-                      <div key={reminder.id} className="day-column__reminder">
+                      <div
+                        key={reminder.id}
+                        className={`day-column__reminder${
+                          isHolidayReminder(reminder)
+                            ? " day-column__reminder--holiday"
+                            : ""
+                        }`}
+                      >
                         <EmojiImg
                           emoji={reminder.emoji}
                           code={reminder.emojiCode}
                           className="day-column__reminder-emoji"
                         />
                         <span className="day-column__reminder-text">
-                          {reminder.text}
+                          {isHolidayReminder(reminder)
+                            ? `Festivo: ${reminder.text}`
+                            : reminder.text}
                         </span>
                       </div>
                     ))}

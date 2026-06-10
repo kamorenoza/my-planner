@@ -246,6 +246,29 @@
   background: var(--accent-blue-soft);
 }
 
+.week-plan-item__tasks {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.week-plan-item__task {
+  position: relative;
+  padding-left: var(--space-md);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.week-plan-item__task::before {
+  content: "•";
+  position: absolute;
+  left: 2px;
+  color: var(--color-text-muted);
+}
+
 .week-plan-item__actions {
   display: flex;
   gap: 2px;
@@ -315,7 +338,21 @@
 .week-track-card__checks {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--space-xs);
+}
+
+.week-track-plan {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.week-track-plan__title {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
 }
 
 .week-track-check {
@@ -326,12 +363,36 @@
 
 .week-track-check__del {
   margin-left: auto;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  color: var(--color-text-muted);
+  cursor: pointer;
   opacity: 0;
-  transition: opacity 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.week-track-check__del:hover {
+  background: var(--color-danger-bg, rgba(220, 80, 80, 0.12));
+  color: var(--color-danger, #d65050);
 }
 
 .week-track-check:hover .week-track-check__del {
   opacity: 1;
+}
+
+/* Touch devices have no hover: keep the delete button visible */
+@media (hover: none) {
+  .week-track-check__del {
+    opacity: 1;
+  }
 }
 
 .week-track-card__bar {

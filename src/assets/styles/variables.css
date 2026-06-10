@@ -57,6 +57,13 @@
   --cal-today-bg: #f3a9c5;
   --cal-today-text: #8a2b56;
 
+  /* Holiday accents: pink number/text + a slightly redder mini-calendar tint */
+  --holiday: #d1568f;
+  --holiday-bg: #fbe9f2;
+  --holiday-soft: #f6d3e1;
+  --holiday-cal-bg: #f6cdcd;
+  --holiday-cal-text: #c2484a;
+
   /* Colors - Neutrals */
   --color-bg: #ffffff;
   --color-surface: #f8f8fa;
@@ -65,6 +72,9 @@
   --color-text-primary: #1a1a2e;
   --color-text-secondary: #6b6b80;
   --color-text-muted: #9e9eb0;
+  /* Alias kept for rules that reference --color-text; resolves to the themed
+     primary text color so titles don't fall back to Safari's default blue. */
+  --color-text: var(--color-text-primary);
 
   /* Shadows */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
@@ -90,9 +100,11 @@
   --max-width: 100%;
   --nav-height: 70px;
   --page-padding: var(--space-lg);
+  /* Right padding so content clears the fixed side menu */
   --app-pad-right: 3rem;
 }
 
+/* Mobile: side menu becomes a bottom bar, so no extra right padding */
 @media (max-width: 767px) {
   :root {
     --app-pad-right: var(--page-padding);

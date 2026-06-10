@@ -55,6 +55,10 @@ function PlanModal({ plan, onClose, onSave }) {
     plan?.links ? [...plan.links] : [],
   );
   const [newLink, setNewLink] = useState("");
+  const [tasks, setTasks] = useState(() =>
+    plan?.tasks ? plan.tasks.map((t) => ({ ...t })) : [],
+  );
+  const [newTask, setNewTask] = useState("");
 
   const addLink = () => {
     const t = newLink.trim();
@@ -66,6 +70,19 @@ function PlanModal({ plan, onClose, onSave }) {
   const removeLink = (i) =>
     setLinks((prev) => prev.filter((_, idx) => idx !== i));
 
+  const addTask = () => {
+    const t = newTask.trim();
+    if (!t) return;
+    setTasks((prev) => [
+      ...prev,
+      { id: `tk-${Date.now()}-${prev.length}`, text: t, done: false },
+    ]);
+    setNewTask("");
+  };
+
+  const removeTask = (id) =>
+    setTasks((prev) => prev.filter((t) => t.id !== id));
+
   const canSave = title.trim();
   const submit = () => {
     if (!canSave) return;
@@ -74,11 +91,12 @@ function PlanModal({ plan, onClose, onSave }) {
       title: title.trim(),
       description: description.trim(),
       links,
+      tasks,
     });
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay">
       <div className="modal modal--form" onClick={(e) => e.stopPropagation()}>
         <h2 className="modal__title">{plan ? "Editar plan" : "Nuevo plan"}</h2>
 
@@ -132,6 +150,39 @@ function PlanModal({ plan, onClose, onSave }) {
               placeholder="https://..."
             />
             <button type="button" className="subtask-add" onClick={addLink}>
+              +
+            </button>
+          </div>
+        </div>
+
+        <div className="field">
+          <span className="field__label">Tareas</span>
+          {tasks.map((task) => (
+            <div key={task.id} className="ingredient-row">
+              <span className="goal-milestone-text">{task.text}</span>
+              <button
+                type="button"
+                className="ingredient-row__remove"
+                onClick={() => removeTask(task.id)}
+              >
+                ×
+              </button>
+            </div>
+          ))}
+          <div className="ingredient-row">
+            <input
+              className="field__input"
+              value={newTask}
+              onChange={(e) => setNewTask(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addTask();
+                }
+              }}
+              placeholder="Nueva tarea"
+            />
+            <button type="button" className="subtask-add" onClick={addTask}>
               +
             </button>
           </div>
@@ -203,6 +254,15 @@ function WeekAccordion({ week, plans, onAddPlan, onEditPlan, onDeletePlan }) {
                     ))}
                   </div>
                 )}
+                {plan.tasks && plan.tasks.length > 0 && (
+                  <ul className="week-plan-item__tasks">
+                    {plan.tasks.map((task) => (
+                      <li key={task.id} className="week-plan-item__task">
+                        {task.text}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
               <div className="week-plan-item__actions">
                 <button
@@ -255,14 +315,29 @@ function WeekAccordion({ week, plans, onAddPlan, onEditPlan, onDeletePlan }) {
     </div>
   );
 }
+
 // ─── Seguimiento Tab ─────────────────────────────────────────
 
-function WeekTrackCard({ week, checks, onToggle, onAdd, onDelete }) {
+function WeekTrackCard({
+  week,
+  plans,
+  checks,
+  onTogglePlanTask,
+  onDeletePlanTask,
+  onToggle,
+  onAdd,
+  onDelete,
+}) {
   const [newCheck, setNewCheck] = useState("");
   const [adding, setAdding] = useState(false);
-  const doneCount = checks.filter((c) => c.done).length;
+
+  const planTasks = plans.flatMap((p) => p.tasks || []);
+  const totalItems = planTasks.length + checks.length;
+  const doneItems =
+    planTasks.filter((t) => t.done).length +
+    checks.filter((c) => c.done).length;
   const progress =
-    checks.length > 0 ? Math.round((doneCount / checks.length) * 100) : 0;
+    totalItems > 0 ? Math.round((doneItems / totalItems) * 100) : 0;
 
   const handleAdd = () => {
     const t = newCheck.trim();
@@ -285,6 +360,44 @@ function WeekTrackCard({ week, checks, onToggle, onAdd, onDelete }) {
         </button>
       </div>
       <div className="week-track-card__checks">
+        {plans.map((plan) =>
+          (plan.tasks || []).length > 0 ? (
+            <div key={plan.id} className="week-track-plan">
+              <span className="week-track-plan__title">{plan.title}</span>
+              {plan.tasks.map((task) => (
+                <div key={task.id} className="week-track-check">
+                  <button
+                    className={`subtask__check${task.done ? " subtask__check--done" : ""}`}
+                    onClick={() => onTogglePlanTask(plan.id, task.id)}
+                  >
+                    {task.done ? "✓" : ""}
+                  </button>
+                  <span
+                    className={`subtask__text${task.done ? " subtask__text--done" : ""}`}
+                  >
+                    {task.text}
+                  </span>
+                  <button
+                    className="week-track-check__del"
+                    onClick={() => onDeletePlanTask(plan.id, task.id)}
+                    title="Quitar"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="12"
+                      height="12"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M18 6 6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : null,
+        )}
         {checks.map((check) => (
           <div key={check.id} className="week-track-check">
             <button
@@ -299,7 +412,7 @@ function WeekTrackCard({ week, checks, onToggle, onAdd, onDelete }) {
               {check.text}
             </span>
             <button
-              className="icon-btn icon-btn--danger week-track-check__del"
+              className="week-track-check__del"
               onClick={() => onDelete(check.id)}
               title="Quitar"
             >
@@ -387,13 +500,18 @@ function GoalView() {
 
   // Overall progress = average of each week's check completion
   const weeklyChecksMap = goal.weeklyChecks || {};
+  const weeklyPlansMap = goal.weeklyPlans || {};
   const progress =
     weeks.length > 0
       ? Math.round(
           weeks.reduce((acc, w) => {
-            const list = weeklyChecksMap[w.index] || [];
-            const pct = list.length
-              ? (list.filter((c) => c.done).length / list.length) * 100
+            const checks = weeklyChecksMap[w.index] || [];
+            const planTasks = (weeklyPlansMap[w.index] || []).flatMap(
+              (p) => p.tasks || [],
+            );
+            const items = [...checks, ...planTasks];
+            const pct = items.length
+              ? (items.filter((c) => c.done).length / items.length) * 100
               : 0;
             return acc + pct;
           }, 0) / weeks.length,
@@ -440,6 +558,33 @@ function GoalView() {
     });
     setConfirmPlan(null);
   };
+
+  const togglePlanTask = (weekIdx, planId, taskId) =>
+    updateGoal((g) => {
+      const wp = { ...(g.weeklyPlans || {}) };
+      wp[weekIdx] = (wp[weekIdx] || []).map((p) =>
+        p.id === planId
+          ? {
+              ...p,
+              tasks: (p.tasks || []).map((t) =>
+                t.id === taskId ? { ...t, done: !t.done } : t,
+              ),
+            }
+          : p,
+      );
+      return { ...g, weeklyPlans: wp };
+    });
+
+  const deletePlanTask = (weekIdx, planId, taskId) =>
+    updateGoal((g) => {
+      const wp = { ...(g.weeklyPlans || {}) };
+      wp[weekIdx] = (wp[weekIdx] || []).map((p) =>
+        p.id === planId
+          ? { ...p, tasks: (p.tasks || []).filter((t) => t.id !== taskId) }
+          : p,
+      );
+      return { ...g, weeklyPlans: wp };
+    });
 
   // Weekly checks (tracking)
   const getChecks = (weekIdx) => weeklyChecksMap[weekIdx] || [];
@@ -494,7 +639,7 @@ function GoalView() {
           <div className="goal-view__facts">
             {goal.targetDate && (
               <span className="goal-view__fact">
-                🎯 Meta: {goal.targetDate}
+                :dart: Meta: {goal.targetDate}
               </span>
             )}
             {weeks.length > 0 && (
@@ -605,7 +750,14 @@ function GoalView() {
             <WeekTrackCard
               key={week.index}
               week={week}
+              plans={getPlans(week.index)}
               checks={getChecks(week.index)}
+              onTogglePlanTask={(planId, taskId) =>
+                togglePlanTask(week.index, planId, taskId)
+              }
+              onDeletePlanTask={(planId, taskId) =>
+                deletePlanTask(week.index, planId, taskId)
+              }
               onToggle={(checkId) => toggleCheck(week.index, checkId)}
               onAdd={(text) => addCheck(week.index, text)}
               onDelete={(checkId) => deleteCheck(week.index, checkId)}

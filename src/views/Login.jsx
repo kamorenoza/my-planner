@@ -39,8 +39,8 @@ function Login() {
         </div>
         <h1 className="login__title">My Planner</h1>
         <p className="login__subtitle">
-          Inicia sesión para sincronizar tu planificador en todos tus
-          dispositivos.
+          Inicia sesión para acceder a tu agenda personalizada y empezar a
+          organizar tu año
         </p>
 
         <button className="login__google" onClick={handleLogin} disabled={busy}>

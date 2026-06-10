@@ -43,6 +43,13 @@
   --cal-today-bg: #e7b4af;
   --cal-today-text: #8a3a33;
 
+  /* Holiday accents: soft orange number/text + a warmer mini-calendar tint */
+  --holiday: #d9874f;
+  --holiday-bg: #fbeee3;
+  --holiday-soft: #f4ddc7;
+  --holiday-cal-bg: #f3d9c2;
+  --holiday-cal-text: #b56a32;
+
   /* Colors - Neutrals */
   --color-bg: #ffffff;
   --color-surface: #f5f7f9;

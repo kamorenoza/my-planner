@@ -7,9 +7,9 @@ export const GOAL_CATEGORIES = [
     color: "var(--cat-purple)",
     bg: "var(--cat-purple-bg)",
   },
-  { id: "salud", label: "Salud", color: "#3f8f5c", bg: "#e6f3ea" },
-  { id: "trabajo", label: "Trabajo", color: "#5a6db0", bg: "#e8ecf8" },
-  { id: "finanzas", label: "Finanzas", color: "#c87f1e", bg: "#fbeede" },
+  { id: "salud", label: "Salud", color: "#3F8F5C", bg: "#E6F3EA" },
+  { id: "trabajo", label: "Trabajo", color: "#5A6DB0", bg: "#E8ECF8" },
+  { id: "finanzas", label: "Finanzas", color: "#C87F1E", bg: "#FBEEDE" },
   {
     id: "aprendizaje",
     label: "Aprendizaje",
@@ -62,7 +62,7 @@ export function GoalModal({ goal, onClose, onSave }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay">
       <div className="modal modal--form" onClick={(e) => e.stopPropagation()}>
         <h2 className="modal__title">{goal ? "Editar meta" : "Nueva meta"}</h2>
 
@@ -209,7 +209,7 @@ export function GoalDetailModal({
             {cat.label}
           </span>
           {goal.targetDate && (
-            <span className="goal-detail__date">🎯 {goal.targetDate}</span>
+            <span className="goal-detail__date">:dart: {goal.targetDate}</span>
           )}
         </div>
 

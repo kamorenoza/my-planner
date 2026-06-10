@@ -1,11 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { seedHolidays } from "../utils/holidaysCO";
 import "./Dashboard.css";
 
 function Dashboard() {
   const [years, setYears] = useState([2026]);
   const [modal, setModal] = useState(null);
   const navigate = useNavigate();
+
+  // Seed Colombian holidays for every year on the dashboard (idempotent), so
+  // years created during the session also get their holidays.
+  useEffect(() => {
+    years.forEach(seedHolidays);
+  }, [years]);
 
   const requestAddYear = () => {
     const nextYear = years.length > 0 ? Math.max(...years) + 1 : 2026;

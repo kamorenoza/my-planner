@@ -127,6 +127,13 @@
   font-weight: var(--font-weight-semibold);
 }
 
+/* Holiday: reddish tint, distinct from the week's pink highlight */
+.mini-calendar__day--holiday {
+  background: var(--holiday-cal-bg);
+  color: var(--holiday-cal-text);
+  font-weight: var(--font-weight-semibold);
+}
+
 /* Habits Table */
 .habits {
   background: var(--color-surface);
@@ -326,6 +333,16 @@
   background: var(--color-primary-light);
   color: var(--color-primary-dark);
   font-weight: var(--font-weight-semibold);
+}
+
+.day-column__number--holiday {
+  color: var(--holiday);
+  font-weight: var(--font-weight-semibold);
+}
+
+.week-view__days .day-column__reminder--holiday .day-column__reminder-text {
+  color: var(--holiday);
+  font-weight: var(--font-weight-medium);
 }
 
 .day-column__body {
@@ -674,6 +691,15 @@
     font-size: var(--font-size-base);
     font-weight: var(--font-weight-semibold);
     color: #3d3d4d;
+  }
+
+  .week-mobile__daynum--holiday {
+    color: var(--holiday);
+  }
+
+  .week-mobile__reminder--holiday .week-mobile__reminder-text {
+    color: var(--holiday);
+    font-weight: var(--font-weight-medium);
   }
 
   .week-mobile__dayside {

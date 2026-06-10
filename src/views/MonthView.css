@@ -211,6 +211,18 @@
   font-weight: var(--font-weight-semibold);
 }
 
+.month-view__day-number--holiday {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  background: var(--holiday-bg);
+  color: var(--holiday);
+  font-weight: var(--font-weight-semibold);
+}
+
 .month-view__events {
   display: flex;
   flex-direction: column;
@@ -350,20 +362,20 @@
   .month-mobile__weeks {
     flex-shrink: 0;
     display: flex;
-    justify-content: center;
-    gap: var(--space-xs);
-    overflow-x: auto;
+    gap: 4px;
     padding-bottom: var(--space-xs);
-    -webkit-overflow-scrolling: touch;
   }
 
   .month-mobile__week-pill {
-    flex-shrink: 0;
+    flex: 1 1 0;
+    min-width: 0;
+    text-align: center;
+    white-space: nowrap;
     font-size: var(--font-size-xs);
     font-weight: var(--font-weight-medium);
     color: var(--color-text-secondary);
     background: var(--color-surface);
-    padding: 4px var(--space-md);
+    padding: 4px 2px;
     border-radius: var(--radius-md);
     cursor: pointer;
     transition:
@@ -384,6 +396,7 @@
 
   .month-mobile__calendar {
     flex-shrink: 0;
+    width: 100%;
     background: var(--color-bg);
     padding-bottom: var(--space-sm);
   }
@@ -403,6 +416,7 @@
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 2px;
+    row-gap: 7px;
   }
 
   .month-mobile__weekday {
@@ -414,7 +428,9 @@
   }
 
   .month-mobile__day {
-    aspect-ratio: 1;
+    width: 32px;
+    height: 32px;
+    margin: 0 auto;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -422,22 +438,87 @@
     color: #3d3d4d;
     border-radius: var(--radius-full);
     cursor: pointer;
+    position: relative;
+  }
+
+  .month-mobile__day-num {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Reminder/event indicator below the day number. Absolute so it never
+     affects the fixed 32px cell height. */
+  .month-mobile__mark {
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: var(--radius-full);
+    pointer-events: none;
+    opacity: 0.65;
+    z-index: 2;
+  }
+
+  .month-mobile__mark--line {
+    border-radius: 2px;
+  }
+
+  /* On a filled day (today/selected/holiday) keep the marks readable. */
+  .month-mobile__day--selected .month-mobile__mark {
+    display: none;
   }
 
   .month-mobile__day--empty {
     visibility: hidden;
   }
 
+  /* Today & holidays: smaller background circle drawn behind the number so
+     the 32px cell size is unaffected. */
+  .month-mobile__day--today::before,
+  .month-mobile__day--holiday::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 26px;
+    height: 26px;
+    transform: translate(-50%, -50%);
+    border-radius: var(--radius-full);
+    z-index: 0;
+  }
+
   .month-mobile__day--today {
-    background: var(--color-primary-light);
     color: var(--color-primary-dark);
     font-weight: var(--font-weight-semibold);
+  }
+
+  .month-mobile__day--today::before {
+    background: var(--color-primary-light);
   }
 
   .month-mobile__day--selected {
     background: var(--color-primary);
     color: white;
     font-weight: var(--font-weight-semibold);
+  }
+
+  .month-mobile__day--holiday {
+    color: var(--holiday);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .month-mobile__day--holiday::before {
+    background: var(--holiday-bg);
+  }
+
+  .month-mobile__day--selected.month-mobile__day--holiday {
+    background: var(--color-primary);
+    color: white;
+  }
+
+  /* When selected, keep the full-size highlight and drop the small circle. */
+  .month-mobile__day--selected::before {
+    display: none;
   }
 
   .month-view__mobile .day-column {
@@ -470,6 +551,10 @@
     font-weight: var(--font-weight-regular);
     color: #3d3d4d;
     text-transform: capitalize;
+  }
+
+  .month-mobile__day-title--holiday {
+    color: var(--holiday);
   }
 
   .month-view__mobile .day-column__todo {

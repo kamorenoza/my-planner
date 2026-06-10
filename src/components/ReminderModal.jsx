@@ -2,52 +2,59 @@ import { useState } from "react";
 import EmojiImg from "./EmojiImg";
 
 export const REMINDER_EMOJIS = [
-  { char: "📌", code: "1f4cc" },
-  { char: "⭐", code: "2b50" },
-  { char: "🔔", code: "1f514" },
-  { char: "💊", code: "1f48a" },
-  { char: "🎂", code: "1f382" },
-  { char: "🎁", code: "1f381" },
-  { char: "📞", code: "1f4de" },
-  { char: "💡", code: "1f4a1" },
-  { char: "📝", code: "1f4dd" },
-  { char: "💰", code: "1f4b0" },
-  { char: "🏥", code: "1f3e5" },
-  { char: "🚗", code: "1f697" },
-  { char: "✈️", code: "2708-fe0f" },
-  { char: "🛒", code: "1f6d2" },
-  { char: "🐶", code: "1f436" },
-  { char: "❤️", code: "2764-fe0f" },
-  { char: "🔑", code: "1f511" },
-  { char: "📅", code: "1f4c5" },
-  { char: "⏰", code: "23f0" },
-  { char: "🎓", code: "1f393" },
-  { char: "🍔", code: "1f354" },
-  { char: "☕", code: "2615" },
-  { char: "🏠", code: "1f3e0" },
-  { char: "✅", code: "2705" },
+  { char: ":pushpin:", code: "1f4cc" },
+  { char: ":star:", code: "2b50" },
+  { char: ":bell:", code: "1f514" },
+  { char: ":pill:", code: "1f48a" },
+  { char: ":birthday:", code: "1f382" },
+  { char: ":gift:", code: "1f381" },
+  { char: ":telephone_receiver:", code: "1f4de" },
+  { char: ":bulb:", code: "1f4a1" },
+  { char: ":memo:", code: "1f4dd" },
+  { char: ":moneybag:", code: "1f4b0" },
+  { char: ":hospital:", code: "1f3e5" },
+  { char: ":car:", code: "1f697" },
+  { char: ":airplane:", code: "2708-fe0f" },
+  { char: ":shopping_trolley:", code: "1f6d2" },
+  { char: ":dog:", code: "1f436" },
+  { char: ":heart:", code: "2764-fe0f" },
+  { char: ":key:", code: "1f511" },
+  { char: ":date:", code: "1f4c5" },
+  { char: ":alarm_clock:", code: "23f0" },
+  { char: ":mortar_board:", code: "1f393" },
+  { char: ":hamburger:", code: "1f354" },
+  { char: ":coffee:", code: "2615" },
+  { char: ":house:", code: "1f3e0" },
+  { char: ":white_check_mark:", code: "2705" },
 ];
 
 // Shared reminder form fields (emoji picker + title) so it can be reused
 // inside a standalone modal or a tabbed modal.
-export function ReminderFields({ reminder, onSave, onClose }) {
+export function ReminderFields({
+  reminder,
+  onSave,
+  onClose,
+  canMarkHoliday = false,
+}) {
   const [selected, setSelected] = useState(
     reminder
       ? { char: reminder.emoji, code: reminder.emojiCode }
       : REMINDER_EMOJIS[0],
   );
   const [text, setText] = useState(reminder?.text || "");
+  const [holiday, setHoliday] = useState(Boolean(reminder?.holiday));
 
   const canSave = text.trim();
 
   const save = () => {
     if (!canSave) return;
-    onSave({
+    const base = {
       id: reminder?.id || `r-${Date.now()}`,
-      emoji: selected.char,
-      emojiCode: selected.code,
+      emoji: holiday ? ":tada:" : selected.char,
+      emojiCode: holiday ? "1f389" : selected.code,
       text: text.trim(),
-    });
+    };
+    onSave(holiday ? { ...base, holiday: true } : base);
   };
 
   return (
@@ -86,6 +93,17 @@ export function ReminderFields({ reminder, onSave, onClose }) {
         />
       </label>
 
+      {canMarkHoliday && (
+        <label className="reminder-holiday">
+          <input
+            type="checkbox"
+            checked={holiday}
+            onChange={(e) => setHoliday(e.target.checked)}
+          />
+          <span>Marcar como día festivo</span>
+        </label>
+      )}
+
       <div className="modal__actions">
         <button className="modal__btn modal__btn--cancel" onClick={onClose}>
           Cancelar
@@ -102,14 +120,24 @@ export function ReminderFields({ reminder, onSave, onClose }) {
   );
 }
 
-export function ReminderModal({ reminder, onSave, onClose }) {
+export function ReminderModal({
+  reminder,
+  onSave,
+  onClose,
+  canMarkHoliday = false,
+}) {
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay">
       <div className="modal modal--form" onClick={(e) => e.stopPropagation()}>
         <h3 className="modal__title">
           {reminder ? "Editar recordatorio" : "Nuevo recordatorio"}
         </h3>
-        <ReminderFields reminder={reminder} onSave={onSave} onClose={onClose} />
+        <ReminderFields
+          reminder={reminder}
+          canMarkHoliday={canMarkHoliday}
+          onSave={onSave}
+          onClose={onClose}
+        />
       </div>
     </div>
   );

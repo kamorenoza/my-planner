@@ -3,6 +3,9 @@ import {
   DAY_START_MIN,
   DAY_END_MIN,
   EVENT_TYPES,
+  REPEAT_OPTIONS,
+  WEEKDAY_LETTERS,
+  isoWeekday,
   getTimeOptions,
 } from "../utils/events";
 import DateField from "./DateField";
@@ -26,8 +29,32 @@ export function EventFields({
   const [type, setType] = useState(event?.type || "personal");
   const [place, setPlace] = useState(event?.place || "");
   const [comments, setComments] = useState(event?.comments || "");
+  const [repeat, setRepeat] = useState(event?.repeat || "none");
+  const [repeatUntil, setRepeatUntil] = useState(event?.repeatUntil || "");
+  const [weekdays, setWeekdays] = useState(event?.weekdays || []);
 
-  const canSave = title.trim() && end > start;
+  const repeats = repeat !== "none";
+  const isCustom = repeat === "custom";
+  const canSave =
+    title.trim() &&
+    end > start &&
+    (!repeats || !repeatUntil || repeatUntil >= date) &&
+    (!isCustom || weekdays.length > 0);
+
+  const changeRepeat = (value) => {
+    setRepeat(value);
+    if (value === "custom" && weekdays.length === 0) {
+      setWeekdays([isoWeekday(date)]);
+    }
+  };
+
+  const toggleWeekday = (idx) => {
+    setWeekdays((prev) =>
+      prev.includes(idx)
+        ? prev.filter((w) => w !== idx)
+        : [...prev, idx].sort((a, b) => a - b),
+    );
+  };
 
   const save = () => {
     if (!canSave) return;
@@ -40,6 +67,9 @@ export function EventFields({
       type,
       place: place.trim(),
       comments: comments.trim(),
+      repeat,
+      repeatUntil: repeats ? repeatUntil || "" : "",
+      weekdays: isCustom ? weekdays : [],
     });
   };
 
@@ -118,6 +148,54 @@ export function EventFields({
       </div>
 
       <label className="field">
+        <span className="field__label">Repetir</span>
+        <select
+          className="field__input"
+          value={repeat}
+          onChange={(e) => changeRepeat(e.target.value)}
+        >
+          {REPEAT_OPTIONS.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      {isCustom && (
+        <div className="field">
+          <span className="field__label">Repetir los</span>
+          <div className="weekday-pills">
+            {WEEKDAY_LETTERS.map((letter, idx) => (
+              <button
+                key={idx}
+                type="button"
+                className={`weekday-pill${
+                  weekdays.includes(idx) ? " weekday-pill--active" : ""
+                }`}
+                onClick={() => toggleWeekday(idx)}
+                aria-pressed={weekdays.includes(idx)}
+              >
+                {letter}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {repeats && (
+        <label className="field">
+          <span className="field__label">Termina (opcional)</span>
+          <DateField
+            value={repeatUntil}
+            onChange={setRepeatUntil}
+            min={date}
+            placeholder="Sin fecha de fin"
+          />
+        </label>
+      )}
+
+      <label className="field">
         <span className="field__label">Lugar</span>
         <input
           className="field__input"
@@ -164,7 +242,7 @@ export function EventFields({
 
 export function EventModal({ defaultDate, event, onSave, onClose, onDelete }) {
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay">
       <div className="modal modal--form" onClick={(e) => e.stopPropagation()}>
         <h3 className="modal__title">
           {event ? "Editar evento" : "Nuevo evento"}

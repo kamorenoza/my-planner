@@ -2,6 +2,7 @@
   position: fixed;
   top: 0;
   right: -7px;
+  height: 100vh;
   height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -40,16 +41,45 @@
   color: var(--color-primary);
 }
 
-.side-menu__today {
+/* Quick-jump group: HOY / SEM / month (desktop = stacked, always visible) */
+.side-menu__jump {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.side-menu__jump-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.side-menu__jump-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
   font-size: 0.65rem;
   font-weight: var(--font-weight-semibold);
   letter-spacing: 0.5px;
   color: var(--color-primary);
+  background: transparent;
+  cursor: pointer;
+  transition: color 0.15s ease;
 }
 
-.side-menu__today:hover,
-.side-menu__today:active {
+.side-menu__jump-btn:hover,
+.side-menu__jump-btn:active {
   color: var(--color-primary-dark);
+}
+
+/* FAB is mobile-only */
+.side-menu__fab {
+  display: none;
 }
 
 .side-menu__logout:hover,
@@ -78,7 +108,8 @@
     box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
   }
 
-  /* Reorder so HOY sits in the middle: Dashboard, Comidas, HOY, Metas, Settings */
+  /* Reorder so the quick-jump FAB sits in the middle:
+     Dashboard, Comidas, [FAB], Metas, Settings */
   .side-menu__item:nth-child(2) {
     order: 0;
   }
@@ -87,21 +118,81 @@
     order: 1;
   }
 
-  .side-menu__today {
+  .side-menu__jump {
     order: 2;
+    position: relative;
+    z-index: 2;
+    width: 54px;
+    height: 54px;
+    flex: 0 0 auto;
+  }
+
+  .side-menu__fab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 54px;
     height: 54px;
     border-radius: var(--radius-full);
     background: var(--color-primary);
     color: white;
     font-size: 0.7rem;
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.5px;
+    box-shadow: var(--shadow-md);
+    cursor: pointer;
+  }
+
+  .side-menu__fab:active {
+    background: var(--color-primary-dark);
+    color: white;
+  }
+
+  /* Speed-dial: pops up above the FAB when open, laid out horizontally */
+  .side-menu__jump-actions {
+    position: absolute;
+    flex-direction: row;
+    bottom: calc(100% + var(--space-sm));
+    left: 50%;
+    transform: translateX(-50%) translateY(8px);
+    gap: var(--space-sm);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      opacity 0.18s ease,
+      transform 0.18s ease;
+  }
+
+  .side-menu__jump-actions.is-open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .side-menu__jump-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-full);
+    background: var(--color-primary);
+    color: white;
+    font-size: 0.62rem;
+    font-weight: var(--font-weight-regular);
+    letter-spacing: 0.3px;
     box-shadow: var(--shadow-md);
   }
 
-  .side-menu__today:hover,
-  .side-menu__today:active {
+  .side-menu__jump-btn:hover,
+  .side-menu__jump-btn:active {
     background: var(--color-primary-dark);
     color: white;
+  }
+
+  /* Tap-away backdrop to close the speed-dial */
+  .side-menu__jump-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    background: transparent;
   }
 
   .side-menu__item:nth-child(4) {

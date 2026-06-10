@@ -25,14 +25,23 @@ export function formatDateLabel(value) {
 
 // A date field that shows the formatted label ("02 Ene 2026") while still
 // using the native date picker underneath (works on iPad).
-function DateField({ value, onChange, className = "field__input" }) {
+function DateField({
+  value,
+  onChange,
+  className = "field__input",
+  min,
+  placeholder = "",
+}) {
   return (
     <div className="date-field">
-      <span className="date-field__label">{formatDateLabel(value)}</span>
+      <span className="date-field__label">
+        {formatDateLabel(value) || placeholder}
+      </span>
       <input
         type="date"
         className={`${className} date-field__input`}
         value={value}
+        min={min}
         onChange={(e) => onChange(e.target.value)}
       />
     </div>

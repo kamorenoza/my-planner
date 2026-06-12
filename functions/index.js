@@ -108,17 +108,25 @@ async function sendToUser(uid, tokensMap, message) {
   if (tokens.length === 0) return;
 
   const res = await getMessaging().sendEachForMulticast({
-    tokens,
+    tokens, // iOS Web Push EXIGE una `notification` visible; los mensajes data-only
+    // (silenciosos) no se muestran de forma fiable y Apple puede revocar la
+    // suscripción. Mandamos la notificación + data como respaldo. El service
+    // worker NO vuelve a mostrarla cuando ya hay `notification` (evita duplicar).
     data: {
       title: String(message.title || ""),
       body: String(message.body || ""),
     },
     webpush: {
-      fcmOptions: { link: "/" },
+      notification: {
+        title: String(message.title || "My Planner"),
+        body: String(message.body || ""),
+        icon: "/my-planer/pwa-192x192.png",
+        badge: "/my-planer/pwa-64x64.png",
+      },
+      fcmOptions: { link: "/my-planer/" },
     },
-  });
+  }); // Remove tokens that are no longer valid.
 
-  // Remove tokens that are no longer valid.
   const invalid = {};
   res.responses.forEach((r, i) => {
     if (!r.success) {
@@ -172,30 +180,26 @@ export const sendPlannerNotifications = onSchedule(
       const { dateKey, hour, minutes } = localParts(now, timezone);
       const planner = data.planner || {};
       const sent = notif.sent || {};
-      const newSent = {};
-      // Keep only today's markers to avoid unbounded growth.
+      const newSent = {}; // Keep only today's markers to avoid unbounded growth.
       Object.keys(sent).forEach((k) => {
         if (k.includes(dateKey)) newSent[k] = sent[k];
       });
 
       const updates = {};
-      const messages = [];
-
-      // 8:00 daily summary — send on the first run at/after the configured
+      const messages = []; // 8:00 daily summary — send on the first run at/after the configured
       // hour (within that hour) if not already sent today.
+
       const dailyKey = `daily-${dateKey}`;
       if (hour === dailyHour && !newSent[dailyKey]) {
         const daily = buildDailyMessages(planner, dateKey);
         if (daily.length) {
           daily.forEach((m) => messages.push(m));
-        }
-        // Mark as sent even if there was nothing, so we don't keep checking
+        } // Mark as sent even if there was nothing, so we don't keep checking
         // all hour long.
         newSent[dailyKey] = true;
-      }
-
-      // Event reminders — send on the first run where the event starts within
+      } // Event reminders — send on the first run where the event starts within
       // `leadMin` minutes (and hasn't started yet), once per event.
+
       const events = parseList(planner, `events-${dateKey}`);
       events.forEach((ev) => {
         const until = ev.start - minutes;
@@ -236,6 +240,15 @@ export const sendPlannerNotifications = onSchedule(
 // HTTP endpoint for the home-screen widget (Scriptable, etc.)
 // ---------------------------------------------------------------------------
 
+// Resolved tag colors (text color, readable on a white background) so the
+// widget can paint each event without knowing the app's CSS variables.
+const EVENT_COLORS = {
+  personal: "#A84672",
+  trabajo: "#3F7D62",
+  citas: "#6A4BA0",
+  otros: "#B5773A",
+};
+
 // Returns today's events, reminders and pending todos for a user as JSON.
 // Auth is a simple uid + shared-secret check, enough for a personal widget.
 export const todayPlanner = onRequest(
@@ -257,7 +270,11 @@ export const todayPlanner = onRequest(
 
     const events = parseList(planner, `events-${dateKey}`)
       .sort((a, b) => a.start - b.start)
-      .map((e) => ({ title: e.title, time: formatTime(e.start) }));
+      .map((e) => ({
+        title: e.title,
+        time: formatTime(e.start),
+        color: EVENT_COLORS[e.type] || "#444444",
+      }));
     const reminders = parseList(planner, `reminders-${dateKey}`).map((r) => ({
       text: r.text,
       holiday: isHoliday(r),

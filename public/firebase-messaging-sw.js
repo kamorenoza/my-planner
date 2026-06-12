@@ -26,16 +26,13 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // Show background notifications. The Cloud Function sends a `notification`
-// payload; this also handles a `data`-only fallback.
+// payload (required so iOS displays it). When that payload is present the
+// browser/OS already shows the notification, so we must NOT show it again here
+// or it would appear twice. We only show one manually for data-only fallbacks.
 messaging.onBackgroundMessage((payload) => {
-  const title =
-    (payload.notification && payload.notification.title) ||
-    (payload.data && payload.data.title) ||
-    "My Planner";
-  const body =
-    (payload.notification && payload.notification.body) ||
-    (payload.data && payload.data.body) ||
-    "";
+  if (payload.notification) return; // ya la muestra el sistema; evitar duplicado
+  const title = (payload.data && payload.data.title) || "My Planner";
+  const body = (payload.data && payload.data.body) || "";
   self.registration.showNotification(title, {
     body,
     icon: "./pwa-192x192.png",

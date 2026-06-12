@@ -13,7 +13,7 @@ const db = getFirestore();
 const WIDGET_KEY = defineSecret("WIDGET_KEY");
 
 // How often the scheduler runs (minutes). Must match the schedule below.
-const RUN_INTERVAL_MIN = 10;
+const RUN_INTERVAL_MIN = 15;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -108,7 +108,8 @@ async function sendToUser(uid, tokensMap, message) {
   if (tokens.length === 0) return;
 
   const res = await getMessaging().sendEachForMulticast({
-    tokens, // iOS Web Push EXIGE una `notification` visible; los mensajes data-only
+    tokens,
+    // iOS Web Push EXIGE una `notification` visible; los mensajes data-only
     // (silenciosos) no se muestran de forma fiable y Apple puede revocar la
     // suscripción. Mandamos la notificación + data como respaldo. El service
     // worker NO vuelve a mostrarla cuando ya hay `notification` (evita duplicar).
@@ -125,8 +126,9 @@ async function sendToUser(uid, tokensMap, message) {
       },
       fcmOptions: { link: "/my-planer/" },
     },
-  }); // Remove tokens that are no longer valid.
+  });
 
+  // Remove tokens that are no longer valid.
   const invalid = {};
   res.responses.forEach((r, i) => {
     if (!r.success) {
@@ -158,6 +160,11 @@ export const sendPlannerNotifications = onSchedule(
     timeZone: "Etc/UTC",
     region: "us-central1",
     retryCount: 0,
+    // Mantener el costo bajo: instancia mínima de recursos, escala a cero
+    // cuando no corre y nunca más de 1 instancia a la vez.
+    memory: "256MiB",
+    minInstances: 0,
+    maxInstances: 1,
   },
   async () => {
     const now = new Date();
@@ -180,26 +187,30 @@ export const sendPlannerNotifications = onSchedule(
       const { dateKey, hour, minutes } = localParts(now, timezone);
       const planner = data.planner || {};
       const sent = notif.sent || {};
-      const newSent = {}; // Keep only today's markers to avoid unbounded growth.
+      const newSent = {};
+      // Keep only today's markers to avoid unbounded growth.
       Object.keys(sent).forEach((k) => {
         if (k.includes(dateKey)) newSent[k] = sent[k];
       });
 
       const updates = {};
-      const messages = []; // 8:00 daily summary — send on the first run at/after the configured
-      // hour (within that hour) if not already sent today.
+      const messages = [];
 
+      // 8:00 daily summary — send on the first run at/after the configured
+      // hour (within that hour) if not already sent today.
       const dailyKey = `daily-${dateKey}`;
       if (hour === dailyHour && !newSent[dailyKey]) {
         const daily = buildDailyMessages(planner, dateKey);
         if (daily.length) {
           daily.forEach((m) => messages.push(m));
-        } // Mark as sent even if there was nothing, so we don't keep checking
+        }
+        // Mark as sent even if there was nothing, so we don't keep checking
         // all hour long.
         newSent[dailyKey] = true;
-      } // Event reminders — send on the first run where the event starts within
-      // `leadMin` minutes (and hasn't started yet), once per event.
+      }
 
+      // Event reminders — send on the first run where the event starts within
+      // `leadMin` minutes (and hasn't started yet), once per event.
       const events = parseList(planner, `events-${dateKey}`);
       events.forEach((ev) => {
         const until = ev.start - minutes;
@@ -252,7 +263,21 @@ const EVENT_COLORS = {
 // Returns today's events, reminders and pending todos for a user as JSON.
 // Auth is a simple uid + shared-secret check, enough for a personal widget.
 export const todayPlanner = onRequest(
-  { region: "us-central1", secrets: [WIDGET_KEY], cors: true },
+  {
+    region: "us-central1",
+    secrets: [WIDGET_KEY],
+    cors: true,
+    // Costo bajo: recursos mínimos, escala a cero y tope de 1 instancia para
+    // que un exceso de llamadas (o bots) no dispare la factura. El CPU se fija
+    // al mínimo para abaratar cada arranque en frío. Con CPU < 1 la
+    // concurrencia debe ser 1 (Cloud Run no permite concurrencia con CPU
+    // fraccional).
+    memory: "128MiB",
+    cpu: 0.0833,
+    minInstances: 0,
+    maxInstances: 1,
+    concurrency: 1,
+  },
   async (req, res) => {
     const uid = String(req.query.uid || "");
     const key = String(req.query.key || "");

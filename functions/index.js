@@ -217,7 +217,7 @@ export const sendPlannerNotifications = onSchedule(
           const evKey = `evt-${dateKey}-${ev.id}`;
           if (!newSent[evKey]) {
             messages.push({
-              title: `Evento: ${ev.title}`,
+              title: ev.title,
               body: `Empieza a las ${formatTime(ev.start)}`,
             });
             newSent[evKey] = true;

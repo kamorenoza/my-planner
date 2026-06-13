@@ -62,10 +62,11 @@ function isHoliday(reminder) {
   return reminder && reminder.holiday === true;
 }
 
-// Build the 8:00 daily messages: events, reminders and tasks, each as its own
-// notification and only when there is something to show.
-// Returns an array of { title, body }.
-function buildDailyMessages(planner, dateKey) {
+// Build the 8:00 daily summary as a SINGLE notification (events, reminders and
+// tasks combined). iOS descarta notificaciones web push enviadas en ráfaga, así
+// que NUNCA mandamos varias seguidas: todo va en un solo mensaje.
+// Returns { title, body } or null when there is nothing to show.
+function buildDailySummary(planner, dateKey) {
   const events = parseList(planner, `events-${dateKey}`).sort(
     (a, b) => a.start - b.start,
   );
@@ -74,30 +75,28 @@ function buildDailyMessages(planner, dateKey) {
   );
   const todos = parseList(planner, `todos-${dateKey}`).filter((t) => !t.done);
 
-  const messages = [];
-
-  if (events.length) {
-    messages.push({
-      title: "Eventos para hoy",
-      body: events.map((e) => `- ${e.title} ${formatTime(e.start)}`).join("\n"),
-    });
-  }
+  const sections = [];
 
   if (reminders.length) {
-    messages.push({
-      title: "Recordatorios para hoy",
-      body: reminders.map((r) => `- ${r.text}`).join("\n"),
-    });
+    sections.push(
+      `Recordatorios:\n${reminders.map((r) => `- ${r.text}`).join("\n")}`,
+    );
   }
 
   if (todos.length) {
-    messages.push({
-      title: "Tareas para hoy",
-      body: todos.map((t) => `- ${t.text}`).join("\n"),
-    });
+    sections.push(`Tareas:\n${todos.map((t) => `- ${t.text}`).join("\n")}`);
   }
 
-  return messages;
+  if (events.length) {
+    sections.push(
+      `Eventos:\n${events
+        .map((e) => `- ${e.title} ${formatTime(e.start)}`)
+        .join("\n")}`,
+    );
+  }
+
+  if (sections.length === 0) return null;
+  return { title: "Resumen de hoy", body: sections.join("\n\n") };
 }
 
 // Send a data-only message to every token of a user, pruning invalid ones.
@@ -108,7 +107,8 @@ async function sendToUser(uid, tokensMap, message) {
   if (tokens.length === 0) return;
 
   const res = await getMessaging().sendEachForMulticast({
-    tokens, // iOS Web Push EXIGE una `notification` visible; los mensajes data-only
+    tokens,
+    // iOS Web Push EXIGE una `notification` visible; los mensajes data-only
     // (silenciosos) no se muestran de forma fiable y Apple puede revocar la
     // suscripción. Mandamos la notificación + data como respaldo. El service
     // worker NO vuelve a mostrarla cuando ya hay `notification` (evita duplicar).
@@ -125,8 +125,9 @@ async function sendToUser(uid, tokensMap, message) {
       },
       fcmOptions: { link: "/my-planer/" },
     },
-  }); // Remove tokens that are no longer valid.
+  });
 
+  // Remove tokens that are no longer valid.
   const invalid = {};
   res.responses.forEach((r, i) => {
     if (!r.success) {
@@ -159,7 +160,8 @@ export const sendPlannerNotifications = onSchedule(
     schedule: `every ${RUN_INTERVAL_MIN} minutes`,
     timeZone: "Etc/UTC",
     region: "us-central1",
-    retryCount: 0, // Mantener el costo bajo: instancia mínima de recursos, escala a cero
+    retryCount: 0,
+    // Mantener el costo bajo: instancia mínima de recursos, escala a cero
     // cuando no corre y nunca más de 1 instancia a la vez.
     memory: "256MiB",
     minInstances: 0,
@@ -186,26 +188,28 @@ export const sendPlannerNotifications = onSchedule(
       const { dateKey, hour, minutes } = localParts(now, timezone);
       const planner = data.planner || {};
       const sent = notif.sent || {};
-      const newSent = {}; // Keep only today's markers to avoid unbounded growth.
+      const newSent = {};
+      // Keep only today's markers to avoid unbounded growth.
       Object.keys(sent).forEach((k) => {
         if (k.includes(dateKey)) newSent[k] = sent[k];
       });
 
       const updates = {};
-      const messages = []; // 8:00 daily summary — send on the first run at/after the configured
-      // hour (within that hour) if not already sent today.
+      const messages = [];
 
+      // 8:00 daily summary — send on the first run at/after the configured
+      // hour (within that hour) if not already sent today.
       const dailyKey = `daily-${dateKey}`;
       if (hour === dailyHour && !newSent[dailyKey]) {
-        const daily = buildDailyMessages(planner, dateKey);
-        if (daily.length) {
-          daily.forEach((m) => messages.push(m));
-        } // Mark as sent even if there was nothing, so we don't keep checking
+        const daily = buildDailySummary(planner, dateKey);
+        if (daily) messages.push(daily);
+        // Mark as sent even if there was nothing, so we don't keep checking
         // all hour long.
         newSent[dailyKey] = true;
-      } // Event reminders — send on the first run where the event starts within
-      // `leadMin` minutes (and hasn't started yet), once per event.
+      }
 
+      // Event reminders — send on the first run where the event starts within
+      // `leadMin` minutes (and hasn't started yet), once per event.
       const events = parseList(planner, `events-${dateKey}`);
       events.forEach((ev) => {
         const until = ev.start - minutes;
@@ -226,9 +230,19 @@ export const sendPlannerNotifications = onSchedule(
       updates["notif.sent"] = newSent;
       jobs.push(
         (async () => {
-          for (const msg of messages) {
-            await sendToUser(docSnap.id, tokens, msg);
-          } // `update()` (no `set`) interpreta 'notif.sent' como ruta anidada y
+          // iOS descarta notificaciones enviadas en ráfaga, así que combinamos
+          // todo lo de esta corrida en UNA sola notificación.
+          const message =
+            messages.length === 1
+              ? messages[0]
+              : {
+                  title: "My Planner",
+                  body: messages
+                    .map((m) => `${m.title}\n${m.body}`)
+                    .join("\n\n"),
+                };
+          await sendToUser(docSnap.id, tokens, message);
+          // `update()` (no `set`) interpreta 'notif.sent' como ruta anidada y
           // REEMPLAZA el mapa. Con `set({'notif.sent':...}, {merge:true})` se
           // creaba un campo literal llamado "notif.sent" que nunca se leía de
           // vuelta (la lectura es data.notif.sent), provocando reenvíos.
@@ -264,7 +278,8 @@ export const todayPlanner = onRequest(
   {
     region: "us-central1",
     secrets: [WIDGET_KEY],
-    cors: true, // Costo bajo: recursos mínimos, escala a cero y tope de 1 instancia para
+    cors: true,
+    // Costo bajo: recursos mínimos, escala a cero y tope de 1 instancia para
     // que un exceso de llamadas (o bots) no dispare la factura. El CPU se fija
     // al mínimo para abaratar cada arranque en frío. Con CPU < 1 la
     // concurrencia debe ser 1 (Cloud Run no permite concurrencia con CPU

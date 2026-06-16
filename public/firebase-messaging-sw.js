@@ -42,16 +42,38 @@ messaging.onBackgroundMessage((payload) => {
 });
 
 // Focus or open the app when a notification is tapped.
+// On an installed iOS PWA the notification belongs to the PWA, so this opens
+// the PWA itself (not Safari). We resolve an absolute in-scope URL and prefer
+// focusing/navigating an already-open window before opening a new one.
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+
+  // Prefer the link the Cloud Function sent, else the SW scope root.
+  const target = new URL(
+    (event.notification.data && event.notification.data.link) || "./",
+    self.registration.scope,
+  ).href;
+
   event.waitUntil(
-    clients
-      .matchAll({ type: "window", includeUncontrolled: true })
-      .then((list) => {
-        for (const client of list) {
-          if ("focus" in client) return client.focus();
+    (async () => {
+      const list = await clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+      for (const client of list) {
+        // Same-origin window already open: focus it (and navigate if possible).
+        if (new URL(client.url).origin === new URL(target).origin) {
+          if ("navigate" in client) {
+            try {
+              await client.navigate(target);
+            } catch {
+              // navigation not allowed (e.g. cross-document) – just focus
+            }
+          }
+          return client.focus();
         }
-        if (clients.openWindow) return clients.openWindow("./");
-      }),
+      }
+      if (clients.openWindow) return clients.openWindow(target);
+    })(),
   );
 });

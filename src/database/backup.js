@@ -71,19 +71,59 @@ export async function pushBackup(uid) {
 }
 
 // Auto-backup: push to the cloud (debounced) whenever planner data changes.
+//
+// CRÍTICO (iOS PWA): el debounce con setTimeout NO se dispara si el sistema
+// congela/suspende la página al cambiar de app o cerrarla. Eso hacía que la
+// última edición nunca llegara a la nube y, al reabrir, el pull sobrescribía
+// localStorage con la versión vieja: pérdida de datos. Por eso forzamos un
+// "flush" inmediato cuando la app se oculta (visibilitychange → hidden),
+// en pagehide, y al desmontar (cierre de sesión / expulsión de sesión).
 export function startAutoBackup(uid, { delay = 1500 } = {}) {
   let timer = null;
-  const unsubscribe = subscribeToSaves(() => {
-    if (timer) clearTimeout(timer);
-    timer = setTimeout(() => {
-      pushBackup(uid).catch(() => {
-        // network/permission error – will retry on next change
-      });
-    }, delay);
-  });
+  let pending = false;
+  let inFlight = null;
 
-  return () => {
+  const flush = () => {
+    if (timer) {
+      clearTimeout(timer);
+      timer = null;
+    }
+    if (!pending) return inFlight || Promise.resolve();
+    pending = false;
+    inFlight = pushBackup(uid)
+      .catch(() => {
+        // Falló (red/permiso): marca de nuevo como pendiente para reintentar
+        // en el próximo cambio o flush.
+        pending = true;
+      })
+      .finally(() => {
+        inFlight = null;
+      });
+    return inFlight;
+  };
+
+  const schedule = () => {
+    pending = true;
     if (timer) clearTimeout(timer);
+    timer = setTimeout(flush, delay);
+  };
+
+  const unsubscribe = subscribeToSaves(schedule);
+
+  const onVisibility = () => {
+    if (document.visibilityState === "hidden") flush();
+  };
+  document.addEventListener("visibilitychange", onVisibility);
+  window.addEventListener("pagehide", flush);
+
+  const stop = () => {
+    flush(); // sube cualquier cambio pendiente antes de soltar los listeners
+    document.removeEventListener("visibilitychange", onVisibility);
+    window.removeEventListener("pagehide", flush);
     unsubscribe();
   };
+  // Exponemos flush para poder forzar la subida antes de un pull.
+  stop.flush = flush;
+  stop.hasPending = () => pending;
+  return stop;
 }

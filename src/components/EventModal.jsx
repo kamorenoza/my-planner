@@ -19,7 +19,6 @@ export function EventFields({
   event,
   onSave,
   onClose,
-  onDelete,
   showActions = true,
 }) {
   const [title, setTitle] = useState(event?.title || "");
@@ -216,12 +215,6 @@ export function EventFields({
         />
       </label>
 
-      {event && onDelete && (
-        <button className="field__delete" onClick={onDelete}>
-          Eliminar evento
-        </button>
-      )}
-
       {showActions && (
         <div className="modal__actions">
           <button className="modal__btn modal__btn--cancel" onClick={onClose}>
@@ -244,15 +237,25 @@ export function EventModal({ defaultDate, event, onSave, onClose, onDelete }) {
   return (
     <div className="modal-overlay">
       <div className="modal modal--form" onClick={(e) => e.stopPropagation()}>
-        <h3 className="modal__title">
-          {event ? "Editar evento" : "Nuevo evento"}
-        </h3>
+        <div className="modal__header">
+          <h3 className="modal__title">
+            {event ? "Editar evento" : "Nuevo evento"}
+          </h3>
+          {event && onDelete && (
+            <button
+              type="button"
+              className="modal__header-delete"
+              onClick={onDelete}
+            >
+              Eliminar
+            </button>
+          )}
+        </div>
         <EventFields
           defaultDate={defaultDate}
           event={event}
           onSave={onSave}
           onClose={onClose}
-          onDelete={onDelete}
         />
       </div>
     </div>

@@ -506,7 +506,9 @@ function MonthView() {
                   return (
                     <div
                       key={i}
-                      className={`month-view__day${day ? "" : " month-view__day--empty"}`}
+                      className={`month-view__day${day ? "" : " month-view__day--empty"}${
+                        day && day === todayDay ? " month-view__day--today" : ""
+                      }`}
                       onClick={() =>
                         day &&
                         navigate(

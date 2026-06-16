@@ -34,6 +34,9 @@ export function AuthProvider({ children }) {
   const [dataVersion, setDataVersion] = useState(0);
   // Holds the teardown for the active session's listeners (watch + backup).
   const cleanupRef = useRef(null);
+  // Holds the active auto-backup handle so we can flush pending writes before a
+  // background pull (avoids the pull clobbering just-made local edits).
+  const backupRef = useRef(null);
 
   useEffect(() => {
     // Start watching for session eviction and auto-backing up local changes.
@@ -42,9 +45,11 @@ export function AuthProvider({ children }) {
         doLogout();
       });
       const stopBackup = startAutoBackup(uid);
+      backupRef.current = stopBackup;
       cleanupRef.current = () => {
         stopWatch();
         stopBackup();
+        backupRef.current = null;
       };
     };
 
@@ -103,6 +108,11 @@ export function AuthProvider({ children }) {
           await registerSession(fbUser.uid, sessionId);
           registered = true;
           attach(fbUser.uid, sessionId);
+          // Flush any local edits made during startup BEFORE pulling, so the
+          // cloud snapshot never overwrites unpushed local changes.
+          if (backupRef.current?.hasPending?.()) {
+            await backupRef.current.flush();
+          }
           const { applied, changed } = await pullBackup(fbUser.uid);
           if (changed) setDataVersion((v) => v + 1);
           else if (!applied) await pushBackup(fbUser.uid);

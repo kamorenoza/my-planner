@@ -201,6 +201,39 @@
   margin-bottom: var(--space-sm);
 }
 
+/* Modal header: title + an always-reachable delete action. Sticky so it stays
+   visible (and tappable) even when the on-screen keyboard pushes the form up. */
+.modal__header {
+  position: sticky;
+  top: calc(-1 * var(--space-xl));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  background: var(--color-bg);
+  margin: calc(-1 * var(--space-xl));
+  margin-bottom: var(--space-sm);
+  padding: var(--space-xl) var(--space-xl) var(--space-sm);
+  z-index: 2;
+}
+
+.modal__header .modal__title {
+  margin-bottom: 0;
+}
+
+.modal__header-delete {
+  flex-shrink: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-accent-red);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+}
+
+.modal__header-delete:hover {
+  background: var(--color-surface-hover);
+}
+
 /* "Mark as holiday" toggle inside the reminder form */
 .reminder-holiday {
   display: flex;

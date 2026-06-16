@@ -120,10 +120,10 @@ async function sendToUser(uid, tokensMap, message) {
       notification: {
         title: String(message.title || "My Planner"),
         body: String(message.body || ""),
-        icon: "/my-planer/pwa-192x192.png",
-        badge: "/my-planer/pwa-64x64.png",
+        icon: "/my-planner/pwa-192x192.png",
+        badge: "/my-planner/pwa-64x64.png",
       },
-      fcmOptions: { link: "/my-planer/" },
+      fcmOptions: { link: "/my-planner/" },
     },
   });
 

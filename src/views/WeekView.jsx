@@ -17,6 +17,8 @@ import {
   sortRemindersHolidayFirst,
 } from "../utils/holidaysCO";
 import { EventFields } from "../components/EventModal";
+import { ReminderFields } from "../components/ReminderModal";
+import DateField from "../components/DateField";
 import { saveNewEvent } from "../utils/recurrence";
 import EmojiImg from "../components/EmojiImg";
 import Breadcrumbs from "../components/Breadcrumbs";
@@ -388,6 +390,13 @@ function AddDayModal({ dateKey: dk, onClose, onSaved }) {
     onClose();
   };
 
+  const saveReminder = (reminder) => {
+    const reminders = load(remindersKey(dk), []);
+    save(remindersKey(dk), [...reminders, { ...reminder, date: dk }]);
+    onSaved();
+    onClose();
+  };
+
   return (
     <div className="modal-overlay">
       <div className="modal modal--form" onClick={(e) => e.stopPropagation()}>
@@ -404,11 +413,18 @@ function AddDayModal({ dateKey: dk, onClose, onSaved }) {
           >
             TODO
           </button>
+          <button
+            className={`modal-tab${tab === "reminder" ? " modal-tab--active" : ""}`}
+            onClick={() => setTab("reminder")}
+          >
+            Recordatorio
+          </button>
         </div>
 
-        {tab === "event" ? (
+        {tab === "event" && (
           <EventFields defaultDate={dk} onSave={saveEvent} onClose={onClose} />
-        ) : (
+        )}
+        {tab === "todo" && (
           <>
             <label className="field">
               <span className="field__label">Tarea</span>
@@ -439,6 +455,13 @@ function AddDayModal({ dateKey: dk, onClose, onSaved }) {
               </button>
             </div>
           </>
+        )}
+        {tab === "reminder" && (
+          <ReminderFields
+            onSave={saveReminder}
+            onClose={onClose}
+            canMarkHoliday={!load(remindersKey(dk), []).some(isHolidayReminder)}
+          />
         )}
       </div>
     </div>

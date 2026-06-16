@@ -193,6 +193,16 @@
   cursor: default;
 }
 
+/* Highlight the whole "today" cell with a soft purple tint (not just the day). */
+.month-view__day--today {
+  background: var(--color-primary-light);
+  box-shadow: inset 0 0 0 1.5px var(--color-primary);
+}
+
+.month-view__day--today:not(.month-view__day--empty):hover {
+  background: var(--color-primary-light);
+}
+
 .month-view__day-number {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
@@ -209,6 +219,12 @@
   background: var(--color-primary-light);
   color: var(--color-primary-dark);
   font-weight: var(--font-weight-semibold);
+}
+
+/* Inside the tinted today cell, make the number badge solid so it still pops. */
+.month-view__day--today .month-view__day-number--today {
+  background: var(--color-primary);
+  color: #fff;
 }
 
 .month-view__day-number--holiday {

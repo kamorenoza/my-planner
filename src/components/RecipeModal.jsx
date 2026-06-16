@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { compressImageToDataURL } from '../utils/image'
 
 export const MEAL_TAGS = [
   { id: 'desayuno', label: 'Desayuno' },
@@ -28,39 +29,7 @@ const EMPTY = {
 // documento de Firestore, que tiene un límite duro de 1 MiB. Una foto de la
 // cámara pesa varios MB; guardada en crudo (base64) hace que la subida a la
 // nube falle en silencio y la foto se pierda al sincronizar entre dispositivos.
-// Por eso la reescalamos (lado máx. 1024px) y la exportamos como JPEG ~0.7,
-// dejándola muy por debajo de ~200 KB.
-const MAX_PHOTO_DIM = 1024
-const PHOTO_QUALITY = 0.7
-
-function resizeImageToDataURL(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onerror = reject
-    reader.onload = () => {
-      const img = new Image()
-      img.onerror = reject
-      img.onload = () => {
-        let { width, height } = img
-        if (width >= height && width > MAX_PHOTO_DIM) {
-          height = Math.round((height * MAX_PHOTO_DIM) / width)
-          width = MAX_PHOTO_DIM
-        } else if (height > width && height > MAX_PHOTO_DIM) {
-          width = Math.round((width * MAX_PHOTO_DIM) / height)
-          height = MAX_PHOTO_DIM
-        }
-        const canvas = document.createElement('canvas')
-        canvas.width = width
-        canvas.height = height
-        const ctx = canvas.getContext('2d')
-        ctx.drawImage(img, 0, 0, width, height)
-        resolve(canvas.toDataURL('image/jpeg', PHOTO_QUALITY))
-      }
-      img.src = reader.result
-    }
-    reader.readAsDataURL(file)
-  })
-}
+// La lógica de reescalado/compresión vive en utils/image.js.
 
 
 export function RecipeModal({ recipe, onClose, onSave }) {
@@ -101,7 +70,7 @@ export function RecipeModal({ recipe, onClose, onSave }) {
   const handlePhoto = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const dataUrl = await resizeImageToDataURL(file)
+    const dataUrl = await compressImageToDataURL(file)
     set('photo', dataUrl)
   }
 

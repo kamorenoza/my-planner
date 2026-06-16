@@ -3,14 +3,12 @@ import {
   onAuth,
   loginWithGoogle,
   logout as doLogout,
-  createSessionId,
 } from '../database/auth'
 import {
-  registerSession,
-  watchSession,
-  pullBackup,
-  pushBackup,
+  reconcilePlanner,
   startAutoBackup,
+  watchPlanner,
+  watchRecipes,
   pullRecipes,
   getLegacyRecipes,
   stripLegacyRecipesFromBigDoc,
@@ -44,15 +42,20 @@ export function AuthProvider({ children }) {
   const backupRef = useRef(null)
 
   useEffect(() => {
-    // Start watching for session eviction and auto-backing up local changes.
-    const attach = (uid, sessionId) => {
-      const stopWatch = watchSession(uid, sessionId, () => {
-        doLogout()
-      })
+    const bump = () => setDataVersion((v) => v + 1)
+
+    // Multi-dispositivo SIN expulsión: en lugar de vigilar una "sesión activa"
+    // y desloguear a los demás, escuchamos en tiempo real los cambios en la
+    // nube (planner + recetas) y subimos los cambios locales. Varios
+    // dispositivos pueden estar logueados a la vez y se mantienen en sync.
+    const attach = (uid) => {
+      const stopPlanner = watchPlanner(uid, bump)
+      const stopRecipes = watchRecipes(uid, bump)
       const stopBackup = startAutoBackup(uid)
       backupRef.current = stopBackup
       cleanupRef.current = () => {
-        stopWatch()
+        stopPlanner()
+        stopRecipes()
         stopBackup()
         backupRef.current = null
       }
@@ -72,7 +75,6 @@ export function AuthProvider({ children }) {
         return
       }
 
-      const sessionId = createSessionId()
       const freshLogin = sessionStorage.getItem(FRESH_LOGIN_KEY) === '1'
       sessionStorage.removeItem(FRESH_LOGIN_KEY)
       const prevOwner = localStorage.getItem(PLANNER_OWNER_KEY)
@@ -80,24 +82,22 @@ export function AuthProvider({ children }) {
 
       if (freshLogin || foreign) {
         // Brand new login, or a different account on this device: show the sync
-        // screen and pull the cloud planner before rendering.
+        // screen and reconcile with the cloud before rendering.
         setSyncing(true)
         try {
           if (foreign) clearPlannerData()
-          await registerSession(fbUser.uid, sessionId)
-          const { applied } = await pullBackup(fbUser.uid)
+          await reconcilePlanner(fbUser.uid)
           // Recetas: bajar de la subcolección. Si está vacía pero el documento
           // grande aún tiene recetas heredadas, se siembran desde ahí.
           const legacy = await getLegacyRecipes(fbUser.uid)
           await pullRecipes(fbUser.uid, legacy)
           await stripLegacyRecipesFromBigDoc(fbUser.uid)
           markRecipesMigrated()
-          if (!applied) await pushBackup(fbUser.uid)
           localStorage.setItem(PLANNER_OWNER_KEY, fbUser.uid)
         } catch {
           // Network/permission issue – continue with local data.
         }
-        attach(fbUser.uid, sessionId)
+        attach(fbUser.uid)
         setUser(fbUser)
         setSyncing(false)
         setLoading(false)
@@ -105,39 +105,34 @@ export function AuthProvider({ children }) {
       }
 
       // Restored session for the same account: trust localStorage and render
-      // immediately so startup is instant. Claim the session, watch for
-      // eviction and refresh from the cloud in the background.
+      // immediately so startup is instant. Then reconcile with the cloud and
+      // attach the real-time listeners in the background.
       localStorage.setItem(PLANNER_OWNER_KEY, fbUser.uid)
       setUser(fbUser)
       setLoading(false)
       setSyncing(false)
       ;(async () => {
-        let registered = false
+        let attached = false
         try {
-          // Claim this device first (this is what evicts other devices), then
-          // start watching so we don't evict ourselves with our own id.
-          await registerSession(fbUser.uid, sessionId)
-          registered = true
-          attach(fbUser.uid, sessionId)
-
           // Recetas: migración única del documento grande viejo a la
           // subcolección (reescala fotos grandes, fusiona y siembra la nube).
           const migrated = await migrateRecipesToSubcollection(fbUser.uid)
           await stripLegacyRecipesFromBigDoc(fbUser.uid)
 
-          // Flush any local edits made during startup BEFORE pulling, so the
-          // cloud snapshot never overwrites unpushed local changes.
-          if (backupRef.current?.hasPending?.()) {
-            await backupRef.current.flush()
-          }
-          const { applied, changed } = await pullBackup(fbUser.uid)
-          // Trae recetas de otros dispositivos (la subcolección es la fuente).
+          // Conciliación inicial a nivel de campo: sube lo solo-local, baja lo
+          // de la nube. No pierde ediciones de otros dispositivos.
+          const pulled = await reconcilePlanner(fbUser.uid)
           const recipesChanged = await pullRecipes(fbUser.uid)
-          if (changed || recipesChanged || migrated) setDataVersion((v) => v + 1)
-          else if (!applied) await pushBackup(fbUser.uid)
+
+          // Ahora sí: escucha en tiempo real y respalda cambios locales.
+          attach(fbUser.uid)
+          attached = true
+
+          if (pulled || recipesChanged || migrated) bump()
         } catch {
-          // Offline: keep using local data; still watch for eviction.
-          if (!registered) attach(fbUser.uid, sessionId)
+          // Offline: keep using local data; attach listeners so we sync when
+          // the connection returns.
+          if (!attached) attach(fbUser.uid)
         }
       })()
     })

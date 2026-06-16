@@ -1,19 +1,19 @@
-import { onSchedule } from "firebase-functions/v2/scheduler";
-import { onRequest } from "firebase-functions/v2/https";
-import { defineSecret } from "firebase-functions/params";
-import { logger } from "firebase-functions";
-import { initializeApp } from "firebase-admin/app";
-import { getFirestore, FieldValue } from "firebase-admin/firestore";
-import { getMessaging } from "firebase-admin/messaging";
+import { onSchedule } from 'firebase-functions/v2/scheduler'
+import { onRequest } from 'firebase-functions/v2/https'
+import { defineSecret } from 'firebase-functions/params'
+import { logger } from 'firebase-functions'
+import { initializeApp } from 'firebase-admin/app'
+import { getFirestore, FieldValue } from 'firebase-admin/firestore'
+import { getMessaging } from 'firebase-admin/messaging'
 
-initializeApp();
-const db = getFirestore();
+initializeApp()
+const db = getFirestore()
 
 // Shared secret so only you can read your planner from the widget.
-const WIDGET_KEY = defineSecret("WIDGET_KEY");
+const WIDGET_KEY = defineSecret('WIDGET_KEY')
 
 // How often the scheduler runs (minutes). Must match the schedule below.
-const RUN_INTERVAL_MIN = 15;
+const RUN_INTERVAL_MIN = 15
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -21,45 +21,45 @@ const RUN_INTERVAL_MIN = 15;
 
 // Local date/time parts for a given IANA timezone.
 function localParts(date, timeZone) {
-  const fmt = new Intl.DateTimeFormat("en-CA", {
+  const fmt = new Intl.DateTimeFormat('en-CA', {
     timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
     hour12: false,
-  });
+  })
   const parts = Object.fromEntries(
     fmt.formatToParts(date).map((p) => [p.type, p.value]),
-  );
-  const hour = parts.hour === "24" ? 0 : Number(parts.hour);
+  )
+  const hour = parts.hour === '24' ? 0 : Number(parts.hour)
   return {
     dateKey: `${parts.year}-${parts.month}-${parts.day}`,
     hour,
     minute: Number(parts.minute),
     minutes: hour * 60 + Number(parts.minute),
-  };
+  }
 }
 
 function formatTime(min) {
-  const hour = Math.floor(min / 60);
-  const minutes = min % 60;
-  const period = hour < 12 ? "am" : "pm";
-  const h = hour % 12 === 0 ? 12 : hour % 12;
-  return `${h}:${String(minutes).padStart(2, "0")} ${period}`;
+  const hour = Math.floor(min / 60)
+  const minutes = min % 60
+  const period = hour < 12 ? 'am' : 'pm'
+  const h = hour % 12 === 0 ? 12 : hour % 12
+  return `${h}:${String(minutes).padStart(2, '0')} ${period}`
 }
 
 function parseList(planner, key) {
   try {
-    return JSON.parse(planner?.[key] || "[]");
+    return JSON.parse(planner?.[key] || '[]')
   } catch {
-    return [];
+    return []
   }
 }
 
 function isHoliday(reminder) {
-  return reminder && reminder.holiday === true;
+  return reminder && reminder.holiday === true
 }
 
 // Build the 8:00 daily summary as a SINGLE notification (events, reminders and
@@ -69,42 +69,40 @@ function isHoliday(reminder) {
 function buildDailySummary(planner, dateKey) {
   const events = parseList(planner, `events-${dateKey}`).sort(
     (a, b) => a.start - b.start,
-  );
+  )
   const reminders = parseList(planner, `reminders-${dateKey}`).filter(
     (r) => !isHoliday(r),
-  );
-  const todos = parseList(planner, `todos-${dateKey}`).filter((t) => !t.done);
+  )
+  const todos = parseList(planner, `todos-${dateKey}`).filter((t) => !t.done)
 
-  const sections = [];
+  const sections = []
 
   if (reminders.length) {
-    sections.push(
-      `Recordatorios:\n${reminders.map((r) => `- ${r.text}`).join("\n")}`,
-    );
+    sections.push(`Recordatorios:\n${reminders.map((r) => `• ${r.text}`).join('\n')}`)
   }
 
   if (todos.length) {
-    sections.push(`Tareas:\n${todos.map((t) => `- ${t.text}`).join("\n")}`);
+    sections.push(`Tareas:\n${todos.map((t) => `• ${t.text}`).join('\n')}`)
   }
 
   if (events.length) {
     sections.push(
       `Eventos:\n${events
-        .map((e) => `- ${e.title} ${formatTime(e.start)}`)
-        .join("\n")}`,
-    );
+        .map((e) => `• ${e.title} ${formatTime(e.start)}`)
+        .join('\n')}`,
+    )
   }
 
-  if (sections.length === 0) return null;
-  return { title: "Resumen de hoy", body: sections.join("\n\n") };
+  if (sections.length === 0) return null
+  return { title: 'Resumen de hoy', body: sections.join('\n\n') }
 }
 
 // Send a data-only message to every token of a user, pruning invalid ones.
 // Data-only (no `notification` field) avoids the duplicate where iOS auto-shows
 // the notification AND the service worker shows it again in onBackgroundMessage.
 async function sendToUser(uid, tokensMap, message) {
-  const tokens = Object.keys(tokensMap || {});
-  if (tokens.length === 0) return;
+  const tokens = Object.keys(tokensMap || {})
+  if (tokens.length === 0) return
 
   const res = await getMessaging().sendEachForMulticast({
     tokens,
@@ -113,41 +111,38 @@ async function sendToUser(uid, tokensMap, message) {
     // suscripción. Mandamos la notificación + data como respaldo. El service
     // worker NO vuelve a mostrarla cuando ya hay `notification` (evita duplicar).
     data: {
-      title: String(message.title || ""),
-      body: String(message.body || ""),
+      title: String(message.title || ''),
+      body: String(message.body || ''),
     },
     webpush: {
       notification: {
-        title: String(message.title || "My Planner"),
-        body: String(message.body || ""),
-        icon: "/my-planner/pwa-192x192.png",
-        badge: "/my-planner/pwa-64x64.png",
+        title: String(message.title || 'My Planner'),
+        body: String(message.body || ''),
+        icon: '/my-planner/pwa-192x192.png',
+        badge: '/my-planner/pwa-64x64.png',
       },
-      fcmOptions: { link: "/my-planner/" },
+      fcmOptions: { link: '/my-planner/' },
     },
-  });
+  })
 
   // Remove tokens that are no longer valid.
-  const invalid = {};
+  const invalid = {}
   res.responses.forEach((r, i) => {
     if (!r.success) {
-      const code = r.error?.code || "";
+      const code = r.error?.code || ''
       if (
-        code.includes("registration-token-not-registered") ||
-        code.includes("invalid-argument") ||
-        code.includes("invalid-registration-token")
+        code.includes('registration-token-not-registered') ||
+        code.includes('invalid-argument') ||
+        code.includes('invalid-registration-token')
       ) {
-        invalid[`notif.tokens.${tokens[i]}`] = FieldValue.delete();
+        invalid[`notif.tokens.${tokens[i]}`] = FieldValue.delete()
       }
     }
-  });
+  })
   if (Object.keys(invalid).length) {
     // `update()` para que las claves punteadas se traten como rutas anidadas y
     // el FieldValue.delete() borre realmente notif.tokens.<token>.
-    await db
-      .doc(`users/${uid}`)
-      .update(invalid)
-      .catch(() => {});
+    await db.doc(`users/${uid}`).update(invalid).catch(() => {})
   }
 }
 
@@ -158,76 +153,76 @@ async function sendToUser(uid, tokensMap, message) {
 export const sendPlannerNotifications = onSchedule(
   {
     schedule: `every ${RUN_INTERVAL_MIN} minutes`,
-    timeZone: "Etc/UTC",
-    region: "us-central1",
+    timeZone: 'Etc/UTC',
+    region: 'us-central1',
     retryCount: 0,
     // Mantener el costo bajo: instancia mínima de recursos, escala a cero
     // cuando no corre y nunca más de 1 instancia a la vez.
-    memory: "256MiB",
+    memory: '256MiB',
     minInstances: 0,
     maxInstances: 1,
   },
   async () => {
-    const now = new Date();
-    const snap = await db.collection("users").get();
+    const now = new Date()
+    const snap = await db.collection('users').get()
 
-    const jobs = [];
+    const jobs = []
     snap.forEach((docSnap) => {
-      const data = docSnap.data() || {};
-      const notif = data.notif;
-      if (!notif || notif.enabled === false) return;
-      const tokens = notif.tokens || {};
-      if (Object.keys(tokens).length === 0) return;
+      const data = docSnap.data() || {}
+      const notif = data.notif
+      if (!notif || notif.enabled === false) return
+      const tokens = notif.tokens || {}
+      if (Object.keys(tokens).length === 0) return
 
-      const timezone = data.timezone || "America/Bogota";
-      const dailyHour = Number.isInteger(notif.dailyHour) ? notif.dailyHour : 8;
+      const timezone = data.timezone || 'America/Bogota'
+      const dailyHour = Number.isInteger(notif.dailyHour) ? notif.dailyHour : 8
       const leadMin = Number.isInteger(notif.eventLeadMinutes)
         ? notif.eventLeadMinutes
-        : 60;
+        : 60
 
-      const { dateKey, hour, minutes } = localParts(now, timezone);
-      const planner = data.planner || {};
-      const sent = notif.sent || {};
-      const newSent = {};
+      const { dateKey, hour, minutes } = localParts(now, timezone)
+      const planner = data.planner || {}
+      const sent = notif.sent || {}
+      const newSent = {}
       // Keep only today's markers to avoid unbounded growth.
       Object.keys(sent).forEach((k) => {
-        if (k.includes(dateKey)) newSent[k] = sent[k];
-      });
+        if (k.includes(dateKey)) newSent[k] = sent[k]
+      })
 
-      const updates = {};
-      const messages = [];
+      const updates = {}
+      const messages = []
 
       // 8:00 daily summary — send on the first run at/after the configured
       // hour (within that hour) if not already sent today.
-      const dailyKey = `daily-${dateKey}`;
+      const dailyKey = `daily-${dateKey}`
       if (hour === dailyHour && !newSent[dailyKey]) {
-        const daily = buildDailySummary(planner, dateKey);
-        if (daily) messages.push(daily);
+        const daily = buildDailySummary(planner, dateKey)
+        if (daily) messages.push(daily)
         // Mark as sent even if there was nothing, so we don't keep checking
         // all hour long.
-        newSent[dailyKey] = true;
+        newSent[dailyKey] = true
       }
 
       // Event reminders — send on the first run where the event starts within
       // `leadMin` minutes (and hasn't started yet), once per event.
-      const events = parseList(planner, `events-${dateKey}`);
+      const events = parseList(planner, `events-${dateKey}`)
       events.forEach((ev) => {
-        const until = ev.start - minutes;
+        const until = ev.start - minutes
         if (until <= leadMin && until > 0) {
-          const evKey = `evt-${dateKey}-${ev.id}`;
+          const evKey = `evt-${dateKey}-${ev.id}`
           if (!newSent[evKey]) {
             messages.push({
               title: ev.title,
               body: `Empieza a las ${formatTime(ev.start)}`,
-            });
-            newSent[evKey] = true;
+            })
+            newSent[evKey] = true
           }
         }
-      });
+      })
 
-      if (messages.length === 0) return;
+      if (messages.length === 0) return
 
-      updates["notif.sent"] = newSent;
+      updates['notif.sent'] = newSent
       jobs.push(
         (async () => {
           // iOS descarta notificaciones enviadas en ráfaga, así que combinamos
@@ -236,12 +231,12 @@ export const sendPlannerNotifications = onSchedule(
             messages.length === 1
               ? messages[0]
               : {
-                  title: "My Planner",
+                  title: 'My Planner',
                   body: messages
                     .map((m) => `${m.title}\n${m.body}`)
-                    .join("\n\n"),
-                };
-          await sendToUser(docSnap.id, tokens, message);
+                    .join('\n\n'),
+                }
+          await sendToUser(docSnap.id, tokens, message)
           // `update()` (no `set`) interpreta 'notif.sent' como ruta anidada y
           // REEMPLAZA el mapa. Con `set({'notif.sent':...}, {merge:true})` se
           // creaba un campo literal llamado "notif.sent" que nunca se leía de
@@ -249,15 +244,15 @@ export const sendPlannerNotifications = onSchedule(
           await db
             .doc(`users/${docSnap.id}`)
             .update(updates)
-            .catch(() => {});
+            .catch(() => {})
         })(),
-      );
-    });
+      )
+    })
 
-    await Promise.all(jobs);
-    logger.info(`Notification run complete: ${jobs.length} user(s) notified.`);
+    await Promise.all(jobs)
+    logger.info(`Notification run complete: ${jobs.length} user(s) notified.`)
   },
-);
+)
 
 // ---------------------------------------------------------------------------
 // HTTP endpoint for the home-screen widget (Scriptable, etc.)
@@ -266,17 +261,17 @@ export const sendPlannerNotifications = onSchedule(
 // Resolved tag colors (text color, readable on a white background) so the
 // widget can paint each event without knowing the app's CSS variables.
 const EVENT_COLORS = {
-  personal: "#A84672",
-  trabajo: "#3F7D62",
-  citas: "#6A4BA0",
-  otros: "#B5773A",
-};
+  personal: 'A84672_1',
+  trabajo: '3F7D62_1',
+  citas: '6A4BA0_1',
+  otros: 'B5773A_1',
+}
 
 // Returns today's events, reminders and pending todos for a user as JSON.
 // Auth is a simple uid + shared-secret check, enough for a personal widget.
 export const todayPlanner = onRequest(
   {
-    region: "us-central1",
+    region: 'us-central1',
     secrets: [WIDGET_KEY],
     cors: true,
     // Costo bajo: recursos mínimos, escala a cero y tope de 1 instancia para
@@ -284,43 +279,50 @@ export const todayPlanner = onRequest(
     // al mínimo para abaratar cada arranque en frío. Con CPU < 1 la
     // concurrencia debe ser 1 (Cloud Run no permite concurrencia con CPU
     // fraccional).
-    memory: "128MiB",
+    memory: '128MiB',
     cpu: 0.0833,
     minInstances: 0,
     maxInstances: 1,
     concurrency: 1,
   },
   async (req, res) => {
-    const uid = String(req.query.uid || "");
-    const key = String(req.query.key || "");
+    const uid = String(req.query.uid || '')
+    const key = String(req.query.key || '')
 
     if (!uid || key !== WIDGET_KEY.value()) {
-      res.status(401).json({ error: "unauthorized" });
-      return;
+      res.status(401).json({ error: 'unauthorized' })
+      return
     }
 
-    const snap = await db.doc(`users/${uid}`).get();
-    const data = snap.data() || {};
-    const planner = data.planner || {};
-    const timezone = data.timezone || "America/Bogota";
-    const { dateKey } = localParts(new Date(), timezone);
+    const snap = await db.doc(`users/${uid}`).get()
+    const data = snap.data() || {}
+    const planner = data.planner || {}
+    const timezone = data.timezone || 'America/Bogota'
+    const { dateKey, minutes: nowMin } = localParts(new Date(), timezone)
 
     const events = parseList(planner, `events-${dateKey}`)
+      // Oculta los eventos que ya terminaron (su hora final ya pasó), para que
+      // el widget muestre primero el siguiente evento en curso o por venir.
+      // Si un evento no tiene `end`, se asume 1 hora de duración.
+      .filter((e) => {
+        const end = Number.isFinite(e.end) ? e.end : e.start + 60
+        return end > nowMin
+      })
       .sort((a, b) => a.start - b.start)
       .map((e) => ({
         title: e.title,
         time: formatTime(e.start),
-        color: EVENT_COLORS[e.type] || "#444444",
-      }));
+        color: EVENT_COLORS[e.type] || '444444_1',
+      }))
     const reminders = parseList(planner, `reminders-${dateKey}`).map((r) => ({
       text: r.text,
       holiday: isHoliday(r),
-    }));
+    }))
     const todos = parseList(planner, `todos-${dateKey}`)
       .filter((t) => !t.done)
-      .map((t) => ({ text: t.text }));
+      .map((t) => ({ text: t.text }))
 
-    res.set("Cache-Control", "no-store");
-    res.json({ dateKey, events, reminders, todos });
+    res.set('Cache-Control', 'no-store')
+    res.json({ dateKey, events, reminders, todos })
   },
-);
+)

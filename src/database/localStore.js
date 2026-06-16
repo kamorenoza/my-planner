@@ -34,6 +34,18 @@ export function save(key, value) {
   notifySave(key)
 }
 
+// Apply a value that came FROM the cloud into localStorage WITHOUT notifying the
+// save listeners. Esto evita un bucle: si notificáramos, el auto-backup volvería
+// a subir lo que justo acabamos de bajar (ping-pong entre dispositivos).
+// `rawValue` es el JSON ya serializado (tal cual se guarda en localStorage).
+export function applyRemote(key, rawValue) {
+  try {
+    if (typeof rawValue === 'string') localStorage.setItem(key, rawValue)
+  } catch {
+    // storage unavailable or full – ignore
+  }
+}
+
 // Key builders
 export const eventsKey = (dk) => `events-${dk}`
 export const todosKey = (dk) => `todos-${dk}`

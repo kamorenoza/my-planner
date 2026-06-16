@@ -694,7 +694,7 @@ function Meals({ storageKey }) {
         {MEALS.map((meal) => {
           const accent = TAG_COLORS[meal.id];
           const selectedIds = meals[meal.id] || [];
-          const canAddMore = selectedIds.length < 5;
+          const canAddMore = selectedIds.length < 4;
           return (
             <div key={meal.id} className="meal-card">
               <span className="meal-card__label">{meal.label}</span>

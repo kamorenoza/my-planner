@@ -13,8 +13,8 @@ import {
 import { db } from './firebase'
 import {
   getAllPlannerData,
-  setAllPlannerData,
   subscribeToSaves,
+  applyRemote,
   load,
   save,
   recipesKey,
@@ -23,60 +23,95 @@ import { compressOversizedRecipePhotos } from './migrate'
 
 const userDoc = (uid) => doc(db, 'users', uid)
 
-// Write the active session id so other devices know they were superseded.
-export async function registerSession(uid, sessionId) {
-  await setDoc(
-    userDoc(uid),
-    { activeSession: sessionId, sessionUpdatedAt: serverTimestamp() },
-    { merge: true },
-  )
-}
+// ---------------------------------------------------------------------------
+// Sincronización del documento grande (todo el planner menos recetas)
+// ---------------------------------------------------------------------------
+// Modelo multi-dispositivo SIN expulsión: varios dispositivos pueden estar
+// logueados a la vez. Para que las ediciones no se pisen entre sí escribimos a
+// NIVEL DE CAMPO: cada clave del planner (events-FECHA, todos-FECHA, etc.) se
+// sube por separado con merge, así editar el día 1 en el celular no borra la
+// edición del día 2 hecha en el iPad. Un listener en tiempo real (onSnapshot)
+// baja los cambios del otro dispositivo. Costo: 1 lectura por cambio y por
+// dispositivo conectado — muy por debajo del nivel gratuito.
 
-// Listen for session changes. When another device registers a new session id,
-// onEvicted() is called so this device can sign out.
-export function watchSession(uid, sessionId, onEvicted) {
-  return onSnapshot(userDoc(uid), (snap) => {
-    const data = snap.data()
-    if (data && data.activeSession && data.activeSession !== sessionId) {
-      onEvicted()
-    }
-  })
-}
-
-// Download the cloud planner snapshot into localStorage.
-// Returns { applied, changed }:
-//   applied = a non-empty cloud snapshot existed and was written locally
-//   changed = the cloud snapshot differed from what was already in localStorage
-export async function pullBackup(uid) {
+// Lee el mapa `planner` del documento grande (una sola lectura).
+async function getCloudPlanner(uid) {
   const snap = await getDoc(userDoc(uid))
   const data = snap.data()
-  if (data && data.planner && Object.keys(data.planner).length > 0) {
-    const before = getAllPlannerData()
-    setAllPlannerData(data.planner)
-    return { applied: true, changed: !plannerEquals(before, data.planner) }
-  }
-  return { applied: false, changed: false }
+  return (data && data.planner) || {}
 }
 
-// Shallow-compare two planner snapshots ({ key: rawJsonString }).
-function plannerEquals(a, b) {
-  const aKeys = Object.keys(a)
-  const bKeys = Object.keys(b)
-  if (aKeys.length !== bKeys.length) return false
-  for (const key of aKeys) {
-    if (a[key] !== b[key]) return false
-  }
-  return true
-}
-
-// Upload the current localStorage planner snapshot to the cloud.
-export async function pushBackup(uid) {
-  const planner = getAllPlannerData()
+// Sube SOLO las claves indicadas (merge a nivel de campo dentro de `planner`).
+async function pushKeysMap(uid, map) {
+  if (!map || Object.keys(map).length === 0) return
   await setDoc(
     userDoc(uid),
-    { planner, updatedAt: serverTimestamp() },
+    { planner: map, updatedAt: serverTimestamp() },
     { merge: true },
   )
+}
+
+// Sube al cloud las claves locales indicadas (toma su valor actual de
+// localStorage). Field-level: no toca las demás claves del documento.
+export async function pushKeys(uid, keys) {
+  const all = getAllPlannerData()
+  const map = {}
+  keys.forEach((k) => {
+    if (all[k] !== undefined) map[k] = all[k]
+  })
+  await pushKeysMap(uid, map)
+}
+
+// Sube todo el planner local clave por clave (merge). Se usa la primera vez que
+// un dispositivo siembra la nube.
+export async function pushBackup(uid) {
+  await pushKeysMap(uid, getAllPlannerData())
+}
+
+// Conciliación inicial al entrar (una sola lectura). Política determinista:
+//  - clave solo local (nunca subida)  -> se sube
+//  - clave solo en la nube            -> se baja
+//  - clave en ambos y distinta        -> gana la nube (evita que un dispositivo
+//                                        desactualizado pise datos más nuevos)
+// A partir de ahí, los listeners en tiempo real mantienen ambos al día.
+// Devuelve true si algo cambió localmente (para refrescar la UI).
+export async function reconcilePlanner(uid) {
+  const cloud = await getCloudPlanner(uid)
+  const local = getAllPlannerData()
+  const keys = new Set([...Object.keys(cloud), ...Object.keys(local)])
+  const toPush = {}
+  let pulled = false
+  keys.forEach((k) => {
+    const c = cloud[k]
+    const l = local[k]
+    if (c === undefined && l !== undefined) {
+      toPush[k] = l
+    } else if (typeof c === 'string' && c !== l) {
+      applyRemote(k, c)
+      pulled = true
+    }
+  })
+  if (Object.keys(toPush).length > 0) await pushKeysMap(uid, toPush)
+  return pulled
+}
+
+// Listener en tiempo real del documento grande: baja a localStorage las claves
+// que cambien en la nube (gana la nube) y llama onRemoteChange() si algo cambió.
+export function watchPlanner(uid, onRemoteChange) {
+  return onSnapshot(userDoc(uid), (snap) => {
+    const data = snap.data()
+    const planner = (data && data.planner) || null
+    if (!planner) return
+    const local = getAllPlannerData()
+    let changed = false
+    Object.entries(planner).forEach(([k, v]) => {
+      if (typeof v === 'string' && local[k] !== v) {
+        applyRemote(k, v)
+        changed = true
+      }
+    })
+    if (changed) onRemoteChange()
+  })
 }
 
 // ---------------------------------------------------------------------------
@@ -228,6 +263,20 @@ export async function migrateRecipesToSubcollection(uid) {
   return true
 }
 
+// Listener en tiempo real de la subcolección de recetas: baja a localStorage
+// los cambios hechos en otro dispositivo (sin volver a subirlos) y llama
+// onRemoteChange() si la lista local cambió.
+export function watchRecipes(uid, onRemoteChange) {
+  return onSnapshot(recipesCol(uid), (snap) => {
+    const recipes = snap.docs.map((d) => d.data())
+    if (stableRecipes(load(recipesKey(), [])) !== stableRecipes(recipes)) {
+      // applyRemote = escribe sin notificar (evita el bucle push/pull).
+      applyRemote(recipesKey(), JSON.stringify(recipes))
+      onRemoteChange()
+    }
+  })
+}
+
 // Auto-backup: push to the cloud (debounced) whenever planner data changes.
 //
 // CRÍTICO (iOS PWA): el debounce con setTimeout NO se dispara si el sistema
@@ -238,7 +287,7 @@ export async function migrateRecipesToSubcollection(uid) {
 // en pagehide, y al desmontar (cierre de sesión / expulsión de sesión).
 export function startAutoBackup(uid, { delay = 1500 } = {}) {
   let timer = null
-  let pendingBig = false
+  const pendingKeys = new Set() // claves del doc grande pendientes de subir
   let pendingRecipes = false
   let inFlight = null
 
@@ -247,19 +296,21 @@ export function startAutoBackup(uid, { delay = 1500 } = {}) {
       clearTimeout(timer)
       timer = null
     }
-    if (!pendingBig && !pendingRecipes) return inFlight || Promise.resolve()
-    const doBig = pendingBig
+    if (pendingKeys.size === 0 && !pendingRecipes) {
+      return inFlight || Promise.resolve()
+    }
+    const keys = [...pendingKeys]
     const doRecipes = pendingRecipes
-    pendingBig = false
+    pendingKeys.clear()
     pendingRecipes = false
     const tasks = []
-    if (doBig) tasks.push(pushBackup(uid))
+    if (keys.length) tasks.push(pushKeys(uid, keys))
     if (doRecipes) tasks.push(pushRecipes(uid))
     inFlight = Promise.all(tasks)
       .catch(() => {
         // Falló (red/permiso): marca de nuevo como pendiente para reintentar
         // en el próximo cambio o flush.
-        if (doBig) pendingBig = true
+        keys.forEach((k) => pendingKeys.add(k))
         if (doRecipes) pendingRecipes = true
       })
       .finally(() => {
@@ -269,9 +320,10 @@ export function startAutoBackup(uid, { delay = 1500 } = {}) {
   }
 
   const schedule = (key) => {
-    // Las recetas se sincronizan en su subcolección; el resto en el doc grande.
+    // Las recetas se sincronizan en su subcolección; el resto va al doc grande
+    // clave por clave (field-level) para no pisar ediciones de otro dispositivo.
     if (key === recipesKey()) pendingRecipes = true
-    else pendingBig = true
+    else pendingKeys.add(key)
     if (timer) clearTimeout(timer)
     timer = setTimeout(flush, delay)
   }
@@ -292,6 +344,6 @@ export function startAutoBackup(uid, { delay = 1500 } = {}) {
   }
   // Exponemos flush para poder forzar la subida antes de un pull.
   stop.flush = flush
-  stop.hasPending = () => pendingBig || pendingRecipes
+  stop.hasPending = () => pendingKeys.size > 0 || pendingRecipes
   return stop
 }

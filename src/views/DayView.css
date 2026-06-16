@@ -66,7 +66,7 @@
 .day-view__title {
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
-  color: #3d3d4d;
+  color: 3D3D4D_1;
 }
 
 /* Two columns */
@@ -371,7 +371,7 @@
 .todo__text {
   flex: 1;
   font-size: var(--font-size-sm);
-  color: #3d3d4d;
+  color: 3D3D4D_1;
   cursor: text;
 }
 
@@ -383,7 +383,7 @@
 .todo__input {
   flex: 1;
   font-size: var(--font-size-sm);
-  color: #3d3d4d;
+  color: 3D3D4D_1;
   background: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -395,9 +395,7 @@
   line-height: 1;
   color: var(--color-text-muted);
   opacity: 0;
-  transition:
-    opacity 0.15s ease,
-    color 0.15s ease;
+  transition: opacity 0.15s ease, color 0.15s ease;
 }
 
 .todo__item:hover .todo__remove {
@@ -417,7 +415,7 @@
 
 /* Reminders */
 .reminders {
-  background: #f1f5fb;
+  background: F1F5FB_1;
   border-radius: var(--radius-md);
   padding: var(--space-md);
 }
@@ -432,21 +430,21 @@
 .reminders__title {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
-  color: #3a6ea5;
+  color: 3A6EA5_1;
 }
 
 .reminders__add-btn {
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
-  color: #3a6ea5;
-  background: #d3e2f2;
+  color: 3A6EA5_1;
+  background: D3E2F2_1;
   padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-sm);
   transition: background 0.2s ease;
 }
 
 .reminders__add-btn:hover {
-  background: #c0d5ec;
+  background: C0D5EC_1;
 }
 
 .reminders__list {
@@ -459,7 +457,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  background: #f2f6fb;
+  background: F2F6FB_1;
   border-radius: var(--radius-sm);
   padding: var(--space-xs) var(--space-sm);
 }
@@ -478,14 +476,14 @@ img.reminder-card__emoji {
 .reminder-card__text {
   flex: 1;
   font-size: var(--font-size-sm);
-  color: #3d3d4d;
+  color: 3D3D4D_1;
   cursor: text;
 }
 
 .reminders__input {
   flex: 1;
   font-size: var(--font-size-sm);
-  color: #3d3d4d;
+  color: 3D3D4D_1;
   background: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -508,9 +506,7 @@ img.reminder-card__emoji {
   line-height: 1;
   color: var(--color-text-muted);
   opacity: 0;
-  transition:
-    opacity 0.15s ease,
-    color 0.15s ease;
+  transition: opacity 0.15s ease, color 0.15s ease;
 }
 
 .reminder-card:hover .reminder-card__remove {
@@ -576,7 +572,8 @@ img.reminder-card__emoji {
 
 .meal-mini {
   position: relative;
-  width: 70px;
+  flex: 1 1 0;
+  min-width: 0;
   border-radius: var(--radius-sm);
   overflow: hidden;
   display: flex;
@@ -609,7 +606,7 @@ img.reminder-card__emoji {
 .meal-mini__title {
   font-size: 0.6rem;
   font-weight: var(--font-weight-medium);
-  color: #3d3d4d;
+  color: 3D3D4D_1;
   padding: 3px var(--space-xs);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -638,8 +635,8 @@ img.reminder-card__emoji {
 }
 
 .meal-add {
-  width: 70px;
-  flex-shrink: 0;
+  flex: 1 1 0;
+  min-width: 0;
   align-self: stretch;
   min-height: 48px;
   display: flex;
@@ -761,16 +758,11 @@ img.reminder-card__emoji {
     width: 64px;
   }
 
-  .meal-mini {
-    width: 92px;
-  }
-
   .meal-mini__title {
     font-size: 0.72rem;
   }
 
   .meal-add {
-    width: 92px;
     min-height: 60px;
     font-size: var(--font-size-xl);
   }

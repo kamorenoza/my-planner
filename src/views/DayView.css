@@ -851,6 +851,10 @@ img.reminder-card__emoji {
     gap: var(--space-sm);
   }
 
+  .day-view__mobile .meal-card__items {
+    width: 100%;
+  }
+
   .day-view__mobile .meal-card__label {
     width: auto;
     padding-top: 0;

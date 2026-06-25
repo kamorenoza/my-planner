@@ -507,7 +507,7 @@
   .week-view--mobile {
     --wk-row-h: 40px;
     --wk-head-h: 46px;
-    --wk-side-h: 92px;
+    --wk-side-h: 132px;
     --wk-col-w: 150px;
     --wk-gutter-w: 40px;
     height: auto;
@@ -706,7 +706,8 @@
   .week-mobile__dayside {
     height: var(--wk-side-h);
     flex-shrink: 0;
-    overflow: hidden;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
     display: flex;
     flex-direction: column;
     gap: 4px;

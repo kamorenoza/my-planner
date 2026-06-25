@@ -101,7 +101,7 @@ function EventBlock({ event, expanded, onToggle, onEdit }) {
           }}
           aria-label="Editar evento"
         >
-          â
+          {'\u270E'}
         </button>
       </div>
       {showTime && (
@@ -114,11 +114,11 @@ function EventBlock({ event, expanded, onToggle, onEdit }) {
           <span className="event-block__type">{type.label}</span>
           {event.seriesId && (
             <span className="event-block__repeat">
-              â³ {getRepeatLabel(event.repeat)}
+              {'\u27F3'} {getRepeatLabel(event.repeat)}
             </span>
           )}
           {event.place && (
-            <span className="event-block__place">ð {event.place}</span>
+            <span className="event-block__place">{'\uD83D\uDCCD'} {event.place}</span>
           )}
           {event.comments && (
             <span className="event-block__comments">{event.comments}</span>
@@ -234,7 +234,7 @@ function Schedule({ events, defaultDate, onAdd, onUpdate, onDelete }) {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3 className="modal__title">Evento que se repite</h3>
             <p className="modal__text">
-              Â¿Quieres aplicar los cambios solo a este evento o a todos los de
+              &iquest;Quieres aplicar los cambios solo a este evento o a todos los de
               la serie?
             </p>
             <div className="modal__actions modal__actions--stack">
@@ -277,8 +277,8 @@ function Schedule({ events, defaultDate, onAdd, onUpdate, onDelete }) {
             <h3 className="modal__title">Eliminar evento</h3>
             <p className="modal__text">
               {confirmDelete.seriesId
-                ? `â${confirmDelete.title}â se repite. Â¿QuÃ© quieres eliminar?`
-                : `Â¿Seguro que quieres eliminar â${confirmDelete.title}â?`}
+                ? `\u201C${confirmDelete.title}\u201D se repite. \u00BFQu\u00E9 quieres eliminar?`
+                : `\u00BFSeguro que quieres eliminar \u201C${confirmDelete.title}\u201D?`}
             </p>
             {confirmDelete.seriesId ? (
               <div className="modal__actions modal__actions--stack">
@@ -329,8 +329,6 @@ function Schedule({ events, defaultDate, onAdd, onUpdate, onDelete }) {
     </div>
   )
 }
-
-
 function Todo({ storageKey, date, year, week, weekdayIndex }) {
   const [items, setItems] = usePersistedState(storageKey, [])
   const [habits] = usePersistedState(habitsKey(), INITIAL_HABITS)
@@ -399,14 +397,14 @@ function Todo({ storageKey, date, year, week, weekdayIndex }) {
                 onClick={() => toggleHabit(habit.id)}
                 aria-label={`Marcar ${habit.name}`}
               >
-                {checked ? 'â' : ''}
+                {checked ? '\u2713' : ''}
               </button>
               <span
                 className={`todo__text${checked ? ' todo__text--done' : ''}`}
               >
                 {habit.name}
               </span>
-              <span className="todo__habit-tag">HÃ¡bito</span>
+              <span className="todo__habit-tag">H&aacute;bito</span>
             </div>
           )
         })}
@@ -417,7 +415,7 @@ function Todo({ storageKey, date, year, week, weekdayIndex }) {
               onClick={() => toggle(item.id)}
               aria-label="Marcar"
             >
-              {item.done ? 'â' : ''}
+              {item.done ? '\u2713' : ''}
             </button>
             {editingId === item.id ? (
               <input
@@ -448,7 +446,7 @@ function Todo({ storageKey, date, year, week, weekdayIndex }) {
               onClick={() => setConfirmItem(item)}
               aria-label="Eliminar"
             >
-              Ã
+              {'\u00D7'}
             </button>
           </div>
         ))}
@@ -473,14 +471,14 @@ function Todo({ storageKey, date, year, week, weekdayIndex }) {
           </div>
         )}
         {items.length === 0 && habits.length === 0 && !adding && (
-          <p className="todo__empty">Sin tareas todavÃ­a</p>
+          <p className="todo__empty">Sin tareas todav&iacute;a</p>
         )}
       </div>
 
       {confirmItem && (
         <ConfirmDialog
           title="Eliminar tarea"
-          message={`Â¿Seguro que deseas eliminar "${confirmItem.text}"?`}
+          message={`\u00BFSeguro que deseas eliminar "${confirmItem.text}"?`}
           onConfirm={() => {
             remove(confirmItem.id)
             setConfirmItem(null)
@@ -536,7 +534,7 @@ function Reminders({ items, setItems, date }) {
       </div>
       <div className="reminders__list">
         {items.length === 0 ? (
-          <p className="reminders__empty">Sin recordatorios todavÃ­a</p>
+          <p className="reminders__empty">Sin recordatorios todav&iacute;a</p>
         ) : (
           sortedItems.map((item) => {
             const holiday = isHolidayReminder(item)
@@ -562,7 +560,7 @@ function Reminders({ items, setItems, date }) {
                   onClick={() => setConfirmItem(item)}
                   aria-label="Eliminar"
                 >
-                  Ã
+                  {'\u00D7'}
                 </button>
               </div>
             )
@@ -591,8 +589,8 @@ function Reminders({ items, setItems, date }) {
           }
           message={
             isHolidayReminder(confirmItem)
-              ? `Â¿Quieres eliminar el festivo "${confirmItem.text}"?`
-              : `Â¿Seguro que deseas eliminar "${confirmItem.text}"?`
+              ? `\u00BFQuieres eliminar el festivo "${confirmItem.text}"?`
+              : `\u00BFSeguro que deseas eliminar "${confirmItem.text}"?`
           }
           onConfirm={() => {
             remove(confirmItem.id)
@@ -628,7 +626,6 @@ function MealPicker({ tag, recipes, onPick, onAddOther, onClose }) {
     if (!title) return
     onAddOther({ title, photo: otherPhoto })
   }
-
   return (
     <div className="modal-overlay">
       <div className="modal modal--form" onClick={(e) => e.stopPropagation()}>
@@ -638,7 +635,7 @@ function MealPicker({ tag, recipes, onPick, onAddOther, onClose }) {
           className="field__input meal-picker__search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscarâ¦"
+          placeholder={'Buscar\u2026'}
           autoFocus
         />
 
@@ -699,8 +696,8 @@ function MealPicker({ tag, recipes, onPick, onAddOther, onClose }) {
         {filtered.length === 0 ? (
           <p className="modal__text">
             {recipes.length === 0
-              ? 'No hay recetas con este tag todavÃ­a. AgrÃ©galas en la secciÃ³n Comidas o usa âOtroâ.'
-              : 'Sin resultados para la bÃºsqueda.'}
+              ? 'No hay recetas con este tag todav\u00EDa. Agr\u00E9galas en la secci\u00F3n Comidas o usa \u201COtro\u201D.'
+              : 'Sin resultados para la b\u00FAsqueda.'}
           </p>
         ) : (
           <div className="meal-picker__list">
@@ -753,7 +750,7 @@ function Meals({ storageKey }) {
   const recipesById = Object.fromEntries(allRecipes.map((r) => [r.id, r]))
 
   // Cada item guardado puede ser el id (string) de una receta existente, o un
-  // objeto ad-hoc { adhoc:true, id, title, photo } que solo vive en este dÃ­a.
+  // objeto ad-hoc { adhoc:true, id, title, photo } que solo vive en este día.
   const resolveItem = (item) => {
     if (typeof item === 'string') {
       const recipe = recipesById[item]
@@ -792,9 +789,9 @@ function Meals({ storageKey }) {
     }))
   }
 
-  // Quitar pidiendo confirmaciÃ³n SOLO si es un item ad-hoc ("Otro"), porque al
-  // borrarlo se pierde (no existe en ningÃºn otro lado). Las recetas reales se
-  // quitan directo: siguen guardadas en la secciÃ³n Comidas.
+  // Quitar pidiendo confirmación SOLO si es un item ad-hoc ("Otro"), porque al
+  // borrarlo se pierde (no existe en ningún otro lado). Las recetas reales se
+  // quitan directo: siguen guardadas en la sección Comidas.
   const requestRemove = (mealId, resolved) => {
     if (resolved.adhoc) {
       setConfirmRemove({ mealId, id: resolved.id, title: resolved.adhoc.title })
@@ -805,7 +802,7 @@ function Meals({ storageKey }) {
 
   return (
     <div className="meals">
-      <h3 className="meals__title">Comidas del dÃ­a</h3>
+      <h3 className="meals__title">Comidas del d&iacute;a</h3>
       <div className="meals__list">
         {MEALS.map((meal) => {
           const accent = TAG_COLORS[meal.id]
@@ -846,7 +843,7 @@ function Meals({ storageKey }) {
                         }}
                         aria-label="Quitar"
                       >
-                        Ã
+                        {'\u00D7'}
                       </button>
                     </div>
                   )
@@ -887,7 +884,7 @@ function Meals({ storageKey }) {
       {confirmRemove && (
         <ConfirmDialog
           title="Quitar comida"
-          message={`Â¿Seguro que va a eliminar "${confirmRemove.title}"?`}
+          message={`\u00BFSeguro que va a eliminar "${confirmRemove.title}"?`}
           onConfirm={() => {
             removeRecipe(confirmRemove.mealId, confirmRemove.id)
             setConfirmRemove(null)
@@ -936,7 +933,6 @@ function DayView() {
     if (original) removeEvent(original, scope)
     refreshEvents()
   }
-
   const isMobile = useIsMobile()
 
   const goDay = (delta) => {
@@ -958,16 +954,16 @@ function DayView() {
           onClick={() => navigate(`/year/${yearNumber}/week/${weekNumber}`)}
           aria-label="Volver"
         >
-          â¹
+          {'\u2039'}
         </button>
         <div className="day-view__heading">
           <h1 className="day-view__title">
-            {WEEKDAYS_FULL[weekdayIndex]} Â· {dayNumber} de {MONTHS[monthNumber]} {yearNumber}
+            {WEEKDAYS_FULL[weekdayIndex]} {'\u00B7'} {dayNumber} de {MONTHS[monthNumber]} {yearNumber}
           </h1>
           {holidayReminder && (
             <span className="day-view__holiday-badge">
               <EmojiImg
-                emoji={holidayReminder.emoji || 'ð'}
+                emoji={holidayReminder.emoji || '\uD83C\uDF89'}
                 code={holidayReminder.emojiCode || '1f389'}
                 className="day-view__holiday-emoji"
               />
@@ -993,16 +989,16 @@ function DayView() {
             <button
               className="day-view__nav-btn"
               onClick={() => goDay(-1)}
-              aria-label="DÃ­a anterior"
+              aria-label={'D\u00EDa anterior'}
             >
-              â¹
+              {'\u2039'}
             </button>
             <button
               className="day-view__nav-btn"
               onClick={() => goDay(1)}
-              aria-label="DÃ­a siguiente"
+              aria-label={'D\u00EDa siguiente'}
             >
-              âº
+              {'\u203A'}
             </button>
           </div>
         ) : (

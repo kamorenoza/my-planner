@@ -1,29 +1,25 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import {
-  MONTHS,
-  WEEKDAYS_FULL,
-  getISOWeek,
-  getMonthDays,
-} from "../utils/calendar";
+import { useState, useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { MONTHS, WEEKDAYS_FULL, getISOWeek, getMonthDays } from '../utils/calendar'
 import {
   DAY_START_MIN,
   DAY_END_MIN,
   getEventType,
   getRepeatLabel,
   formatTime,
-} from "../utils/events";
+} from '../utils/events'
 import {
   isHolidayReminder,
   sortRemindersHolidayFirst,
-} from "../utils/holidaysCO";
-import EventModal from "../components/EventModal";
-import EmojiImg from "../components/EmojiImg";
-import PlateIcon from "../components/PlateIcon";
-import ReminderModal from "../components/ReminderModal";
-import Breadcrumbs from "../components/Breadcrumbs";
-import ConfirmDialog from "../components/ConfirmDialog";
-import { TAG_COLORS, RecipeDetailModal } from "../components/RecipeModal";
+} from '../utils/holidaysCO'
+import EventModal from '../components/EventModal'
+import EmojiImg from '../components/EmojiImg'
+import PlateIcon from '../components/PlateIcon'
+import ReminderModal from '../components/ReminderModal'
+import Breadcrumbs from '../components/Breadcrumbs'
+import ConfirmDialog from '../components/ConfirmDialog'
+import { TAG_COLORS, RecipeDetailModal } from '../components/RecipeModal'
+import { compressImageToDataURL } from '../utils/image'
 import {
   usePersistedState,
   eventsKey,
@@ -34,55 +30,59 @@ import {
   habitsKey,
   checksKey,
   load,
-} from "../utils/storage";
-import { saveNewEvent, editEvent, removeEvent } from "../utils/recurrence";
-import { useIsMobile } from "../utils/useIsMobile";
-import "./DayView.css";
+} from '../utils/storage'
+import {
+  saveNewEvent,
+  editEvent,
+  removeEvent,
+} from '../utils/recurrence'
+import { useIsMobile } from '../utils/useIsMobile'
+import './DayView.css'
 
-const HOURS = Array.from({ length: 16 }, (_, i) => i + 6); // 6 -> 21 (blocks), 22 label added separately
+const HOURS = Array.from({ length: 16 }, (_, i) => i + 6) // 6 -> 21 (blocks), 22 label added separately
 
 const MEALS = [
-  { id: "desayuno", label: "Desayuno" },
-  { id: "almuerzo", label: "Almuerzo" },
-  { id: "cena", label: "Cena" },
-];
+  { id: 'desayuno', label: 'Desayuno' },
+  { id: 'almuerzo', label: 'Almuerzo' },
+  { id: 'cena', label: 'Cena' },
+]
 
 // Must match the default habits seeded by WeekView so both views share the
 // same global 'habits' store.
-const INITIAL_HABITS = [{ id: "h1", name: "Ejercicio" }];
+const INITIAL_HABITS = [{ id: 'h1', name: 'Ejercicio' }]
 
 function formatHour(hour) {
-  const period = hour < 12 ? "am" : "pm";
-  const h = hour % 12 === 0 ? 12 : hour % 12;
-  return `${h}:00 ${period}`;
+  const period = hour < 12 ? 'am' : 'pm'
+  const h = hour % 12 === 0 ? 12 : hour % 12
+  return `${h}:00 ${period}`
 }
 
 function EventBlock({ event, expanded, onToggle, onEdit }) {
-  const type = getEventType(event.type);
-  const total = DAY_END_MIN - DAY_START_MIN;
-  const duration = event.end - event.start;
-  const top = ((event.start - DAY_START_MIN) / total) * 100;
-  const height = (duration / total) * 100;
+  const type = getEventType(event.type)
+  const total = DAY_END_MIN - DAY_START_MIN
+  const duration = event.end - event.start
+  const top = ((event.start - DAY_START_MIN) / total) * 100
+  const height = (duration / total) * 100
 
   // Compact: short events (<= 30 min) shown on a single centered line
-  const compact = !expanded && duration <= 30;
+  const compact = !expanded && duration <= 30
   // Info detail shown automatically based on duration
-  const showTime = !compact && (duration > 30 || expanded);
-  const showDetails = duration >= 90 || expanded;
+  const showTime = !compact && (duration > 30 || expanded)
+  const showDetails = duration >= 90 || expanded
 
   return (
     <div
-      className={`event-block${expanded ? " event-block--expanded" : ""}${compact ? " event-block--compact" : ""}`}
+      className={`event-block${expanded ? ' event-block--expanded' : ''}${compact ? ' event-block--compact' : ''}`}
       style={{
         top: `${top}%`,
-        height: expanded ? "auto" : `${height}%`,
+        height: expanded ? 'auto' : `${height}%`,
         minHeight: expanded ? `${height}%` : undefined,
         background: type.color,
         color: type.text,
       }}
       onClick={(e) => {
-        e.stopPropagation();
-        onToggle(event.id);
+        e.stopPropagation()
+        onToggle(event.id)
       }}
     >
       <div className="event-block__head">
@@ -96,12 +96,12 @@ function EventBlock({ event, expanded, onToggle, onEdit }) {
           className="event-block__edit"
           style={{ color: type.text }}
           onClick={(e) => {
-            e.stopPropagation();
-            onEdit(event);
+            e.stopPropagation()
+            onEdit(event)
           }}
           aria-label="Editar evento"
         >
-          ✎
+          â
         </button>
       </div>
       {showTime && (
@@ -114,13 +114,11 @@ function EventBlock({ event, expanded, onToggle, onEdit }) {
           <span className="event-block__type">{type.label}</span>
           {event.seriesId && (
             <span className="event-block__repeat">
-              ⟳ {getRepeatLabel(event.repeat)}
+              â³ {getRepeatLabel(event.repeat)}
             </span>
           )}
           {event.place && (
-            <span className="event-block__place">
-              :round_pushpin: {event.place}
-            </span>
+            <span className="event-block__place">ð {event.place}</span>
           )}
           {event.comments && (
             <span className="event-block__comments">{event.comments}</span>
@@ -128,61 +126,61 @@ function EventBlock({ event, expanded, onToggle, onEdit }) {
         </>
       )}
     </div>
-  );
+  )
 }
 
 function Schedule({ events, defaultDate, onAdd, onUpdate, onDelete }) {
-  const [showModal, setShowModal] = useState(false);
-  const [editingEvent, setEditingEvent] = useState(null);
-  const [expandedId, setExpandedId] = useState(null);
-  const [confirmDelete, setConfirmDelete] = useState(null);
-  const [scopePrompt, setScopePrompt] = useState(null);
+  const [showModal, setShowModal] = useState(false)
+  const [editingEvent, setEditingEvent] = useState(null)
+  const [expandedId, setExpandedId] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState(null)
+  const [scopePrompt, setScopePrompt] = useState(null)
 
   const toggleExpand = (id) =>
-    setExpandedId((prev) => (prev === id ? null : id));
+    setExpandedId((prev) => (prev === id ? null : id))
 
   useEffect(() => {
-    if (!expandedId) return;
-    const close = () => setExpandedId(null);
-    document.addEventListener("click", close);
-    return () => document.removeEventListener("click", close);
-  }, [expandedId]);
+    if (!expandedId) return
+    const close = () => setExpandedId(null)
+    document.addEventListener('click', close)
+    return () => document.removeEventListener('click', close)
+  }, [expandedId])
 
   const openNew = () => {
-    setEditingEvent(null);
-    setShowModal(true);
-  };
+    setEditingEvent(null)
+    setShowModal(true)
+  }
 
   const openEdit = (event) => {
-    setEditingEvent(event);
-    setShowModal(true);
-  };
+    setEditingEvent(event)
+    setShowModal(true)
+  }
 
   const handleSave = (event) => {
     if (editingEvent) {
       if (editingEvent.seriesId) {
         // Recurring event: ask whether to apply to one or all occurrences.
-        setScopePrompt({ mode: "edit", event });
-        return;
+        setScopePrompt({ mode: 'edit', event })
+        return
       }
-      onUpdate(event);
+      onUpdate(event)
     } else {
-      onAdd(event);
+      onAdd(event)
     }
-    setShowModal(false);
-    setEditingEvent(null);
-  };
+    setShowModal(false)
+    setEditingEvent(null)
+  }
 
   const requestDelete = () => {
-    setConfirmDelete(editingEvent);
-  };
+    setConfirmDelete(editingEvent)
+  }
 
   const confirmRemove = (scope) => {
-    onDelete(confirmDelete.id, scope);
-    setConfirmDelete(null);
-    setShowModal(false);
-    setEditingEvent(null);
-  };
+    onDelete(confirmDelete.id, scope)
+    setConfirmDelete(null)
+    setShowModal(false)
+    setEditingEvent(null)
+  }
 
   return (
     <div className="schedule">
@@ -224,8 +222,8 @@ function Schedule({ events, defaultDate, onAdd, onUpdate, onDelete }) {
           event={editingEvent}
           onSave={handleSave}
           onClose={() => {
-            setShowModal(false);
-            setEditingEvent(null);
+            setShowModal(false)
+            setEditingEvent(null)
           }}
           onDelete={requestDelete}
         />
@@ -236,17 +234,17 @@ function Schedule({ events, defaultDate, onAdd, onUpdate, onDelete }) {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3 className="modal__title">Evento que se repite</h3>
             <p className="modal__text">
-              ¿Quieres aplicar los cambios solo a este evento o a todos los de
+              Â¿Quieres aplicar los cambios solo a este evento o a todos los de
               la serie?
             </p>
             <div className="modal__actions modal__actions--stack">
               <button
                 className="modal__btn modal__btn--primary"
                 onClick={() => {
-                  onUpdate(scopePrompt.event, "one");
-                  setScopePrompt(null);
-                  setShowModal(false);
-                  setEditingEvent(null);
+                  onUpdate(scopePrompt.event, 'one')
+                  setScopePrompt(null)
+                  setShowModal(false)
+                  setEditingEvent(null)
                 }}
               >
                 Solo este evento
@@ -254,10 +252,10 @@ function Schedule({ events, defaultDate, onAdd, onUpdate, onDelete }) {
               <button
                 className="modal__btn modal__btn--primary"
                 onClick={() => {
-                  onUpdate(scopePrompt.event, "all");
-                  setScopePrompt(null);
-                  setShowModal(false);
-                  setEditingEvent(null);
+                  onUpdate(scopePrompt.event, 'all')
+                  setScopePrompt(null)
+                  setShowModal(false)
+                  setEditingEvent(null)
                 }}
               >
                 Todos los eventos
@@ -279,26 +277,26 @@ function Schedule({ events, defaultDate, onAdd, onUpdate, onDelete }) {
             <h3 className="modal__title">Eliminar evento</h3>
             <p className="modal__text">
               {confirmDelete.seriesId
-                ? `“${confirmDelete.title}” se repite. ¿Qué quieres eliminar?`
-                : `¿Seguro que quieres eliminar “${confirmDelete.title}”?`}
+                ? `â${confirmDelete.title}â se repite. Â¿QuÃ© quieres eliminar?`
+                : `Â¿Seguro que quieres eliminar â${confirmDelete.title}â?`}
             </p>
             {confirmDelete.seriesId ? (
               <div className="modal__actions modal__actions--stack">
                 <button
                   className="modal__btn modal__btn--danger"
-                  onClick={() => confirmRemove("one")}
+                  onClick={() => confirmRemove('one')}
                 >
                   Eliminar este evento
                 </button>
                 <button
                   className="modal__btn modal__btn--danger"
-                  onClick={() => confirmRemove("future")}
+                  onClick={() => confirmRemove('future')}
                 >
                   Eliminar de este en adelante
                 </button>
                 <button
                   className="modal__btn modal__btn--danger"
-                  onClick={() => confirmRemove("all")}
+                  onClick={() => confirmRemove('all')}
                 >
                   Eliminar todos
                 </button>
@@ -329,61 +327,59 @@ function Schedule({ events, defaultDate, onAdd, onUpdate, onDelete }) {
         </div>
       )}
     </div>
-  );
+  )
 }
 
+
 function Todo({ storageKey, date, year, week, weekdayIndex }) {
-  const [items, setItems] = usePersistedState(storageKey, []);
-  const [habits] = usePersistedState(habitsKey(), INITIAL_HABITS);
-  const [checks, setChecks] = usePersistedState(checksKey(year, week), {});
-  const [adding, setAdding] = useState(false);
-  const [newText, setNewText] = useState("");
-  const [editingId, setEditingId] = useState(null);
-  const [draft, setDraft] = useState("");
-  const [confirmItem, setConfirmItem] = useState(null);
+  const [items, setItems] = usePersistedState(storageKey, [])
+  const [habits] = usePersistedState(habitsKey(), INITIAL_HABITS)
+  const [checks, setChecks] = usePersistedState(checksKey(year, week), {})
+  const [adding, setAdding] = useState(false)
+  const [newText, setNewText] = useState('')
+  const [editingId, setEditingId] = useState(null)
+  const [draft, setDraft] = useState('')
+  const [confirmItem, setConfirmItem] = useState(null)
 
   const toggleHabit = (habitId) => {
-    const key = `${habitId}-${weekdayIndex}`;
-    setChecks((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
+    const key = `${habitId}-${weekdayIndex}`
+    setChecks((prev) => ({ ...prev, [key]: !prev[key] }))
+  }
 
   const commitAdd = () => {
-    const text = newText.trim();
+    const text = newText.trim()
     if (text) {
-      setItems((prev) => [
-        ...prev,
-        { id: `t-${Date.now()}`, text, done: false, date },
-      ]);
+      setItems((prev) => [...prev, { id: `t-${Date.now()}`, text, done: false, date }])
     }
-    setNewText("");
-    setAdding(false);
-  };
+    setNewText('')
+    setAdding(false)
+  }
 
   const toggle = (id) => {
     setItems((prev) =>
       prev.map((it) => (it.id === id ? { ...it, done: !it.done } : it)),
-    );
-  };
+    )
+  }
 
   const remove = (id) => {
-    setItems((prev) => prev.filter((it) => it.id !== id));
-  };
+    setItems((prev) => prev.filter((it) => it.id !== id))
+  }
 
   const startEdit = (item) => {
-    setEditingId(item.id);
-    setDraft(item.text);
-  };
+    setEditingId(item.id)
+    setDraft(item.text)
+  }
 
   const commitEdit = (id) => {
-    const text = draft.trim();
+    const text = draft.trim()
     if (text) {
       setItems((prev) =>
         prev.map((it) => (it.id === id ? { ...it, text } : it)),
-      );
+      )
     }
-    setEditingId(null);
-    setDraft("");
-  };
+    setEditingId(null)
+    setDraft('')
+  }
 
   return (
     <div className="todo">
@@ -395,33 +391,33 @@ function Todo({ storageKey, date, year, week, weekdayIndex }) {
       </div>
       <div className="todo__list">
         {habits.map((habit) => {
-          const checked = !!checks[`${habit.id}-${weekdayIndex}`];
+          const checked = !!checks[`${habit.id}-${weekdayIndex}`]
           return (
             <div key={habit.id} className="todo__item todo__item--habit">
               <button
-                className={`todo__check${checked ? " todo__check--on" : ""}`}
+                className={`todo__check${checked ? ' todo__check--on' : ''}`}
                 onClick={() => toggleHabit(habit.id)}
                 aria-label={`Marcar ${habit.name}`}
               >
-                {checked ? "✓" : ""}
+                {checked ? 'â' : ''}
               </button>
               <span
-                className={`todo__text${checked ? " todo__text--done" : ""}`}
+                className={`todo__text${checked ? ' todo__text--done' : ''}`}
               >
                 {habit.name}
               </span>
-              <span className="todo__habit-tag">Hábito</span>
+              <span className="todo__habit-tag">HÃ¡bito</span>
             </div>
-          );
+          )
         })}
         {items.map((item) => (
           <div key={item.id} className="todo__item">
             <button
-              className={`todo__check${item.done ? " todo__check--on" : ""}`}
+              className={`todo__check${item.done ? ' todo__check--on' : ''}`}
               onClick={() => toggle(item.id)}
               aria-label="Marcar"
             >
-              {item.done ? "✓" : ""}
+              {item.done ? 'â' : ''}
             </button>
             {editingId === item.id ? (
               <input
@@ -431,16 +427,16 @@ function Todo({ storageKey, date, year, week, weekdayIndex }) {
                 onChange={(e) => setDraft(e.target.value)}
                 onBlur={() => commitEdit(item.id)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") commitEdit(item.id);
-                  if (e.key === "Escape") {
-                    setEditingId(null);
-                    setDraft("");
+                  if (e.key === 'Enter') commitEdit(item.id)
+                  if (e.key === 'Escape') {
+                    setEditingId(null)
+                    setDraft('')
                   }
                 }}
               />
             ) : (
               <span
-                className={`todo__text${item.done ? " todo__text--done" : ""}`}
+                className={`todo__text${item.done ? ' todo__text--done' : ''}`}
                 onClick={() => startEdit(item)}
                 title="Editar"
               >
@@ -452,7 +448,7 @@ function Todo({ storageKey, date, year, week, weekdayIndex }) {
               onClick={() => setConfirmItem(item)}
               aria-label="Eliminar"
             >
-              ×
+              Ã
             </button>
           </div>
         ))}
@@ -467,68 +463,68 @@ function Todo({ storageKey, date, year, week, weekdayIndex }) {
               onChange={(e) => setNewText(e.target.value)}
               onBlur={commitAdd}
               onKeyDown={(e) => {
-                if (e.key === "Enter") commitAdd();
-                if (e.key === "Escape") {
-                  setNewText("");
-                  setAdding(false);
+                if (e.key === 'Enter') commitAdd()
+                if (e.key === 'Escape') {
+                  setNewText('')
+                  setAdding(false)
                 }
               }}
             />
           </div>
         )}
         {items.length === 0 && habits.length === 0 && !adding && (
-          <p className="todo__empty">Sin tareas todavía</p>
+          <p className="todo__empty">Sin tareas todavÃ­a</p>
         )}
       </div>
 
       {confirmItem && (
         <ConfirmDialog
           title="Eliminar tarea"
-          message={`¿Seguro que deseas eliminar "${confirmItem.text}"?`}
+          message={`Â¿Seguro que deseas eliminar "${confirmItem.text}"?`}
           onConfirm={() => {
-            remove(confirmItem.id);
-            setConfirmItem(null);
+            remove(confirmItem.id)
+            setConfirmItem(null)
           }}
           onCancel={() => setConfirmItem(null)}
         />
       )}
     </div>
-  );
+  )
 }
 
 function Reminders({ items, setItems, date }) {
-  const [showModal, setShowModal] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [confirmItem, setConfirmItem] = useState(null);
+  const [showModal, setShowModal] = useState(false)
+  const [editing, setEditing] = useState(null)
+  const [confirmItem, setConfirmItem] = useState(null)
 
   const openNew = () => {
-    setEditing(null);
-    setShowModal(true);
-  };
+    setEditing(null)
+    setShowModal(true)
+  }
 
   const openEdit = (item) => {
-    setEditing(item);
-    setShowModal(true);
-  };
+    setEditing(item)
+    setShowModal(true)
+  }
 
   const saveReminder = (reminder) => {
-    const stamped = { ...reminder, date };
+    const stamped = { ...reminder, date }
     setItems((prev) => {
-      const exists = prev.some((it) => it.id === stamped.id);
+      const exists = prev.some((it) => it.id === stamped.id)
       return exists
         ? prev.map((it) => (it.id === stamped.id ? stamped : it))
-        : [...prev, stamped];
-    });
-    setShowModal(false);
-    setEditing(null);
-  };
+        : [...prev, stamped]
+    })
+    setShowModal(false)
+    setEditing(null)
+  }
 
   const remove = (id) => {
-    setItems((prev) => prev.filter((it) => it.id !== id));
-  };
+    setItems((prev) => prev.filter((it) => it.id !== id))
+  }
 
-  const dayHasHolidayHere = items.some(isHolidayReminder);
-  const sortedItems = sortRemindersHolidayFirst(items);
+  const dayHasHolidayHere = items.some(isHolidayReminder)
+  const sortedItems = sortRemindersHolidayFirst(items)
 
   return (
     <div className="reminders">
@@ -540,14 +536,14 @@ function Reminders({ items, setItems, date }) {
       </div>
       <div className="reminders__list">
         {items.length === 0 ? (
-          <p className="reminders__empty">Sin recordatorios todavía</p>
+          <p className="reminders__empty">Sin recordatorios todavÃ­a</p>
         ) : (
           sortedItems.map((item) => {
-            const holiday = isHolidayReminder(item);
+            const holiday = isHolidayReminder(item)
             return (
               <div
                 key={item.id}
-                className={`reminder-card${holiday ? " reminder-card--holiday" : ""}`}
+                className={`reminder-card${holiday ? ' reminder-card--holiday' : ''}`}
               >
                 <EmojiImg
                   emoji={item.emoji}
@@ -556,10 +552,8 @@ function Reminders({ items, setItems, date }) {
                 />
                 <span
                   className="reminder-card__text"
-                  onClick={() =>
-                    holiday ? setConfirmItem(item) : openEdit(item)
-                  }
-                  title={holiday ? "Festivo" : "Editar"}
+                  onClick={() => (holiday ? setConfirmItem(item) : openEdit(item))}
+                  title={holiday ? 'Festivo' : 'Editar'}
                 >
                   {holiday ? `Festivo: ${item.text}` : item.text}
                 </span>
@@ -568,10 +562,10 @@ function Reminders({ items, setItems, date }) {
                   onClick={() => setConfirmItem(item)}
                   aria-label="Eliminar"
                 >
-                  ×
+                  Ã
                 </button>
               </div>
-            );
+            )
           })
         )}
       </div>
@@ -582,8 +576,8 @@ function Reminders({ items, setItems, date }) {
           canMarkHoliday={!dayHasHolidayHere}
           onSave={saveReminder}
           onClose={() => {
-            setShowModal(false);
-            setEditing(null);
+            setShowModal(false)
+            setEditing(null)
           }}
         />
       )}
@@ -592,39 +586,125 @@ function Reminders({ items, setItems, date }) {
         <ConfirmDialog
           title={
             isHolidayReminder(confirmItem)
-              ? "Eliminar festivo"
-              : "Eliminar recordatorio"
+              ? 'Eliminar festivo'
+              : 'Eliminar recordatorio'
           }
           message={
             isHolidayReminder(confirmItem)
-              ? `¿Quieres eliminar el festivo "${confirmItem.text}"?`
-              : `¿Seguro que deseas eliminar "${confirmItem.text}"?`
+              ? `Â¿Quieres eliminar el festivo "${confirmItem.text}"?`
+              : `Â¿Seguro que deseas eliminar "${confirmItem.text}"?`
           }
           onConfirm={() => {
-            remove(confirmItem.id);
-            setConfirmItem(null);
+            remove(confirmItem.id)
+            setConfirmItem(null)
           }}
           onCancel={() => setConfirmItem(null)}
         />
       )}
     </div>
-  );
+  )
 }
 
-function MealPicker({ tag, recipes, onPick, onClose }) {
-  const accent = TAG_COLORS[tag];
+function MealPicker({ tag, recipes, onPick, onAddOther, onClose }) {
+  const accent = TAG_COLORS[tag]
+  const [query, setQuery] = useState('')
+  const [otherOpen, setOtherOpen] = useState(false)
+  const [otherName, setOtherName] = useState('')
+  const [otherPhoto, setOtherPhoto] = useState('')
+
+  const filtered = recipes.filter((r) =>
+    r.title.toLowerCase().includes(query.trim().toLowerCase()),
+  )
+
+  const handleOtherPhoto = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const dataUrl = await compressImageToDataURL(file)
+    setOtherPhoto(dataUrl)
+  }
+
+  const addOther = () => {
+    const title = otherName.trim()
+    if (!title) return
+    onAddOther({ title, photo: otherPhoto })
+  }
+
   return (
     <div className="modal-overlay">
       <div className="modal modal--form" onClick={(e) => e.stopPropagation()}>
         <h2 className="modal__title">Elegir receta</h2>
-        {recipes.length === 0 ? (
+
+        <input
+          className="field__input meal-picker__search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Buscarâ¦"
+          autoFocus
+        />
+
+        <div className="meal-picker__other">
+          {otherOpen ? (
+            <div className="meal-picker__other-form">
+              <span className="meal-picker__thumb" style={{ background: accent.bg }}>
+                {otherPhoto ? (
+                  <img src={otherPhoto} alt="" />
+                ) : (
+                  <label className="meal-picker__other-upload">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleOtherPhoto}
+                      hidden
+                    />
+                    <PlateIcon className="meal-picker__thumb-icon" />
+                  </label>
+                )}
+              </span>
+              <input
+                className="field__input"
+                value={otherName}
+                onChange={(e) => setOtherName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') addOther()
+                }}
+                placeholder="Nombre"
+                autoFocus
+              />
+              <button
+                type="button"
+                className="meal-picker__other-add"
+                onClick={addOther}
+                disabled={!otherName.trim()}
+              >
+                Agregar
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="meal-picker__item meal-picker__item--other"
+              onClick={() => setOtherOpen(true)}
+            >
+              <span className="meal-picker__thumb meal-picker__thumb--other">+</span>
+              <span className="meal-picker__info">
+                <span className="meal-picker__name">Otro</span>
+                <span className="meal-picker__count">
+                  Solo para hoy, sin guardar
+                </span>
+              </span>
+            </button>
+          )}
+        </div>
+
+        {filtered.length === 0 ? (
           <p className="modal__text">
-            No hay recetas con este tag todavía. Agrégalas en la sección
-            Comidas.
+            {recipes.length === 0
+              ? 'No hay recetas con este tag todavÃ­a. AgrÃ©galas en la secciÃ³n Comidas o usa âOtroâ.'
+              : 'Sin resultados para la bÃºsqueda.'}
           </p>
         ) : (
           <div className="meal-picker__list">
-            {recipes.map((recipe) => (
+            {filtered.map((recipe) => (
               <button
                 key={recipe.id}
                 className="meal-picker__item"
@@ -643,10 +723,10 @@ function MealPicker({ tag, recipes, onPick, onClose }) {
                 <span className="meal-picker__info">
                   <span className="meal-picker__name">{recipe.title}</span>
                   <span className="meal-picker__count">
-                    {recipe.ingredients.length}{" "}
+                    {recipe.ingredients.length}{' '}
                     {recipe.ingredients.length === 1
-                      ? "ingrediente"
-                      : "ingredientes"}
+                      ? 'ingrediente'
+                      : 'ingredientes'}
                   </span>
                 </span>
               </button>
@@ -660,77 +740,116 @@ function MealPicker({ tag, recipes, onPick, onClose }) {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 function Meals({ storageKey }) {
-  const [meals, setMeals] = usePersistedState(storageKey, {});
-  const [picking, setPicking] = useState(null);
-  const [viewing, setViewing] = useState(null);
-  const allRecipes = load(recipesKey(), []);
+  const [meals, setMeals] = usePersistedState(storageKey, {})
+  const [picking, setPicking] = useState(null)
+  const [viewing, setViewing] = useState(null)
+  const [confirmRemove, setConfirmRemove] = useState(null)
+  const allRecipes = load(recipesKey(), [])
 
-  const recipesById = Object.fromEntries(allRecipes.map((r) => [r.id, r]));
+  const recipesById = Object.fromEntries(allRecipes.map((r) => [r.id, r]))
+
+  // Cada item guardado puede ser el id (string) de una receta existente, o un
+  // objeto ad-hoc { adhoc:true, id, title, photo } que solo vive en este dÃ­a.
+  const resolveItem = (item) => {
+    if (typeof item === 'string') {
+      const recipe = recipesById[item]
+      return recipe ? { id: recipe.id, recipe } : null
+    }
+    if (item && item.adhoc) {
+      return { id: item.id, adhoc: item }
+    }
+    return null
+  }
+
+  const itemId = (item) => (typeof item === 'string' ? item : item && item.id)
 
   const addRecipe = (mealId, recipe) => {
     setMeals((prev) => {
-      const current = prev[mealId] || [];
-      if (current.includes(recipe.id)) return prev;
-      return { ...prev, [mealId]: [...current, recipe.id] };
-    });
-    setPicking(null);
-  };
+      const current = prev[mealId] || []
+      if (current.some((it) => itemId(it) === recipe.id)) return prev
+      return { ...prev, [mealId]: [...current, recipe.id] }
+    })
+    setPicking(null)
+  }
 
-  const removeRecipe = (mealId, recipeId) => {
+  const addOther = (mealId, { title, photo }) => {
+    const entry = { adhoc: true, id: `adhoc-${Date.now()}`, title, photo }
     setMeals((prev) => ({
       ...prev,
-      [mealId]: (prev[mealId] || []).filter((id) => id !== recipeId),
-    }));
-  };
+      [mealId]: [...(prev[mealId] || []), entry],
+    }))
+    setPicking(null)
+  }
+
+  const removeRecipe = (mealId, id) => {
+    setMeals((prev) => ({
+      ...prev,
+      [mealId]: (prev[mealId] || []).filter((it) => itemId(it) !== id),
+    }))
+  }
+
+  // Quitar pidiendo confirmaciÃ³n SOLO si es un item ad-hoc ("Otro"), porque al
+  // borrarlo se pierde (no existe en ningÃºn otro lado). Las recetas reales se
+  // quitan directo: siguen guardadas en la secciÃ³n Comidas.
+  const requestRemove = (mealId, resolved) => {
+    if (resolved.adhoc) {
+      setConfirmRemove({ mealId, id: resolved.id, title: resolved.adhoc.title })
+    } else {
+      removeRecipe(mealId, resolved.id)
+    }
+  }
 
   return (
     <div className="meals">
-      <h3 className="meals__title">Comidas del día</h3>
+      <h3 className="meals__title">Comidas del dÃ­a</h3>
       <div className="meals__list">
         {MEALS.map((meal) => {
-          const accent = TAG_COLORS[meal.id];
-          const selectedIds = meals[meal.id] || [];
-          const canAddMore = selectedIds.length < 4;
+          const accent = TAG_COLORS[meal.id]
+          const selected = meals[meal.id] || []
+          const canAddMore = selected.length < 4
           return (
             <div key={meal.id} className="meal-card">
               <span className="meal-card__label">{meal.label}</span>
               <div className="meal-card__items">
-                {selectedIds.map((id) => {
-                  const recipe = recipesById[id];
-                  if (!recipe) return null;
+                {selected.map((item) => {
+                  const resolved = resolveItem(item)
+                  if (!resolved) return null
+                  const data = resolved.recipe || resolved.adhoc
                   return (
                     <div
-                      key={id}
+                      key={resolved.id}
                       className="meal-mini"
                       style={{ background: accent.bg }}
-                      onClick={() => setViewing(recipe)}
+                      onClick={() =>
+                        resolved.recipe ? setViewing(resolved.recipe) : null
+                      }
                       role="button"
-                      title={recipe.title}
+                      title={data.title}
                     >
                       <span className="meal-mini__photo">
-                        {recipe.photo ? (
-                          <img src={recipe.photo} alt={recipe.title} />
+                        {data.photo ? (
+                          <img src={data.photo} alt={data.title} />
                         ) : (
                           <PlateIcon className="meal-mini__icon" />
                         )}
                       </span>
-                      <span className="meal-mini__title">{recipe.title}</span>
+                      <span className="meal-mini__title">{data.title}</span>
                       <button
                         className="meal-mini__remove"
                         onClick={(e) => {
-                          e.stopPropagation();
-                          removeRecipe(meal.id, id);
+                          e.stopPropagation()
+                          requestRemove(meal.id, resolved)
                         }}
                         aria-label="Quitar"
                       >
-                        ×
+                        Ã
                       </button>
                     </div>
-                  );
+                  )
                 })}
                 {canAddMore && (
                   <button
@@ -744,7 +863,7 @@ function Meals({ storageKey }) {
                 )}
               </div>
             </div>
-          );
+          )
         })}
       </div>
 
@@ -753,69 +872,85 @@ function Meals({ storageKey }) {
           tag={picking}
           recipes={allRecipes.filter((r) => r.tags.includes(picking))}
           onPick={(recipe) => addRecipe(picking, recipe)}
+          onAddOther={(data) => addOther(picking, data)}
           onClose={() => setPicking(null)}
         />
       )}
 
       {viewing && (
-        <RecipeDetailModal recipe={viewing} onClose={() => setViewing(null)} />
+        <RecipeDetailModal
+          recipe={viewing}
+          onClose={() => setViewing(null)}
+        />
+      )}
+
+      {confirmRemove && (
+        <ConfirmDialog
+          title="Quitar comida"
+          message={`Â¿Seguro que va a eliminar "${confirmRemove.title}"?`}
+          onConfirm={() => {
+            removeRecipe(confirmRemove.mealId, confirmRemove.id)
+            setConfirmRemove(null)
+          }}
+          onCancel={() => setConfirmRemove(null)}
+        />
       )}
     </div>
-  );
+  )
 }
 
 function DayView() {
-  const { year, month, day } = useParams();
-  const navigate = useNavigate();
-  const yearNumber = Number(year);
-  const monthNumber = Number(month);
-  const dayNumber = Number(day);
+  const { year, month, day } = useParams()
+  const navigate = useNavigate()
+  const yearNumber = Number(year)
+  const monthNumber = Number(month)
+  const dayNumber = Number(day)
 
-  const date = new Date(Date.UTC(yearNumber, monthNumber, dayNumber));
-  const weekdayIndex = (date.getUTCDay() + 6) % 7;
-  const weekNumber = getISOWeek(yearNumber, monthNumber, dayNumber);
-  const defaultDate = `${yearNumber}-${String(monthNumber + 1).padStart(2, "0")}-${String(dayNumber).padStart(2, "0")}`;
+  const date = new Date(Date.UTC(yearNumber, monthNumber, dayNumber))
+  const weekdayIndex = (date.getUTCDay() + 6) % 7
+  const weekNumber = getISOWeek(yearNumber, monthNumber, dayNumber)
+  const defaultDate = `${yearNumber}-${String(monthNumber + 1).padStart(2, '0')}-${String(dayNumber).padStart(2, '0')}`
 
-  const [events, setEvents] = usePersistedState(eventsKey(defaultDate), []);
+  const [events, setEvents] = usePersistedState(eventsKey(defaultDate), [])
   const [reminders, setReminders] = usePersistedState(
     remindersKey(defaultDate),
     [],
-  );
-  const holidayReminder = reminders.find(isHolidayReminder);
+  )
+  const holidayReminder = reminders.find(isHolidayReminder)
 
-  const refreshEvents = () => setEvents(load(eventsKey(defaultDate), []));
+  const refreshEvents = () => setEvents(load(eventsKey(defaultDate), []))
 
   const addEvent = (event) => {
-    saveNewEvent(event);
-    refreshEvents();
-  };
+    saveNewEvent(event)
+    refreshEvents()
+  }
 
   const updateEvent = (event, scope) => {
-    const original = events.find((e) => e.id === event.id) || event;
-    editEvent(original, event, scope);
-    refreshEvents();
-  };
+    const original = events.find((e) => e.id === event.id) || event
+    editEvent(original, event, scope)
+    refreshEvents()
+  }
 
   const deleteEvent = (id, scope) => {
-    const original = events.find((e) => e.id === id);
-    if (original) removeEvent(original, scope);
-    refreshEvents();
-  };
+    const original = events.find((e) => e.id === id)
+    if (original) removeEvent(original, scope)
+    refreshEvents()
+  }
 
-  const isMobile = useIsMobile();
+  const isMobile = useIsMobile()
 
   const goDay = (delta) => {
-    const d = new Date(Date.UTC(yearNumber, monthNumber, dayNumber + delta));
+    const d = new Date(Date.UTC(yearNumber, monthNumber, dayNumber + delta))
     navigate(
       `/year/${d.getUTCFullYear()}/month/${d.getUTCMonth()}/day/${d.getUTCDate()}`,
-    );
-  };
+    )
+  }
 
   return (
     <div className="day-view">
       <div
         className={`day-view__header${
-          holidayReminder ? " day-view__header--holiday" : ""
+          holidayReminder ? ' day-view__header--holiday' : ''
         }`}
       >
         <button
@@ -823,18 +958,17 @@ function DayView() {
           onClick={() => navigate(`/year/${yearNumber}/week/${weekNumber}`)}
           aria-label="Volver"
         >
-          ‹
+          â¹
         </button>
         <div className="day-view__heading">
           <h1 className="day-view__title">
-            {WEEKDAYS_FULL[weekdayIndex]} · {dayNumber} de {MONTHS[monthNumber]}{" "}
-            {yearNumber}
+            {WEEKDAYS_FULL[weekdayIndex]} Â· {dayNumber} de {MONTHS[monthNumber]} {yearNumber}
           </h1>
           {holidayReminder && (
             <span className="day-view__holiday-badge">
               <EmojiImg
-                emoji={holidayReminder.emoji || ":tada:"}
-                code={holidayReminder.emojiCode || "1f389"}
+                emoji={holidayReminder.emoji || 'ð'}
+                code={holidayReminder.emojiCode || '1f389'}
                 className="day-view__holiday-emoji"
               />
               Festivo: {holidayReminder.text}
@@ -859,16 +993,16 @@ function DayView() {
             <button
               className="day-view__nav-btn"
               onClick={() => goDay(-1)}
-              aria-label="Día anterior"
+              aria-label="DÃ­a anterior"
             >
-              ‹
+              â¹
             </button>
             <button
               className="day-view__nav-btn"
               onClick={() => goDay(1)}
-              aria-label="Día siguiente"
+              aria-label="DÃ­a siguiente"
             >
-              ›
+              âº
             </button>
           </div>
         ) : (
@@ -878,12 +1012,8 @@ function DayView() {
               .map((d) => (
                 <button
                   key={d}
-                  className={`month-pill month-pill--mini${d === dayNumber ? " month-pill--active" : ""}`}
-                  onClick={() =>
-                    navigate(
-                      `/year/${yearNumber}/month/${monthNumber}/day/${d}`,
-                    )
-                  }
+                  className={`month-pill month-pill--mini${d === dayNumber ? ' month-pill--active' : ''}`}
+                  onClick={() => navigate(`/year/${yearNumber}/month/${monthNumber}/day/${d}`)}
                 >
                   {d}
                 </button>
@@ -894,11 +1024,7 @@ function DayView() {
 
       {isMobile ? (
         <div className="day-view__mobile">
-          <Reminders
-            items={reminders}
-            setItems={setReminders}
-            date={defaultDate}
-          />
+          <Reminders items={reminders} setItems={setReminders} date={defaultDate} />
           <Todo
             storageKey={todosKey(defaultDate)}
             date={defaultDate}
@@ -936,17 +1062,13 @@ function DayView() {
               week={weekNumber}
               weekdayIndex={weekdayIndex}
             />
-            <Reminders
-              items={reminders}
-              setItems={setReminders}
-              date={defaultDate}
-            />
+            <Reminders items={reminders} setItems={setReminders} date={defaultDate} />
             <Meals storageKey={mealsKey(defaultDate)} />
           </div>
         </div>
       )}
     </div>
-  );
+  )
 }
 
-export default DayView;
+export default DayView

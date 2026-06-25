@@ -828,7 +828,6 @@ function WeekView() {
           const reminders = sortRemindersHolidayFirst(
             load(remindersKey(dk), []).filter((r) => !r.date || r.date === dk),
           );
-          const visibleTodos = todos.slice(0, 3);
           const now = new Date();
           const isToday =
             now.getFullYear() === date.getUTCFullYear() &&
@@ -884,7 +883,7 @@ function WeekView() {
                 )}
                 {todos.length > 0 && (
                   <div className="day-column__todos">
-                    {visibleTodos.map((todo) => (
+                    {todos.map((todo) => (
                       <div
                         key={todo.id}
                         className={`day-column__todo${
@@ -897,11 +896,6 @@ function WeekView() {
                         </span>
                       </div>
                     ))}
-                    {todos.length > 3 && (
-                      <div className="day-column__todo day-column__todo--more">
-                        …
-                      </div>
-                    )}
                   </div>
                 )}
                 <div className="day-column__events">

@@ -458,7 +458,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  background: var(--color-bg);
+  background: transparent;
   border-radius: var(--radius-sm);
   padding: var(--space-xs) var(--space-sm);
 }
@@ -477,6 +477,7 @@ img.reminder-card__emoji {
 .reminder-card__text {
   flex: 1;
   font-size: var(--font-size-sm);
+  line-height: 16px;
   color: 3D3D4D_1;
   cursor: text;
 }
@@ -661,6 +662,59 @@ img.reminder-card__emoji {
 }
 
 /* Meal picker modal */
+.meal-picker__search {
+  margin-bottom: var(--space-sm);
+}
+
+.meal-picker__other {
+  margin-bottom: var(--space-sm);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.meal-picker__item--other {
+  width: 100%;
+}
+
+.meal-picker__thumb--other {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-xl);
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.meal-picker__other-form {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.meal-picker__other-upload {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.meal-picker__other-add {
+  flex-shrink: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+}
+
+.meal-picker__other-add:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .meal-picker__list {
   display: flex;
   flex-direction: column;
@@ -730,6 +784,21 @@ img.reminder-card__emoji {
 @media (min-width: 768px) {
   .day-view__title {
     font-size: var(--font-size-sm);
+  }
+
+  /* Header: el heading (fecha + breadcrumbs) tiene un ancho FIJO calculado para
+     la fecha mÃ¡s larga posible ("MiÃ©rcoles Â· 30 de Septiembre 2026"), y las
+     pills toman TODO el espacio restante (que es fijo porque el heading lo es).
+     AsÃ­ las pills no se amontonan ni se mueven al cambiar el largo de la fecha. */
+  .day-view__heading {
+    flex: 0 0 250px;
+    width: 250px;
+    min-width: 0;
+  }
+
+  .day-view__days {
+    flex: 1;
+    width: auto;
   }
 
   /* Bigger day pills */
@@ -853,862 +922,6 @@ img.reminder-card__emoji {
 
   .day-view__mobile .meal-card__items {
     width: 100%;
-  }
-
-  .day-view__mobile .meal-card__label {
-    width: auto;
-    padding-top: 0;
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-regular);
-    color: var(--color-text-secondary);
-  }
-}
-.day-view {
-  height: 100vh;
-  height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  padding: var(--space-md) var(--page-padding);
-  padding-right: var(--app-pad-right);
-  padding-top: calc(var(--space-md) + env(safe-area-inset-top));
-  padding-bottom: calc(var(--space-md) + env(safe-area-inset-bottom));
-  max-width: var(--max-width);
-  margin: 0 auto;
-  overflow: hidden;
-}
-
-.day-view__header {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-sm);
-  margin-bottom: var(--space-md);
-  flex-shrink: 0;
-}
-
-/* Holiday day: only the header text turns pink (no background) */
-.day-view__header--holiday .day-view__title {
-  color: var(--holiday);
-}
-
-.day-view__holiday-badge {
-  margin-top: 2px;
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
-  color: var(--holiday);
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.day-view__holiday-emoji {
-  width: 1em;
-  height: 1em;
-  vertical-align: middle;
-}
-
-.day-view__back {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--font-size-2xl);
-  color: var(--color-text-secondary);
-  background: var(--color-surface);
-  line-height: 1;
-}
-
-.day-view__back:hover {
-  background: var(--color-surface-hover);
-}
-
-.day-view__heading {
-  display: flex;
-  flex-direction: column;
-}
-
-.day-view__title {
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-medium);
-  color: 3D3D4D_1;
-}
-
-/* Two columns */
-.day-view__days {
-  flex: 1;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: var(--space-xs);
-  margin-left: var(--space-md);
-}
-
-.day-view__columns {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-md);
-  min-height: 0;
-}
-
-.day-view__col {
-  min-height: 0;
-}
-
-.day-view__col--side {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-  min-height: 0;
-  overflow-y: auto;
-}
-
-/* Schedule */
-.schedule {
-  background: transparent;
-  border-radius: var(--radius-md);
-  padding: var(--space-md);
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.schedule__head-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--space-lg);
-  flex-shrink: 0;
-}
-
-.schedule__title {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-primary);
-}
-
-.schedule__add-btn {
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-primary);
-  background: var(--color-primary-light);
-  padding: var(--space-xs) var(--space-sm);
-  border-radius: var(--radius-sm);
-  transition: background 0.2s ease;
-}
-
-.schedule__add-btn:hover {
-  background: var(--accent-soft);
-}
-
-.schedule__body {
-  flex: 1;
-  min-height: 0;
-}
-
-.schedule__grid {
-  position: relative;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.schedule__hour-row {
-  flex: 1;
-  display: grid;
-  grid-template-columns: 64px 1fr;
-  align-items: start;
-  min-height: 0;
-}
-
-.schedule__hour {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-  font-weight: var(--font-weight-medium);
-  transform: translateY(-6px);
-}
-
-.schedule__line {
-  border-top: 1px solid var(--color-border);
-  height: 100%;
-}
-
-.schedule__last-label {
-  display: grid;
-  grid-template-columns: 64px 1fr;
-  align-items: start;
-  height: 0;
-}
-
-.schedule__events {
-  position: absolute;
-  top: 0;
-  left: 64px;
-  right: 0;
-  bottom: 0;
-}
-
-.event-block {
-  position: absolute;
-  left: var(--space-xs);
-  right: var(--space-xs);
-  border-radius: var(--radius-sm);
-  padding: 3px 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  overflow: hidden;
-  cursor: pointer;
-  font-size: var(--font-size-xs);
-}
-
-.event-block--expanded {
-  z-index: 10;
-  box-shadow: var(--shadow-lg);
-  overflow: visible;
-  height: auto;
-}
-
-.event-block--compact {
-  justify-content: center;
-}
-
-.event-block__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-xs);
-}
-
-.event-block__title {
-  font-weight: var(--font-weight-semibold);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex: 1;
-  min-width: 0;
-}
-
-.event-block--expanded .event-block__title {
-  white-space: normal;
-}
-
-.event-block__edit {
-  font-size: 15px;
-  line-height: 1;
-  opacity: 0.6;
-  flex-shrink: 0;
-  padding: 0 2px;
-  transition: opacity 0.15s ease;
-}
-
-.event-block:hover .event-block__edit {
-  opacity: 1;
-}
-
-.event-block__time {
-  font-size: 0.65rem;
-  opacity: 0.85;
-}
-
-.event-block__time--inline {
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-
-.event-block__type {
-  margin-top: 2px;
-  font-size: 0.65rem;
-  font-weight: var(--font-weight-medium);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  opacity: 0.9;
-}
-
-.event-block__repeat {
-  font-size: 0.65rem;
-  opacity: 0.9;
-}
-
-.event-block__place,
-.event-block__comments {
-  font-size: 0.7rem;
-  opacity: 0.9;
-}
-
-.event-block__comments {
-  margin-top: 2px;
-}
-
-/* TODO */
-.todo {
-  background: var(--color-surface);
-  border-radius: var(--radius-md);
-  padding: var(--space-md);
-}
-
-.todo__head-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--space-sm);
-}
-
-.todo__title {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-primary);
-}
-
-.todo__add-btn {
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-primary);
-  background: var(--color-primary-light);
-  padding: var(--space-xs) var(--space-sm);
-  border-radius: var(--radius-sm);
-  transition: background 0.2s ease;
-}
-
-.todo__add-btn:hover {
-  background: var(--accent-soft);
-}
-
-.todo__list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-}
-
-.todo__item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-}
-
-.todo__habit-tag {
-  flex-shrink: 0;
-  font-size: 0.6rem;
-  font-weight: var(--font-weight-semibold);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--todo-check);
-  background: color-mix(in srgb, var(--todo-check) 14%, transparent);
-  border-radius: var(--radius-sm);
-  padding: 1px 6px;
-}
-
-.todo__item--habit .todo__text {
-  cursor: default;
-  font-weight: var(--font-weight-regular);
-}
-
-.todo__check {
-  width: 21px;
-  height: 21px;
-  flex-shrink: 0;
-  border-radius: var(--radius-sm);
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  color: white;
-  transition: all 0.15s ease;
-}
-
-.todo__check:hover {
-  border-color: var(--todo-check);
-}
-
-.todo__check--on {
-  background: var(--todo-check);
-  border-color: var(--todo-check);
-}
-
-.todo__check--placeholder {
-  cursor: default;
-}
-
-.todo__text {
-  flex: 1;
-  font-size: var(--font-size-sm);
-  color: 3D3D4D_1;
-  cursor: text;
-}
-
-.todo__text--done {
-  text-decoration: line-through;
-  color: var(--color-text-muted);
-}
-
-.todo__input {
-  flex: 1;
-  font-size: var(--font-size-sm);
-  color: 3D3D4D_1;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 2px 6px;
-}
-
-.todo__remove {
-  font-size: var(--font-size-lg);
-  line-height: 1;
-  color: var(--color-text-muted);
-  opacity: 0;
-  transition: opacity 0.15s ease, color 0.15s ease;
-}
-
-.todo__item:hover .todo__remove {
-  opacity: 1;
-}
-
-.todo__remove:hover {
-  color: var(--color-accent-red);
-}
-
-.todo__empty {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
-  text-align: center;
-  padding: var(--space-sm) 0;
-}
-
-/* Reminders */
-.reminders {
-  background: var(--accent-blue-bg);
-  border-radius: var(--radius-md);
-  padding: var(--space-md);
-}
-
-.reminders__head-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--space-sm);
-}
-
-.reminders__title {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--accent-blue);
-}
-
-.reminders__add-btn {
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
-  color: var(--accent-blue);
-  background: var(--accent-blue-soft);
-  padding: var(--space-xs) var(--space-sm);
-  border-radius: var(--radius-sm);
-  transition: background 0.2s ease;
-}
-
-.reminders__add-btn:hover {
-  background: var(--accent-blue);
-  color: #fff;
-}
-
-.reminders__list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-}
-
-.reminder-card {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  background: var(--color-bg);
-  border-radius: var(--radius-sm);
-  padding: var(--space-xs) var(--space-sm);
-}
-
-.reminder-card__emoji {
-  font-size: var(--font-size-base);
-  flex-shrink: 0;
-}
-
-img.reminder-card__emoji {
-  width: 20px;
-  height: 20px;
-  object-fit: contain;
-}
-
-.reminder-card__text {
-  flex: 1;
-  font-size: var(--font-size-sm);
-  color: 3D3D4D_1;
-  cursor: text;
-}
-
-.reminders__input {
-  flex: 1;
-  font-size: var(--font-size-sm);
-  color: 3D3D4D_1;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 2px 6px;
-}
-
-.reminders__emoji-input {
-  width: 32px;
-  flex-shrink: 0;
-  text-align: center;
-  font-size: var(--font-size-base);
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 2px;
-}
-
-.reminder-card__remove {
-  font-size: var(--font-size-lg);
-  line-height: 1;
-  color: var(--color-text-muted);
-  opacity: 0;
-  transition: opacity 0.15s ease, color 0.15s ease;
-}
-
-.reminder-card:hover .reminder-card__remove {
-  opacity: 1;
-}
-
-.reminder-card__remove:hover {
-  color: var(--color-accent-red);
-}
-
-.reminders__empty {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
-  text-align: center;
-  padding: var(--space-sm) 0;
-}
-
-/* Meals */
-.meals {
-  background: var(--color-surface);
-  border-radius: var(--radius-md);
-  padding: var(--space-md);
-}
-
-.meals__title {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-primary);
-  margin-bottom: var(--space-sm);
-}
-
-.meals__list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-}
-
-.meal-card {
-  background: var(--color-bg);
-  border-radius: var(--radius-sm);
-  padding: var(--space-sm) var(--space-md);
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-md);
-}
-
-.meal-card__label {
-  font-size: 0.65rem;
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-secondary);
-  flex-shrink: 0;
-  width: 52px;
-  padding-top: var(--space-xs);
-}
-
-.meal-card__items {
-  flex: 1;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: stretch;
-  gap: var(--space-xs);
-}
-
-.meal-mini {
-  position: relative;
-  flex: 0 0 calc((100% - 3 * var(--space-xs)) / 4);
-  max-width: calc((100% - 3 * var(--space-xs)) / 4);
-  min-width: 0;
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  cursor: pointer;
-}
-
-.meal-mini__photo {
-  aspect-ratio: 16 / 9;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.5);
-  overflow: hidden;
-}
-
-.meal-mini__photo img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.meal-mini__icon {
-  width: 22px;
-  height: 22px;
-  color: var(--color-text-muted);
-  opacity: 0.7;
-}
-
-.meal-mini__title {
-  font-size: 0.6rem;
-  font-weight: var(--font-weight-medium);
-  color: 3D3D4D_1;
-  padding: 3px var(--space-xs);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.meal-mini__remove {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 18px;
-  height: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.85);
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
-  line-height: 1;
-  cursor: pointer;
-}
-
-.meal-mini__remove:hover {
-  color: var(--color-accent-red);
-}
-
-.meal-add {
-  flex: 0 0 calc((100% - 3 * var(--space-xs)) / 4);
-  max-width: calc((100% - 3 * var(--space-xs)) / 4);
-  align-self: stretch;
-  min-height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-lg);
-  line-height: 1;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.meal-add:hover,
-.meal-add:active {
-  border-color: var(--color-primary-soft);
-  color: var(--color-primary);
-}
-
-/* Meal picker modal */
-.meal-picker__list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-  max-height: 50vh;
-  overflow-y: auto;
-  margin-bottom: var(--space-md);
-}
-
-.meal-picker__item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-xs);
-  border-radius: var(--radius-md);
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.meal-picker__item:hover {
-  background: var(--color-surface);
-}
-
-.meal-picker__thumb {
-  width: 44px;
-  height: 44px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-}
-
-.meal-picker__thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.meal-picker__thumb-icon {
-  width: 26px;
-  height: 26px;
-  color: var(--color-text-muted);
-  opacity: 0.7;
-}
-
-.meal-picker__info {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.meal-picker__name {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-primary);
-}
-
-.meal-picker__count {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-}
-
-/* Tablet (iPad 10) */
-@media (min-width: 768px) {
-  .day-view__title {
-    font-size: var(--font-size-sm);
-  }
-
-  /* Bigger day pills */
-  .day-view__days .month-pill--mini {
-    font-size: var(--font-size-sm);
-    padding: 2px 8px;
-    border-radius: 12px;
-  }
-
-  /* Bigger todo */
-  .todo__check {
-    width: 24px;
-    height: 24px;
-    font-size: 0.9rem;
-  }
-
-  .todo__text,
-  .todo__input {
-    font-size: var(--font-size-sm);
-  }
-
-  /* Bigger meals labels and cards */
-  .meals__title {
-    font-size: var(--font-size-base);
-  }
-
-  .meal-card__label {
-    font-size: var(--font-size-sm);
-    width: 64px;
-  }
-
-  .meal-mini__title {
-    font-size: 0.72rem;
-  }
-
-  .meal-add {
-    min-height: 60px;
-    font-size: var(--font-size-xl);
-  }
-}
-
-/* Mobile: stacked sections (reminders, todos, schedule, meals) + day arrows */
-@media (max-width: 767px) {
-  .day-view {
-    height: auto;
-    min-height: 100dvh;
-    overflow: visible;
-    padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom));
-  }
-
-  .day-view__header {
-    margin-bottom: var(--space-xl);
-  }
-
-  .day-view__title {
-    font-size: var(--font-size-sm);
-  }
-
-  .day-view__back {
-    width: 34px;
-    height: 34px;
-    font-size: var(--font-size-xl);
-  }
-
-  .event-block__edit {
-    font-size: 17px;
-    opacity: 0.9;
-    padding: 2px 4px;
-    margin: -2px -2px -2px 0;
-  }
-
-  .day-view__nav {
-    margin-left: auto;
-    display: flex;
-    gap: var(--space-xs);
-    align-self: center;
-  }
-
-  .day-view__nav-btn {
-    width: 34px;
-    height: 34px;
-    border-radius: var(--radius-full);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: var(--font-size-xl);
-    color: var(--color-text-secondary);
-    background: var(--color-surface);
-    line-height: 1;
-  }
-
-  .day-view__nav-btn:active {
-    background: var(--color-surface-hover);
-  }
-
-  .day-view__mobile {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-md);
-  }
-
-  .day-view__mobile .day-view__col--schedule {
-    height: 880px;
-    background: var(--color-surface);
-    border-radius: var(--radius-md);
-  }
-
-  .day-view__mobile .schedule {
-    padding: var(--space-md) var(--space-sm);
-  }
-
-  /* Meals: label as a bigger header, recipe cards below */
-  .day-view__mobile .meal-card {
-    flex-direction: column;
-    gap: var(--space-sm);
   }
 
   .day-view__mobile .meal-card__label {

@@ -9,9 +9,9 @@ export const MEAL_TAGS = [
 ]
 
 export const TAG_COLORS = {
-  desayuno: { color: 'C87F1E_1', bg: 'FBEEDE_1' },
-  almuerzo: { color: '3F8F5C_1', bg: 'E6F3EA_1' },
-  cena: { color: '5A6DB0_1', bg: 'E8ECF8_1' },
+  desayuno: { color: 'var(--meal-orange)', bg: 'var(--color-accent-orange-light)' },
+  almuerzo: { color: 'var(--color-accent-green)', bg: 'var(--color-accent-green-light)' },
+  cena: { color: 'var(--accent-blue)', bg: 'var(--accent-blue-bg)' },
   postre: { color: 'var(--cat-pink)', bg: 'var(--cat-pink-bg)' },
 }
 

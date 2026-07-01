@@ -44,9 +44,33 @@
   padding: var(--space-xl) var(--page-padding);
   padding-right: var(--app-pad-right);
   padding-top: calc(var(--space-xl) + env(safe-area-inset-top));
-  padding-bottom: calc(
-    var(--space-xl) + env(safe-area-inset-bottom) + var(--nav-height)
-  );
+  padding-bottom: calc(var(--space-xl) + env(safe-area-inset-bottom));
+}
+
+/* En móvil reservamos espacio para la barra inferior fija. En escritorio
+   el menú es una barra lateral, así que no hace falta y evita scroll extra. */
+@media (max-width: 767px) {
+  .page {
+    padding-bottom: calc(
+      var(--space-xl) + env(safe-area-inset-bottom) + var(--nav-height)
+    );
+  }
+}
+
+/* Scroll interno del contenido: en tablet/escritorio el menú es lateral, así
+   que la barra de scroll queda dentro de la página (a la izquierda del menú)
+   en lugar de en el contenedor global. El hueco del menú se reserva con
+   margin-right (fuera del área scrolleable) para que la barra no quede debajo
+   del menú. */
+@media (min-width: 768px) {
+  .page--scroll {
+    height: 100dvh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    padding-right: var(--page-padding);
+    margin-right: var(--app-pad-right);
+  }
 }
 
 .page__header {

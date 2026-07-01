@@ -8,6 +8,9 @@ import DayView from "./views/DayView";
 import Comidas from "./views/Comidas";
 import Metas from "./views/Metas";
 import GoalView from "./views/GoalView";
+import MedicationHome from "./views/MedicationHome";
+import CreateTreatmentPlan from "./views/CreateTreatmentPlan";
+import TreatmentPlanDetails from "./views/TreatmentPlanDetails";
 import Login from "./views/Login";
 import SideMenu from "./components/SideMenu";
 import { useAuth } from "./context/AuthContext";
@@ -90,6 +93,10 @@ function App() {
         <Route path="/comidas" element={<Comidas />} />
         <Route path="/metas" element={<Metas />} />
         <Route path="/metas/:id" element={<GoalView />} />
+        <Route path="/medications" element={<MedicationHome />} />
+        <Route path="/medications/new" element={<CreateTreatmentPlan />} />
+        <Route path="/medications/:id/edit" element={<CreateTreatmentPlan />} />
+        <Route path="/medications/:id" element={<TreatmentPlanDetails />} />
         <Route path="/year/:year" element={<YearView />} />
         <Route path="/year/:year/month/:month" element={<MonthView />} />
         <Route path="/year/:year/week/:week" element={<WeekView />} />

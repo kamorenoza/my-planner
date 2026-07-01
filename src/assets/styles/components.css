@@ -28,7 +28,7 @@
   justify-content: center;
   min-height: 120px;
   background: transparent;
-  border: 2px dashed #c9bce4;
+  border: 2px dashed #C9BCE4;
   cursor: pointer;
 }
 
@@ -293,7 +293,7 @@
 }
 
 .modal__btn--danger:hover {
-  background: #d65f5f;
+  background: #D65F5F;
 }
 
 .modal__btn--primary {
@@ -312,8 +312,19 @@
 
 .modal--form {
   max-width: 420px;
-  max-height: 90vh;
+  max-height: 90dvh;
   overflow-y: auto;
+}
+
+/* Mantener las acciones (Guardar/Cancelar) siempre visibles al final del modal,
+   aunque el contenido (p. ej. muchos ingredientes) lo haga scrollear. */
+.modal--form .modal__actions {
+  position: sticky;
+  bottom: calc(-1 * var(--space-xl));
+  background: var(--color-bg);
+  margin: var(--space-lg) calc(-1 * var(--space-xl)) calc(-1 * var(--space-xl));
+  padding: var(--space-md) var(--space-xl) var(--space-xl);
+  z-index: 2;
 }
 
 .modal-tabs {
@@ -371,8 +382,8 @@
 }
 
 .emoji-picker__item--active {
-  background: #e6eef7;
-  border-color: #3a6ea5;
+  background: #E6EEF7;
+  border-color: #3A6EA5;
 }
 
 .emoji-picker__img {
@@ -493,7 +504,7 @@ select.field__input {
 
 /* Icon button danger variant */
 .icon-btn--danger:hover {
-  background: var(--color-accent-red-light, #fbeaea);
+  background: var(--color-accent-red-light, #FBEAEA);
   color: var(--color-accent-red);
 }
 

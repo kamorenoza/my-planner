@@ -8,6 +8,7 @@ import {
   getMonthWeeks,
   getISOWeek,
   getWeekDates,
+  getLastISOWeek,
 } from "../utils/calendar";
 import { getEventType, formatTime } from "../utils/events";
 import { DAY_START_MIN, DAY_END_MIN } from "../utils/events";
@@ -658,12 +659,13 @@ function WeekView() {
 
   const weekDates = getWeekDates(yearNumber, weekNumber);
   const refMonth = weekDates[0].getUTCMonth();
+  const maxWeek = getLastISOWeek(yearNumber);
 
   const isMobile = useIsMobile();
 
   const goWeek = (delta) => {
     const next = weekNumber + delta;
-    if (next < 1) return;
+    if (next < 1 || next > maxWeek) return;
     navigate(`/year/${yearNumber}/week/${next}`);
   };
 
@@ -721,6 +723,7 @@ function WeekView() {
             <button
               className="week-view__nav-btn"
               onClick={() => goWeek(-1)}
+              disabled={weekNumber <= 1}
               aria-label="Semana anterior"
             >
               ‹
@@ -728,6 +731,7 @@ function WeekView() {
             <button
               className="week-view__nav-btn"
               onClick={() => goWeek(1)}
+              disabled={weekNumber >= maxWeek}
               aria-label="Semana siguiente"
             >
               ›
@@ -784,6 +788,14 @@ function WeekView() {
           />
         </div>
         <div className="week-view__weeks">
+          <button
+            className="week-view__nav-btn week-view__nav-btn--inline"
+            onClick={() => goWeek(-1)}
+            disabled={weekNumber <= 1}
+            aria-label="Semana anterior"
+          >
+            ‹
+          </button>
           {getMonthWeeks(yearNumber, refMonth).map((w, i) => (
             <button
               key={w.weekNumber}
@@ -795,6 +807,14 @@ function WeekView() {
               S{i + 1}
             </button>
           ))}
+          <button
+            className="week-view__nav-btn week-view__nav-btn--inline"
+            onClick={() => goWeek(1)}
+            disabled={weekNumber >= maxWeek}
+            aria-label="Semana siguiente"
+          >
+            ›
+          </button>
         </div>
       </div>
 

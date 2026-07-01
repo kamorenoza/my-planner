@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { usePersistedState, recipesKey } from "../utils/storage";
 import {
   RecipeModal,
@@ -16,33 +16,23 @@ const SECTIONS = [
   { tag: "postre", label: "Postres" },
 ];
 
-function useGridColumns(ref) {
-  const [columns, setColumns] = useState(0);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const measure = () => {
-      const cols = getComputedStyle(el)
-        .gridTemplateColumns.split(" ")
-        .filter(Boolean).length;
-      setColumns(cols);
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [ref]);
-
-  return columns;
-}
+const FILTERS = [
+  { tag: "todas", label: "Todas" },
+  { tag: "desayuno", label: "Desayuno" },
+  { tag: "almuerzo", label: "Almuerzo" },
+  { tag: "cena", label: "Cena" },
+  { tag: "postre", label: "Postre" },
+];
 
 function RecipeCard({ recipe, accent, onClick }) {
   return (
     <button
       className="recipe-card"
       onClick={onClick}
-      style={{ background: accent.bg }}
+      style={{
+        background: accent.bg,
+        border: `1px solid color-mix(in srgb, ${accent.color} 35%, white)`,
+      }}
     >
       <div className="recipe-card__photo">
         {recipe.photo ? (
@@ -62,66 +52,61 @@ function RecipeCard({ recipe, accent, onClick }) {
   );
 }
 
-function Section({ tag, label, recipes, onOpen, expanded, onToggleExpand }) {
-  const gridRef = useRef(null);
-  const columns = useGridColumns(gridRef);
+function Section({ tag, label, recipes, open, filtering, onToggle, onOpen }) {
   const accent = TAG_COLORS[tag];
 
-  const perRow = columns || recipes.length;
-  const shown = expanded ? recipes : recipes.slice(0, perRow);
-  const needsSecondRow = recipes.length > perRow;
-
   return (
-    <section className="comidas__section">
-      <h2 className="comidas__section-title">
-        <span
-          className="comidas__section-dot"
-          style={{ background: accent.color }}
-        />
-        {label}
-      </h2>
-      {recipes.length === 0 ? (
-        <p className="comidas__empty">Aún no hay recetas aquí.</p>
-      ) : (
-        <>
-          <div className="recipe-grid" ref={gridRef}>
-            {shown.map((recipe) => (
-              <RecipeCard
-                key={recipe.id}
-                recipe={recipe}
-                accent={accent}
-                onClick={() => onOpen(recipe)}
-              />
-            ))}
-          </div>
-          {needsSecondRow && (
-            <div className="comidas__more-row">
-              <button
-                className="comidas__more"
-                onClick={onToggleExpand}
-                aria-label={expanded ? "Ver menos" : "Ver más"}
-                title={expanded ? "Ver menos" : "Ver más"}
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="22"
-                  height="22"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  style={{
-                    transform: expanded ? "rotate(180deg)" : "none",
-                    transition: "transform 0.2s ease",
-                  }}
-                >
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </button>
+    <section
+      className={`comidas__section${open ? " comidas__section--open" : ""}`}
+    >
+      <button
+        type="button"
+        className="comidas__section-header"
+        onClick={filtering ? undefined : onToggle}
+        aria-expanded={open}
+        disabled={filtering}
+      >
+        <span className="comidas__section-title">
+          <span
+            className="comidas__section-dot"
+            style={{ background: accent.color }}
+          />
+          {label}
+          <span className="comidas__section-count">{recipes.length}</span>
+        </span>
+        {!filtering && (
+          <svg
+            className="comidas__section-chevron"
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        )}
+      </button>
+      {open && (
+        <div className="comidas__section-body">
+          {recipes.length === 0 ? (
+            <p className="comidas__empty">Aún no hay recetas aquí.</p>
+          ) : (
+            <div className="recipe-grid">
+              {recipes.map((recipe) => (
+                <RecipeCard
+                  key={recipe.id}
+                  recipe={recipe}
+                  accent={accent}
+                  onClick={() => onOpen(recipe)}
+                />
+              ))}
             </div>
           )}
-        </>
+        </div>
       )}
     </section>
   );
@@ -133,10 +118,12 @@ function Comidas() {
   const [editing, setEditing] = useState(null);
   const [detail, setDetail] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
-  const [expandedTags, setExpandedTags] = useState([]);
+  const [openTags, setOpenTags] = useState([]);
+  const [search, setSearch] = useState("");
+  const [filterTag, setFilterTag] = useState("todas");
 
-  const toggleExpand = (tag) =>
-    setExpandedTags((prev) =>
+  const toggleOpen = (tag) =>
+    setOpenTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
     );
 
@@ -169,12 +156,25 @@ function Comidas() {
     setDetail(null);
   };
 
-  const anyExpanded = expandedTags.length > 0;
+  const query = search.trim().toLowerCase();
+  const filtering = query !== "" || filterTag !== "todas";
+
+  const matchesSearch = (recipe) =>
+    !query || recipe.title.toLowerCase().includes(query);
+
+  const sections = SECTIONS.filter(
+    (s) => filterTag === "todas" || s.tag === filterTag,
+  )
+    .map((s) => ({
+      ...s,
+      recipes: recipes.filter(
+        (r) => r.tags.includes(s.tag) && matchesSearch(r),
+      ),
+    }))
+    .filter((s) => !filtering || s.recipes.length > 0);
 
   return (
-    <div
-      className={`page comidas-page${anyExpanded ? " comidas-page--scroll" : ""}`}
-    >
+    <div className="page page--scroll comidas-page">
       <div className="page__header">
         <h1 className="page__title comidas__title">Comidas</h1>
         <button className="comidas__add-btn" onClick={openNew}>
@@ -182,18 +182,77 @@ function Comidas() {
         </button>
       </div>
 
+      <div className="search-bar comidas__search">
+        <svg
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          fill="none"
+          stroke="var(--color-text-muted)"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.3-4.3" />
+        </svg>
+        <input
+          className="search-bar__input"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar"
+        />
+      </div>
+
+      <div className="cat-pills comidas__filters">
+        {FILTERS.map((f) => {
+          const accent = f.tag === "todas" ? null : TAG_COLORS[f.tag];
+          return (
+            <button
+              key={f.tag}
+              type="button"
+              className={`cat-pill${filterTag === f.tag ? " cat-pill--active" : ""}`}
+              style={
+                accent
+                  ? { "--pill-color": accent.color, "--pill-bg": accent.bg }
+                  : {
+                      "--pill-color": "var(--color-primary)",
+                      "--pill-bg": "var(--color-primary-light)",
+                    }
+              }
+              onClick={() => setFilterTag(f.tag)}
+            >
+              {accent && (
+                <span
+                  className="cat-pill__dot"
+                  style={{ background: accent.color }}
+                />
+              )}
+              {f.label}
+            </button>
+          );
+        })}
+      </div>
+
       <div className="comidas__sections">
-        {SECTIONS.map((section) => (
-          <Section
-            key={section.tag}
-            tag={section.tag}
-            label={section.label}
-            recipes={recipes.filter((r) => r.tags.includes(section.tag))}
-            onOpen={setDetail}
-            expanded={expandedTags.includes(section.tag)}
-            onToggleExpand={() => toggleExpand(section.tag)}
-          />
-        ))}
+        {sections.length === 0 ? (
+          <p className="comidas__empty comidas__empty--page">
+            No hay recetas que coincidan.
+          </p>
+        ) : (
+          sections.map((section) => (
+            <Section
+              key={section.tag}
+              tag={section.tag}
+              label={section.label}
+              recipes={section.recipes}
+              open={filtering ? true : openTags.includes(section.tag)}
+              filtering={filtering}
+              onToggle={() => toggleOpen(section.tag)}
+              onOpen={setDetail}
+            />
+          ))
+        )}
       </div>
 
       {detail && (

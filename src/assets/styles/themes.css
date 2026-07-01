@@ -4,58 +4,59 @@
 /* Masculine theme – soft, muted slate-blue palette (not too strong). */
 [data-theme="masculino"] {
   /* Colors - Primary */
-  --color-primary: #5b7a99;
-  --color-primary-soft: #8ba3ba;
-  --color-primary-light: #eaeff4;
-  --color-primary-dark: #3f5a73;
+  --color-primary: #5B7A99;
+  --color-primary-soft: #8BA3BA;
+  --color-primary-light: #EAEFF4;
+  --color-primary-dark: #3F5A73;
 
   /* Colors - Accents */
-  --color-accent-green: #4a9e8f;
-  --color-accent-green-light: #e6f2f0;
-  --color-accent-orange: #d99566;
-  --color-accent-orange-light: #fbeee3;
-  --color-accent-red: #d6726b;
-  --color-accent-red-light: #f9e7e6;
+  --color-accent-green: #4A9E8F;
+  --color-accent-green-light: #E6F2F0;
+  --color-accent-orange: #D99566;
+  --color-accent-orange-light: #FBEEE3;
+  --meal-orange: #C68D68;
+  --color-accent-red: #D6726B;
+  --color-accent-red-light: #F9E7E6;
 
   /* Category palette – pink becomes muted red, purple becomes muted blue */
-  --cat-pink: #b85c54;
-  --cat-pink-bg: #f6e8e7;
-  --cat-pink-soft: #efd6d4;
-  --cat-pink-text: #a04a43;
+  --cat-pink: #B85C54;
+  --cat-pink-bg: #F6E8E7;
+  --cat-pink-soft: #EFD6D4;
+  --cat-pink-text: #A04A43;
 
-  --cat-purple: #4a6fb5;
-  --cat-purple-bg: #e8edf6;
-  --cat-purple-soft: #d6e0f0;
-  --cat-purple-text: #3a5896;
+  --cat-purple: #4A6FB5;
+  --cat-purple-bg: #E8EDF6;
+  --cat-purple-soft: #D6E0F0;
+  --cat-purple-text: #3A5896;
 
   /* Soft accent + todo check turn blue/red to match */
-  --accent-soft: #dbe3f0;
-  --todo-check: #cf8a84;
+  --accent-soft: #DBE3F0;
+  --todo-check: #CF8A84;
 
   /* Blue accent stays a calm slate-blue, matching the primary */
-  --accent-blue: #4a6fb5;
-  --accent-blue-bg: #e7edf7;
-  --accent-blue-soft: #d8e2f1;
+  --accent-blue: #4A6FB5;
+  --accent-blue-bg: #E7EDF7;
+  --accent-blue-soft: #D8E2F1;
 
   /* Mini calendar highlight becomes muted red */
-  --cal-active-bg: #f6e0de;
-  --cal-active-text: #a8514a;
-  --cal-today-bg: #e7b4af;
-  --cal-today-text: #8a3a33;
+  --cal-active-bg: #F6E0DE;
+  --cal-active-text: #A8514A;
+  --cal-today-bg: #E7B4AF;
+  --cal-today-text: #8A3A33;
 
   /* Holiday accents: soft orange number/text + a warmer mini-calendar tint */
-  --holiday: #d9874f;
-  --holiday-bg: #fbeee3;
-  --holiday-soft: #f4ddc7;
-  --holiday-cal-bg: #f3d9c2;
-  --holiday-cal-text: #b56a32;
+  --holiday: #D9874F;
+  --holiday-bg: #FBEEE3;
+  --holiday-soft: #F4DDC7;
+  --holiday-cal-bg: #F3D9C2;
+  --holiday-cal-text: #B56A32;
 
   /* Colors - Neutrals */
-  --color-bg: #ffffff;
-  --color-surface: #f5f7f9;
-  --color-surface-hover: #eceff3;
-  --color-border: #e2e6ec;
-  --color-text-primary: #1c2533;
-  --color-text-secondary: #5e6b7a;
-  --color-text-muted: #94a0ad;
+  --color-bg: #FFFFFF;
+  --color-surface: #F5F7F9;
+  --color-surface-hover: #ECEFF3;
+  --color-border: #E2E6EC;
+  --color-text-primary: #1C2533;
+  --color-text-secondary: #5E6B7A;
+  --color-text-muted: #94A0AD;
 }

@@ -1,0 +1,273 @@
+
+
+.plan-details .breadcrumbs {
+  margin-bottom: var(--space-lg);
+}
+
+.plan-details__header {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-top: 3px solid var(--color-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.plan-details__top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.plan-details__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+
+.plan-details__icon-img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.plan-details__head-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.plan-details__title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.plan-details__desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin-top: var(--space-xs);
+}
+
+.plan-details__head-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-shrink: 0;
+}
+
+.plan-details__progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.plan-details__progress-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.plan-details__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.plan-details__section {
+  margin-bottom: var(--space-lg);
+}
+
+.plan-details__section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-md);
+}
+
+.plan-details__section-title {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.plan-details__empty {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  padding: var(--space-md) 0;
+}
+
+.plan-details__med-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.plan-details__upcoming {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.plan-details__upcoming-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.plan-details__upcoming-name {
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+}
+
+.plan-details__upcoming-time {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+}
+
+.plan-details__missing {
+  color: var(--color-text-muted);
+}
+
+/* Histórico de dosis */
+.plan-details__history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.plan-details__history-date {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-xs);
+  text-transform: capitalize;
+}
+
+.plan-details__history-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.plan-details__history-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.plan-details__history-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.plan-details__history-time {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+  min-width: 44px;
+}
+
+.plan-details__history-name {
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Pill Tomado / No tomado */
+.dose-pill {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  padding: 2px var(--space-xs);
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.dose-pill--taken {
+  color: var(--color-accent-green);
+  background: var(--color-accent-green-light);
+}
+
+.dose-pill--skipped {
+  color: var(--color-accent-red);
+  background: var(--color-accent-red-light);
+}
+
+/* Toggle de estado en el modal de dosis */
+.dose-status {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.dose-status__btn {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dose-status__btn--taken {
+  color: var(--color-accent-green);
+  background: var(--color-accent-green-light);
+  border-color: var(--color-accent-green);
+}
+
+.dose-status__btn--skipped {
+  color: var(--color-accent-red);
+  background: var(--color-accent-red-light);
+  border-color: var(--color-accent-red);
+}
+
+.dose-status__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.dose-status__hint {
+  margin-top: var(--space-xs);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.dose-delete-link {
+  align-self: flex-start;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-accent-red);
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}

@@ -1,0 +1,115 @@
+
+
+/* Márgenes de página igual que Metas/Comidas */
+.medication-home {
+  padding-top: var(--space-lg);
+  padding-bottom: var(--space-2xl);
+}
+
+/* Mobile: padding inferior extra para librar la barra de navegación */
+@media (max-width: 767px) {
+  .medication-home {
+    padding-bottom: calc(
+      var(--nav-height) + var(--space-2xl) + env(safe-area-inset-bottom)
+    );
+  }
+}
+
+.medication-home__title {
+  flex: 1;
+  font-size: var(--font-size-xl);
+}
+
+/* Botón "+ Nuevo plan": mismo estilo que el de Metas/Comidas */
+.medication-home__add-btn {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.medication-home__add-btn:hover,
+.medication-home__add-btn:active {
+  background: var(--accent-soft);
+}
+
+.medication-home__search {
+  margin-bottom: var(--space-md);
+}
+
+.medication-home__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-lg);
+}
+
+.medication-home__filters {
+  display: flex;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+.medication-home__filter {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  background: transparent;
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.medication-home__filter:hover {
+  background: var(--color-surface-hover);
+}
+
+.medication-home__filter--active {
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.medication-home__sort {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.medication-home__sort .field__input {
+  width: auto;
+}
+
+.medication-home__grid {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(max(240px, calc((100% - 2 * var(--space-md)) / 3)), 1fr)
+  );
+  gap: var(--space-md);
+}
+
+.medication-home__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-2xl) var(--space-md);
+  text-align: center;
+}
+
+.medication-home__empty-icon {
+  font-size: 2.5rem;
+}
+
+.medication-home__empty-text {
+  color: var(--color-text-muted);
+}

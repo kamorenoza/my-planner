@@ -105,3 +105,29 @@ export function getWeekDates(year, week) {
   }
   return dates;
 }
+
+// Año mínimo disponible en la app (la primera agenda creada por defecto en el
+// Dashboard).
+export const MIN_YEAR = 2026;
+
+// Año máximo disponible para navegar. Replica la regla del Dashboard: la agenda
+// del año X se desbloquea el 1 de diciembre del año X-1.
+export function getMaxYear() {
+  const now = new Date();
+  const y = now.getFullYear();
+  // El año y+1 se desbloquea el 1 de diciembre del año y.
+  const unlock = new Date(y, 11, 1);
+  return now >= unlock ? y + 1 : y;
+}
+
+// ¿La agenda de este año ya existe y por tanto se puede visitar? Se usa para
+// evitar que las flechas de navegación salten a un año que aún no se ha creado.
+export function isYearAvailable(year) {
+  return year >= MIN_YEAR && year <= getMaxYear();
+}
+
+// Última semana ISO del año (basada en el 28 de diciembre, que siempre cae en
+// la última semana ISO).
+export function getLastISOWeek(year) {
+  return getISOWeek(year, 11, 28);
+}

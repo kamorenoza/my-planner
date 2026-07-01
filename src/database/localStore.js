@@ -55,6 +55,8 @@ export const habitsKey = () => 'habits'
 export const checksKey = (year, week) => `checks-${year}-W${week}`
 export const recipesKey = () => 'recipes'
 export const goalsKey = () => 'goals'
+export const medPlansKey = () => 'med-plans'
+export const medHistoryKey = () => 'med-history'
 
 // ---------------------------------------------------------------------------
 // Planner snapshot helpers (used for cloud backup)
@@ -71,7 +73,7 @@ const PLANNER_PREFIXES = ['events-', 'todos-', 'meals-', 'reminders-', 'checks-'
 // `recipes` sigue siendo "dato del planner" para notificar guardados y para
 // limpiarlo al cambiar de usuario.
 const RECIPES_KEY = 'recipes'
-const BIG_DOC_KEYS = ['habits', 'goals']
+const BIG_DOC_KEYS = ['habits', 'goals', 'med-plans', 'med-history']
 
 // Claves que SÍ van en el documento grande (todo el planner menos recetas).
 function isBigDocKey(key) {

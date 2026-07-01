@@ -49,7 +49,7 @@
 .week-view__title {
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
-  color: #3d3d4d;
+  color: #3D3D4D;
 }
 
 /* Row 1: mini calendar + habits */
@@ -57,9 +57,34 @@
   margin-left: auto;
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
   gap: var(--space-xs);
   flex-shrink: 0;
+}
+
+/* Flechas para cambiar de semana dentro del header (desktop/iPad) */
+.week-view__nav-btn--inline {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-lg);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.week-view__nav-btn--inline:hover {
+  background: var(--color-surface-hover);
+}
+
+.week-view__nav-btn--inline:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .week-view__top {
@@ -102,7 +127,7 @@
 
 .mini-calendar__day {
   font-size: 0.7rem;
-  color: #3d3d4d;
+  color: #3D3D4D;
   text-align: center;
   display: flex;
   align-items: center;
@@ -172,7 +197,7 @@
 }
 
 .habits__add-btn:hover {
-  background: #e3dcf0;
+  background: #E3DCF0;
 }
 
 .habits__table {
@@ -190,7 +215,7 @@
 
 .habits__cell {
   font-size: var(--font-size-sm);
-  color: #3d3d4d;
+  color: #3D3D4D;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -235,7 +260,7 @@
   width: 100%;
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
-  color: #3d3d4d;
+  color: #3D3D4D;
   background: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -268,12 +293,12 @@
 }
 
 .habits__check:hover {
-  border-color: #8cc7b1;
+  border-color: #8CC7B1;
 }
 
 .habits__check--on {
-  background: #8cc7b1;
-  border-color: #8cc7b1;
+  background: #8CC7B1;
+  border-color: #8CC7B1;
   color: white;
 }
 
@@ -320,7 +345,7 @@
 .day-column__number {
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-medium);
-  color: #3d3d4d;
+  color: #3D3D4D;
 }
 
 .day-column__number--today {
@@ -369,7 +394,7 @@
   align-items: center;
   gap: 6px;
   font-size: var(--font-size-xs);
-  color: #3d3d4d;
+  color: #3D3D4D;
   line-height: 1.2;
 }
 
@@ -412,7 +437,7 @@
   flex-direction: column;
   gap: 4px;
   flex-shrink: 0;
-  background: #ffffff;
+  background: #FFFFFF;
   border-radius: var(--radius-sm);
   padding: var(--space-sm);
 }
@@ -435,7 +460,7 @@
 .day-column__reminder-text {
   flex: 1;
   font-size: var(--font-size-xs);
-  color: #3d3d4d;
+  color: #3D3D4D;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -546,6 +571,11 @@
     background: var(--color-surface-hover);
   }
 
+  .week-view__nav-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
   .week-mobile {
     display: flex;
     flex-direction: column;
@@ -575,7 +605,7 @@
     gap: var(--space-xs);
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-medium);
-    color: #3d3d4d;
+    color: #3D3D4D;
   }
 
   .habits-m__remove {
@@ -691,7 +721,7 @@
   .week-mobile__daynum {
     font-size: var(--font-size-base);
     font-weight: var(--font-weight-semibold);
-    color: #3d3d4d;
+    color: #3D3D4D;
   }
 
   .week-mobile__daynum--holiday {
@@ -718,7 +748,7 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    background: #f1f5fb;
+    background: #F1F5FB;
     border-radius: var(--radius-sm);
     padding: 4px 6px;
   }
@@ -740,7 +770,7 @@
   .week-mobile__reminder-text {
     flex: 1;
     font-size: var(--font-size-xs);
-    color: #3d3d4d;
+    color: #3D3D4D;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -760,7 +790,7 @@
     align-items: center;
     gap: 6px;
     font-size: var(--font-size-xs);
-    color: #3d3d4d;
+    color: #3D3D4D;
     line-height: 1.2;
   }
 

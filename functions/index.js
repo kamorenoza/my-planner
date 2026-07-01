@@ -58,6 +58,58 @@ function parseList(planner, key) {
   }
 }
 
+// Horas (en minutos del día) de cada frecuencia predefinida. Debe coincidir con
+// src/utils/medications.js (FREQUENCIES) para que las notificaciones reflejen
+// los mismos horarios que muestra la app.
+const FREQ_HOURS = {
+  every_4h: 4,
+  every_6h: 6,
+  every_8h: 8,
+  every_12h: 12,
+  every_24h: 24,
+  twice: 12,
+  three: 8,
+  weekly: 24,
+}
+
+function medTimeToMin(time) {
+  if (!time) return 0
+  const [h, m] = String(time).split(':').map(Number)
+  return (h || 0) * 60 + (m || 0)
+}
+
+// Devuelve los minutos del día de cada dosis de un medicamento. Réplica de
+// computeDoseTimes() del cliente, devolviendo minutos en lugar de "HH:MM".
+function medDoseMinutes(med) {
+  if (!med) return []
+  const start = medTimeToMin(med.startTime || '08:00')
+
+  if (med.frequency === 'custom') {
+    const rule = med.repeat || {}
+    if (rule.mode === 'times' && Array.isArray(rule.times)) {
+      return rule.times.filter(Boolean).map(medTimeToMin).sort((a, b) => a - b)
+    }
+    if (rule.mode === 'interval') {
+      const interval = Number(rule.interval) || 1
+      const unit = rule.intervalUnit || 'hours'
+      if (unit === 'days') return [start]
+      const step = unit === 'minutes' ? interval : interval * 60
+      if (step <= 0) return [start]
+      const out = []
+      for (let min = start; min < 1440; min += step) out.push(min)
+      return out.length ? out : [start]
+    }
+    return [start]
+  }
+
+  if (med.frequency === 'weekly') return [start]
+  const hours = FREQ_HOURS[med.frequency] || 24
+  const step = hours * 60
+  const out = []
+  for (let min = start; min < 1440; min += step) out.push(min)
+  return out.length ? out : [start]
+}
+
 function isHoliday(reminder) {
   return reminder && reminder.holiday === true
 }
@@ -220,6 +272,31 @@ export const sendPlannerNotifications = onSchedule(
         }
       })
 
+      // Medication dose reminders — for each active plan (startDate ≤ hoy ≤
+      // endDate) y cada medicamento no pausado, avisa cuando una dosis cae
+      // dentro de la ventana de esta corrida. Una notificación por dosis.
+      const medPlans = parseList(planner, 'med-plans')
+      medPlans.forEach((plan) => {
+        if (!plan || !plan.startDate || !plan.endDate) return
+        if (dateKey < plan.startDate || dateKey > plan.endDate) return
+        ;(plan.medications || []).forEach((med) => {
+          if (!med || med.status === 'paused') return
+          medDoseMinutes(med).forEach((doseMin) => {
+            // Dentro de la ventana [minutes, minutes + intervalo).
+            if (doseMin >= minutes && doseMin < minutes + RUN_INTERVAL_MIN) {
+              const doseKey = `dose-${dateKey}-${med.id}-${doseMin}`
+              if (!newSent[doseKey]) {
+                messages.push({
+                  title: `Medicación: ${med.name}`,
+                  body: `${med.dose} ${med.unit} a las ${formatTime(doseMin)}`,
+                })
+                newSent[doseKey] = true
+              }
+            }
+          })
+        })
+      })
+
       if (messages.length === 0) return
 
       updates['notif.sent'] = newSent
@@ -265,6 +342,28 @@ const EVENT_COLORS = {
   trabajo: '3F7D62_1',
   citas: '6A4BA0_1',
   otros: 'B5773A_1',
+}
+
+// Colores de plan de medicación resueltos a hex (sin '#'), espejo de
+// PLAN_COLORS en src/utils/medications.js, para que el widget pinte el tag del
+// plan sin conocer las variables CSS del tema.
+const PLAN_COLOR_HEX = {
+  purple: '8d76b0',
+  pink: 'c25690',
+  green: '4caf93',
+  orange: 'f0a05e',
+  blue: '7e9fd4',
+  red: 'e57373',
+}
+
+// ¿El plan está activo (en curso) ese día? Espejo de planStatus() del cliente:
+// activo cuando hoy está dentro de [startDate, endDate] (fechas ausentes no
+// restringen).
+function isPlanActiveOn(plan, dateKey) {
+  if (!plan) return false
+  if (plan.startDate && dateKey < plan.startDate) return false
+  if (plan.endDate && dateKey > plan.endDate) return false
+  return true
 }
 
 // Returns today's events, reminders and pending todos for a user as JSON.
@@ -322,7 +421,43 @@ export const todayPlanner = onRequest(
       .filter((t) => !t.done)
       .map((t) => ({ text: t.text }))
 
+    // Medicamentos pendientes de hoy: para cada plan activo y cada medicamento
+    // no pausado, se listan las dosis del día que NO estén marcadas como
+    // tomadas en el historial. Ordenadas por hora.
+    let medHistory = {}
+    try {
+      medHistory = JSON.parse(planner['med-history'] || '{}')
+    } catch {
+      medHistory = {}
+    }
+    const pad2 = (n) => String(n).padStart(2, '0')
+    const minToHHMM = (min) => `${pad2(Math.floor(min / 60))}:${pad2(min % 60)}`
+    const medications = []
+    parseList(planner, 'med-plans').forEach((plan) => {
+      if (!isPlanActiveOn(plan, dateKey)) return
+      const planColor = PLAN_COLOR_HEX[plan.color] || PLAN_COLOR_HEX.purple
+      ;(plan.medications || []).forEach((med) => {
+        if (!med || med.status === 'paused') return
+        medDoseMinutes(med).forEach((doseMin) => {
+          const sched = `${dateKey}T${minToHHMM(doseMin)}`
+          const taken = ((medHistory && medHistory[med.id]) || []).some(
+            (e) => e.scheduledTime === sched && e.status === 'Taken',
+          )
+          if (taken) return
+          medications.push({
+            plan: plan.name || '',
+            color: planColor,
+            time: formatTime(doseMin),
+            name: med.name || '',
+            min: doseMin,
+          })
+        })
+      })
+    })
+    medications.sort((a, b) => a.min - b.min)
+    medications.forEach((m) => delete m.min)
+
     res.set('Cache-Control', 'no-store')
-    res.json({ dateKey, events, reminders, todos })
+    res.json({ dateKey, events, reminders, todos, medications })
   },
 )

@@ -30,6 +30,7 @@ function DateField({
   onChange,
   className = "field__input",
   min,
+  max,
   placeholder = "",
 }) {
   return (
@@ -42,6 +43,7 @@ function DateField({
         className={`${className} date-field__input`}
         value={value}
         min={min}
+        max={max}
         onChange={(e) => onChange(e.target.value)}
       />
     </div>

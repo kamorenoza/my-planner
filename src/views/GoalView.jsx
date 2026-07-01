@@ -616,7 +616,7 @@ function GoalView() {
     });
 
   return (
-    <div className="page goal-view">
+    <div className="page page--scroll goal-view">
       <Breadcrumbs
         items={[{ label: "Metas", to: "/metas" }, { label: goal.title }]}
       />

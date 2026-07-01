@@ -16,62 +16,63 @@
   --font-weight-bold: 700;
 
   /* Colors - Primary */
-  --color-primary: #8d76b0;
-  --color-primary-soft: #b0a0cd;
-  --color-primary-light: #ede8f5;
-  --color-primary-dark: #6b5790;
+  --color-primary: #8D76B0;
+  --color-primary-soft: #B0A0CD;
+  --color-primary-light: #EDE8F5;
+  --color-primary-dark: #6B5790;
 
   /* Colors - Accents */
-  --color-accent-green: #4caf93;
-  --color-accent-green-light: #e8f5f0;
-  --color-accent-orange: #f0a05e;
-  --color-accent-orange-light: #fef3e8;
-  --color-accent-red: #e57373;
-  --color-accent-red-light: #fde8e8;
+  --color-accent-green: #4CAF93;
+  --color-accent-green-light: #E8F5F0;
+  --color-accent-orange: #F0A05E;
+  --color-accent-orange-light: #FEF3E8;
+  --meal-orange: #CF9A72;
+  --color-accent-red: #E57373;
+  --color-accent-red-light: #FDE8E8;
 
   /* Category palette (themeable: pink / purple change per theme) */
-  --cat-pink: #c25690;
-  --cat-pink-bg: #fbe9f2;
-  --cat-pink-soft: #f8d7e3;
-  --cat-pink-text: #a84672;
+  --cat-pink: #C25690;
+  --cat-pink-bg: #FBE9F2;
+  --cat-pink-soft: #F8D7E3;
+  --cat-pink-text: #A84672;
 
-  --cat-purple: #8d76b0;
-  --cat-purple-bg: #ede8f5;
-  --cat-purple-soft: #e0d4f5;
-  --cat-purple-text: #6a4ba0;
+  --cat-purple: #8D76B0;
+  --cat-purple-bg: #EDE8F5;
+  --cat-purple-soft: #E0D4F5;
+  --cat-purple-text: #6A4BA0;
 
   /* Soft accent used for badges / card hover backgrounds */
-  --accent-soft: #e3dcf0;
+  --accent-soft: #E3DCF0;
 
   /* Todo checkbox accent */
-  --todo-check: #f5b8d0;
+  --todo-check: #F5B8D0;
 
   /* Blue accent (goal tabs / checks) – pastel blue in the original theme */
-  --accent-blue: #7e9fd4;
-  --accent-blue-bg: #eef2fb;
-  --accent-blue-soft: #dde7f6;
+  --accent-blue: #7E9FD4;
+  --accent-blue-bg: #EEF2FB;
+  --accent-blue-soft: #DDE7F6;
 
   /* Mini calendar highlight (themeable pink) */
-  --cal-active-bg: #f8d7e3;
-  --cal-active-text: #b03a6e;
-  --cal-today-bg: #f3a9c5;
-  --cal-today-text: #8a2b56;
+  --cal-active-bg: #F8D7E3;
+  --cal-active-text: #B03A6E;
+  --cal-today-bg: #F3A9C5;
+  --cal-today-text: #8A2B56;
 
   /* Holiday accents: pink number/text + a slightly redder mini-calendar tint */
-  --holiday: #d1568f;
-  --holiday-bg: #fbe9f2;
-  --holiday-soft: #f6d3e1;
-  --holiday-cal-bg: #f6cdcd;
-  --holiday-cal-text: #c2484a;
+  --holiday: #D1568F;
+  --holiday-bg: #FBE9F2;
+  --holiday-soft: #F6D3E1;
+  --holiday-cal-bg: #F6CDCD;
+  --holiday-cal-text: #C2484A;
 
   /* Colors - Neutrals */
-  --color-bg: #ffffff;
-  --color-surface: #f8f8fa;
-  --color-surface-hover: #f0f0f4;
-  --color-border: #e8e8ec;
-  --color-text-primary: #1a1a2e;
-  --color-text-secondary: #6b6b80;
-  --color-text-muted: #9e9eb0;
+  --color-bg: #FFFFFF;
+  --color-surface: #F8F8FA;
+  --color-surface-hover: #F0F0F4;
+  --color-border: #E8E8EC;
+  --color-text-primary: #1A1A2E;
+  --color-text-secondary: #6B6B80;
+  --color-text-muted: #9E9EB0;
   /* Alias kept for rules that reference --color-text; resolves to the themed
      primary text color so titles don't fall back to Safari's default blue. */
   --color-text: var(--color-text-primary);

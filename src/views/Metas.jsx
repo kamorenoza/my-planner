@@ -53,7 +53,7 @@ function GoalCard({ goal, onClick }) {
             </span>
           )}
           {goal.targetDate && (
-            <span className="goal-card__date">🎯 {goal.targetDate}</span>
+            <span className="goal-card__date">:dart: {goal.targetDate}</span>
           )}
         </div>
       </div>
@@ -92,7 +92,7 @@ function Metas() {
   const doneCount = goals.length - activeCount;
 
   return (
-    <div className="page metas-page">
+    <div className="page page--scroll metas-page">
       <div className="page__header">
         <h1 className="page__title metas__title">Metas</h1>
         <button className="metas__add-btn" onClick={openNew}>
@@ -121,7 +121,7 @@ function Metas() {
 
       {filtered.length === 0 ? (
         <div className="metas__empty">
-          <span className="metas__empty-icon">🎯</span>
+          <span className="metas__empty-icon">:dart:</span>
           <p className="metas__empty-text">
             {goals.length === 0
               ? "Aún no tienes metas. ¡Crea la primera!"

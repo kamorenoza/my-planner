@@ -3,17 +3,15 @@
   font-size: var(--font-size-base);
 }
 
-/* Full-height page that fits the viewport */
+/* Página de comidas: scroll interno como el resto de vistas (page--scroll).
+   El hueco del menú lateral lo reserva page--scroll con margin-right. */
 .comidas-page {
-  height: 100vh;
-  height: 100dvh;
   display: flex;
   flex-direction: column;
   padding-left: var(--page-padding);
-  padding-right: var(--app-pad-right);
+  padding-right: var(--page-padding);
   padding-top: calc(var(--space-lg) + env(safe-area-inset-top));
   padding-bottom: calc(var(--space-lg) + env(safe-area-inset-bottom));
-  overflow: hidden;
 }
 
 .comidas-page .page__header {
@@ -25,51 +23,66 @@
   font-size: var(--font-size-xl);
 }
 
+.comidas__search {
+  margin-bottom: var(--space-md);
+}
+
+.comidas__filters {
+  margin-bottom: var(--space-lg);
+}
+
+.comidas__filters .cat-pill--active {
+  color: var(--color-text-secondary);
+}
+
 .comidas__sections {
-  flex: 1;
-  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  overflow: hidden;
 }
 
 .comidas__section {
-  flex: 1;
-  min-height: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.comidas__section-header {
+  width: 100%;
   display: flex;
-  flex-direction: column;
-  margin-bottom: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  cursor: pointer;
+  color: var(--color-text-primary);
+  background: var(--color-surface-hover);
+  transition: filter 0.15s ease;
 }
 
-/* When something is expanded, allow scrolling */
-.comidas-page--scroll {
-  overflow-y: auto;
+.comidas__section-header:disabled {
+  cursor: default;
 }
 
-.comidas-page--scroll .comidas__sections {
-  overflow: visible;
+.comidas__section-header:not(:disabled):hover,
+.comidas__section-header:not(:disabled):active {
+  filter: brightness(0.97);
 }
 
-.comidas-page--scroll .comidas__section {
-  flex: 0 0 auto;
+.comidas__section-chevron {
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
 }
 
-/* On very short screens, fall back to scrolling */
-@media (max-height: 560px) {
-  .comidas-page {
-    height: auto;
-    min-height: 100vh;
-    overflow-y: auto;
-  }
+.comidas__section--open .comidas__section-chevron {
+  transform: rotate(180deg);
+}
 
-  .comidas__sections {
-    overflow: visible;
-  }
-
-  .comidas__section {
-    flex: 0 0 auto;
-  }
+.comidas__section-body {
+  padding: var(--space-sm) var(--space-md) var(--space-md);
+  background: var(--color-bg);
 }
 
 .comidas__add-btn {
@@ -91,19 +104,28 @@
 .comidas__section-title {
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
-  color: #3d3d4d;
-  margin-bottom: var(--space-sm);
+  color: var(--color-text-primary);
   display: flex;
   align-items: center;
   gap: var(--space-xs);
-  flex-shrink: 0;
 }
 
 .comidas__section-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   flex-shrink: 0;
+}
+
+.comidas__section-count {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  background: var(--color-bg);
+  padding: 0 var(--space-xs);
+  border-radius: var(--radius-full);
+  min-width: 18px;
+  text-align: center;
 }
 
 .comidas__empty {
@@ -111,32 +133,23 @@
   color: var(--color-text-muted);
 }
 
+.comidas__empty--page {
+  text-align: center;
+  padding: var(--space-xl) 0;
+}
+
 .recipe-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-  gap: var(--space-sm);
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-md);
   align-content: start;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.comidas-page--scroll .recipe-grid {
-  overflow: visible;
-}
-
-@media (max-height: 560px) {
-  .recipe-grid {
-    overflow: visible;
-    flex: 0 0 auto;
-  }
 }
 
 .recipe-card {
   display: flex;
   flex-direction: column;
   text-align: left;
-  background: var(--color-surface);
+  background: var(--color-surface-hover);
   border-radius: var(--radius-lg);
   overflow: hidden;
   cursor: pointer;
@@ -176,12 +189,12 @@
 .recipe-card__body {
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  padding: var(--space-xs) var(--space-sm) var(--space-sm);
+  gap: 2px;
+  padding: var(--space-sm) var(--space-sm) var(--space-md);
 }
 
 .recipe-card__title {
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
   overflow: hidden;
@@ -192,29 +205,6 @@
 .recipe-card__count {
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
-}
-
-.comidas__more-row {
-  display: flex;
-  justify-content: center;
-  gap: var(--space-md);
-  margin-top: var(--space-xs);
-  flex-shrink: 0;
-}
-
-.comidas__more {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-xs) var(--space-lg);
-  color: var(--color-text-muted);
-  cursor: pointer;
-  transition: color 0.15s ease;
-}
-
-.comidas__more:hover,
-.comidas__more:active {
-  color: var(--color-primary);
 }
 
 /* Mobile: scrollable page, recipe cards two per row */
@@ -228,17 +218,7 @@
     );
   }
 
-  .comidas__sections {
-    overflow: visible;
-  }
-
-  .comidas__section {
-    flex: 0 0 auto;
-  }
-
   .recipe-grid {
     grid-template-columns: repeat(2, 1fr);
-    overflow: visible;
-    flex: 0 0 auto;
   }
 }

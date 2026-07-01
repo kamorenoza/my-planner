@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { MONTHS, WEEKDAYS_FULL, getISOWeek, getMonthDays } from '../utils/calendar'
+import { MONTHS, WEEKDAYS_FULL, getISOWeek, getMonthDays, isYearAvailable } from '../utils/calendar'
 import {
   DAY_START_MIN,
   DAY_END_MIN,
@@ -36,6 +36,14 @@ import {
   editEvent,
   removeEvent,
 } from '../utils/recurrence'
+import {
+  medPlansKey,
+  medHistoryKey,
+  planStatus,
+  computeDoseTimes,
+  colorById,
+  newId,
+} from '../utils/medications'
 import { useIsMobile } from '../utils/useIsMobile'
 import './DayView.css'
 
@@ -338,6 +346,25 @@ function Todo({ storageKey, date, year, week, weekdayIndex }) {
   const [editingId, setEditingId] = useState(null)
   const [draft, setDraft] = useState('')
   const [confirmItem, setConfirmItem] = useState(null)
+  const [reordering, setReordering] = useState(false)
+  const [dragId, setDragId] = useState(null)
+  const [overId, setOverId] = useState(null)
+  const rootRef = useRef(null)
+
+  useEffect(() => {
+    if (!reordering) return
+    const handleOutside = (e) => {
+      if (rootRef.current && !rootRef.current.contains(e.target)) {
+        setReordering(false)
+      }
+    }
+    document.addEventListener('mousedown', handleOutside)
+    document.addEventListener('touchstart', handleOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleOutside)
+      document.removeEventListener('touchstart', handleOutside)
+    }
+  }, [reordering])
 
   const toggleHabit = (habitId) => {
     const key = `${habitId}-${weekdayIndex}`
@@ -379,13 +406,75 @@ function Todo({ storageKey, date, year, week, weekdayIndex }) {
     setDraft('')
   }
 
+  const handleDrop = (targetId) => {
+    if (dragId == null || dragId === targetId) {
+      setDragId(null)
+      setOverId(null)
+      return
+    }
+    setItems((prev) => {
+      const from = prev.findIndex((it) => it.id === dragId)
+      const to = prev.findIndex((it) => it.id === targetId)
+      if (from === -1 || to === -1) return prev
+      const next = [...prev]
+      const [moved] = next.splice(from, 1)
+      next.splice(to, 0, moved)
+      return next
+    })
+    setDragId(null)
+    setOverId(null)
+  }
+
   return (
-    <div className="todo">
+    <div className="todo" ref={rootRef}>
       <div className="todo__head-bar">
         <h3 className="todo__title">TODO</h3>
-        <button className="todo__add-btn" onClick={() => setAdding(true)}>
-          + Agregar
-        </button>
+        <div className="todo__actions">
+          <button
+            type="button"
+            className={`todo__reorder-btn${reordering ? ' todo__reorder-btn--on' : ''}`}
+            onClick={() => setReordering((v) => !v)}
+            disabled={items.length < 2}
+            aria-pressed={reordering}
+            aria-label={reordering ? 'Cerrar reordenar' : 'Reordenar tareas'}
+            title={reordering ? 'Cerrar reordenar' : 'Reordenar tareas'}
+          >
+            {reordering ? (
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            ) : (
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="m21 16-4 4-4-4" />
+                <path d="M17 20V4" />
+                <path d="m3 8 4-4 4 4" />
+                <path d="M7 4v16" />
+              </svg>
+            )}
+          </button>
+          <button className="todo__add-btn" onClick={() => setAdding(true)}>
+            + Agregar
+          </button>
+        </div>
       </div>
       <div className="todo__list">
         {habits.map((habit) => {
@@ -409,14 +498,51 @@ function Todo({ storageKey, date, year, week, weekdayIndex }) {
           )
         })}
         {items.map((item) => (
-          <div key={item.id} className="todo__item">
-            <button
-              className={`todo__check${item.done ? ' todo__check--on' : ''}`}
-              onClick={() => toggle(item.id)}
-              aria-label="Marcar"
-            >
-              {item.done ? '\u2713' : ''}
-            </button>
+          <div
+            key={item.id}
+            className={`todo__item${reordering ? ' todo__item--reorder' : ''}${
+              reordering && dragId === item.id ? ' todo__item--dragging' : ''
+            }${reordering && overId === item.id && dragId !== item.id ? ' todo__item--over' : ''}`}
+            draggable={reordering}
+            onDragStart={reordering ? () => setDragId(item.id) : undefined}
+            onDragOver={
+              reordering
+                ? (e) => {
+                    e.preventDefault()
+                    if (overId !== item.id) setOverId(item.id)
+                  }
+                : undefined
+            }
+            onDrop={reordering ? () => handleDrop(item.id) : undefined}
+            onDragEnd={
+              reordering
+                ? () => {
+                    setDragId(null)
+                    setOverId(null)
+                  }
+                : undefined
+            }
+          >
+            {reordering ? (
+              <span className="todo__drag-handle" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="9" cy="6" r="1" />
+                  <circle cx="9" cy="12" r="1" />
+                  <circle cx="9" cy="18" r="1" />
+                  <circle cx="15" cy="6" r="1" />
+                  <circle cx="15" cy="12" r="1" />
+                  <circle cx="15" cy="18" r="1" />
+                </svg>
+              </span>
+            ) : (
+              <button
+                className={`todo__check${item.done ? ' todo__check--on' : ''}`}
+                onClick={() => toggle(item.id)}
+                aria-label="Marcar"
+              >
+                {item.done ? '\u2713' : ''}
+              </button>
+            )}
             {editingId === item.id ? (
               <input
                 className="todo__input"
@@ -435,19 +561,21 @@ function Todo({ storageKey, date, year, week, weekdayIndex }) {
             ) : (
               <span
                 className={`todo__text${item.done ? ' todo__text--done' : ''}`}
-                onClick={() => startEdit(item)}
-                title="Editar"
+                onClick={() => (reordering ? null : startEdit(item))}
+                title={reordering ? undefined : 'Editar'}
               >
                 {item.text}
               </span>
             )}
-            <button
-              className="todo__remove"
-              onClick={() => setConfirmItem(item)}
-              aria-label="Eliminar"
-            >
-              {'\u00D7'}
-            </button>
+            {!reordering && (
+              <button
+                className="todo__remove"
+                onClick={() => setConfirmItem(item)}
+                aria-label="Eliminar"
+              >
+                {'\u00D7'}
+              </button>
+            )}
           </div>
         ))}
         {adding && (
@@ -636,7 +764,6 @@ function MealPicker({ tag, recipes, onPick, onAddOther, onClose }) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={'Buscar\u2026'}
-          autoFocus
         />
 
         <div className="meal-picker__other">
@@ -805,9 +932,9 @@ function Meals({ storageKey }) {
       <h3 className="meals__title">Comidas del d&iacute;a</h3>
       <div className="meals__list">
         {MEALS.map((meal) => {
-          const accent = TAG_COLORS[meal.id]
           const selected = meals[meal.id] || []
-          const canAddMore = selected.length < 4
+          const accent = TAG_COLORS[meal.id] || TAG_COLORS.desayuno
+          const canAddMore = selected.length < 3
           return (
             <div key={meal.id} className="meal-card">
               <span className="meal-card__label">{meal.label}</span>
@@ -820,7 +947,10 @@ function Meals({ storageKey }) {
                     <div
                       key={resolved.id}
                       className="meal-mini"
-                      style={{ background: accent.bg }}
+                      style={{
+                        background: accent.bg,
+                        border: `1px solid color-mix(in srgb, ${accent.color} 35%, white)`,
+                      }}
                       onClick={() =>
                         resolved.recipe ? setViewing(resolved.recipe) : null
                       }
@@ -896,6 +1026,170 @@ function Meals({ storageKey }) {
   )
 }
 
+// Convierte "HH:MM" (24h) a etiqueta de 12h tipo "8:00am" / "8:30pm".
+function formatDose12h(time) {
+  const [h, m] = String(time).split(':').map(Number)
+  const period = h < 12 ? 'am' : 'pm'
+  const hh = h % 12 === 0 ? 12 : h % 12
+  return `${hh}:${String(m || 0).padStart(2, '0')}${period}`
+}
+
+// Recuadro "Medicamentos": muestra las dosis del día agrupadas por plan activo,
+// con un check para marcar cada dosis como tomada (se guarda en el historial
+// global de medicación, compartido con el módulo de Medicación).
+function DayMedications({ dayISO }) {
+  const navigate = useNavigate()
+  const [plans] = usePersistedState(medPlansKey(), [])
+  const [history, setHistory] = usePersistedState(medHistoryKey(), {})
+
+  const activePlans = plans
+    .filter((plan) => planStatus(plan, dayISO) === 'active')
+    .map((plan) => {
+      const doses = []
+      ;(plan.medications || []).forEach((med) => {
+        if (med.status === 'paused') return
+        computeDoseTimes(med).forEach((time) => {
+          doses.push({ medId: med.id, name: med.name, time })
+        })
+      })
+      doses.sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0))
+      return { plan, doses }
+    })
+    .filter((p) => p.doses.length > 0)
+
+  const schedFor = (time) => `${dayISO}T${time}`
+
+  const isTaken = (medId, time) => {
+    const sched = schedFor(time)
+    return ((history && history[medId]) || []).some(
+      (e) => e.scheduledTime === sched && e.status === 'Taken',
+    )
+  }
+
+  // Una dosis tomada permanece visible con su check marcado (no se oculta).
+  const toggleDose = (medId, time) => {
+    const sched = schedFor(time)
+    setHistory((prev) => {
+      const entries = prev[medId] || []
+      const taken = entries.some(
+        (e) => e.scheduledTime === sched && e.status === 'Taken',
+      )
+      if (taken) {
+        return {
+          ...prev,
+          [medId]: entries.filter(
+            (e) => !(e.scheduledTime === sched && e.status === 'Taken'),
+          ),
+        }
+      }
+      const entry = {
+        id: newId('dose'),
+        scheduledTime: sched,
+        completedTime: new Date().toISOString(),
+        status: 'Taken',
+      }
+      return { ...prev, [medId]: [...entries, entry] }
+    })
+  }
+
+  // El recuadro siempre se muestra (aunque no haya medicamentos ese día). Las
+  // dosis ya tomadas permanecen visibles con su check marcado.
+  return (
+    <div className="day-meds">
+      <div className="day-meds__header">
+        <h3 className="day-meds__title">Medicamentos</h3>
+        <button
+          type="button"
+          className="day-meds__go"
+          onClick={() => navigate('/medications')}
+          aria-label="Ver medicamentos"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </button>
+      </div>
+      {activePlans.length === 0 && (
+        <p className="day-meds__empty">Sin medicamentos para hoy</p>
+      )}
+      {activePlans.map(({ plan, doses }) => {
+        const color = colorById(plan.color)
+        return (
+          <div key={plan.id} className="day-meds__plan">
+            <div
+              className="day-meds__plan-name"
+              style={{ background: color.bg }}
+            >
+              <span
+                className="day-meds__dot"
+                style={{ background: color.color }}
+              />
+              <span className="day-meds__plan-label">{plan.name}</span>
+              <button
+                type="button"
+                className="day-meds__plan-go"
+                style={{ color: color.color }}
+                onClick={() => navigate(`/medications/${plan.id}`)}
+                aria-label={`Ver plan ${plan.name}`}
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            </div>
+            <ul className="day-meds__list">
+              {doses.map((dose) => {
+                const taken = isTaken(dose.medId, dose.time)
+                return (
+                  <li
+                    key={`${dose.medId}-${dose.time}`}
+                    className="day-meds__row"
+                  >
+                    <button
+                      type="button"
+                      className={`day-meds__check${taken ? ' day-meds__check--on' : ''}`}
+                      onClick={() => toggleDose(dose.medId, dose.time)}
+                      aria-label={taken ? 'Marcar como pendiente' : 'Marcar como tomado'}
+                    />
+                    <span
+                      className={`day-meds__time${taken ? ' day-meds__time--done' : ''}`}
+                    >
+                      {formatDose12h(dose.time)}
+                    </span>
+                    <span
+                      className={`day-meds__name${taken ? ' day-meds__name--done' : ''}`}
+                    >
+                      {dose.name}
+                    </span>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 function DayView() {
   const { year, month, day } = useParams()
   const navigate = useNavigate()
@@ -935,8 +1229,14 @@ function DayView() {
   }
   const isMobile = useIsMobile()
 
+  const dayTarget = (delta) =>
+    new Date(Date.UTC(yearNumber, monthNumber, dayNumber + delta))
+  const canPrevDay = isYearAvailable(dayTarget(-1).getUTCFullYear())
+  const canNextDay = isYearAvailable(dayTarget(1).getUTCFullYear())
+
   const goDay = (delta) => {
-    const d = new Date(Date.UTC(yearNumber, monthNumber, dayNumber + delta))
+    const d = dayTarget(delta)
+    if (!isYearAvailable(d.getUTCFullYear())) return
     navigate(
       `/year/${d.getUTCFullYear()}/month/${d.getUTCMonth()}/day/${d.getUTCDate()}`,
     )
@@ -989,6 +1289,7 @@ function DayView() {
             <button
               className="day-view__nav-btn"
               onClick={() => goDay(-1)}
+              disabled={!canPrevDay}
               aria-label={'D\u00EDa anterior'}
             >
               {'\u2039'}
@@ -996,6 +1297,7 @@ function DayView() {
             <button
               className="day-view__nav-btn"
               onClick={() => goDay(1)}
+              disabled={!canNextDay}
               aria-label={'D\u00EDa siguiente'}
             >
               {'\u203A'}
@@ -1003,6 +1305,14 @@ function DayView() {
           </div>
         ) : (
           <div className="day-view__days">
+            <button
+              className="day-view__nav-btn"
+              onClick={() => goDay(-1)}
+              disabled={!canPrevDay}
+              aria-label={'D\u00EDa anterior'}
+            >
+              {'\u2039'}
+            </button>
             {getMonthDays(yearNumber, monthNumber)
               .filter((d) => d !== null)
               .map((d) => (
@@ -1014,6 +1324,14 @@ function DayView() {
                   {d}
                 </button>
               ))}
+            <button
+              className="day-view__nav-btn"
+              onClick={() => goDay(1)}
+              disabled={!canNextDay}
+              aria-label={'D\u00EDa siguiente'}
+            >
+              {'\u203A'}
+            </button>
           </div>
         )}
       </div>
@@ -1038,6 +1356,7 @@ function DayView() {
             />
           </div>
           <Meals storageKey={mealsKey(defaultDate)} />
+          <DayMedications dayISO={defaultDate} />
         </div>
       ) : (
         <div className="day-view__columns">
@@ -1051,15 +1370,20 @@ function DayView() {
             />
           </div>
           <div className="day-view__col day-view__col--side">
-            <Todo
-              storageKey={todosKey(defaultDate)}
-              date={defaultDate}
-              year={yearNumber}
-              week={weekNumber}
-              weekdayIndex={weekdayIndex}
-            />
-            <Reminders items={reminders} setItems={setReminders} date={defaultDate} />
-            <Meals storageKey={mealsKey(defaultDate)} />
+            <div className="day-view__top-row">
+              <Todo
+                storageKey={todosKey(defaultDate)}
+                date={defaultDate}
+                year={yearNumber}
+                week={weekNumber}
+                weekdayIndex={weekdayIndex}
+              />
+              <Reminders items={reminders} setItems={setReminders} date={defaultDate} />
+            </div>
+            <div className="day-view__meals-row">
+              <Meals storageKey={mealsKey(defaultDate)} />
+              <DayMedications dayISO={defaultDate} />
+            </div>
           </div>
         </div>
       )}

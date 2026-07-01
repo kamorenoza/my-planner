@@ -7,8 +7,6 @@
   padding-right: var(--app-pad-right);
   padding-top: calc(var(--space-md) + env(safe-area-inset-top));
   padding-bottom: calc(var(--space-md) + env(safe-area-inset-bottom));
-  max-width: var(--max-width);
-  margin: 0 auto;
   overflow: hidden;
 }
 
@@ -66,7 +64,7 @@
 .day-view__title {
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
-  color: 3D3D4D_1;
+  color: var(--color-text-primary);
 }
 
 /* Two columns */
@@ -74,15 +72,62 @@
   flex: 1;
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
   gap: var(--space-xs);
   margin-left: var(--space-md);
 }
 
+.day-view__days .day-view__nav-btn {
+  width: 28px;
+  height: 28px;
+  font-size: var(--font-size-lg);
+  background: var(--color-surface);
+}
+
+.day-view__days .day-view__nav-btn:hover {
+  background: var(--color-surface-hover);
+}
+
+/* Flechas para moverse entre días (base; el móvil ajusta tamaños más abajo) */
+.day-view__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.day-view__nav--desktop {
+  align-self: center;
+  margin-left: var(--space-sm);
+}
+
+.day-view__nav-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-xl);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.day-view__nav-btn:hover {
+  background: var(--color-surface-hover);
+}
+
+.day-view__nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 .day-view__columns {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 0.6fr 1fr;
   gap: var(--space-md);
   min-height: 0;
 }
@@ -292,7 +337,7 @@
 }
 
 .todo__title {
-  font-size: var(--font-size-sm);
+  font-size: 0.8rem;
   font-weight: var(--font-weight-medium);
   color: var(--color-primary);
 }
@@ -309,6 +354,69 @@
 
 .todo__add-btn:hover {
   background: var(--accent-soft);
+}
+
+.todo__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.todo__reorder-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.todo__reorder-btn:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+
+.todo__reorder-btn--on {
+  background: var(--accent-soft);
+}
+
+.todo__reorder-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.todo__item--reorder {
+  padding: var(--space-xs);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  cursor: grab;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.todo__item--reorder:active {
+  cursor: grabbing;
+}
+
+.todo__item--dragging {
+  opacity: 0.4;
+}
+
+.todo__item--over {
+  border-color: var(--color-primary);
+  box-shadow: 0 -2px 0 var(--color-primary) inset;
+}
+
+.todo__drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 21px;
+  color: var(--color-text-muted);
+  cursor: grab;
 }
 
 .todo__list {
@@ -371,7 +479,7 @@
 .todo__text {
   flex: 1;
   font-size: var(--font-size-sm);
-  color: 3D3D4D_1;
+  color: var(--color-text-primary);
   cursor: text;
 }
 
@@ -383,7 +491,7 @@
 .todo__input {
   flex: 1;
   font-size: var(--font-size-sm);
-  color: 3D3D4D_1;
+  color: var(--color-text-primary);
   background: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -428,7 +536,7 @@
 }
 
 .reminders__title {
-  font-size: var(--font-size-sm);
+  font-size: 0.8rem;
   font-weight: var(--font-weight-medium);
   color: var(--accent-blue);
 }
@@ -478,14 +586,14 @@ img.reminder-card__emoji {
   flex: 1;
   font-size: var(--font-size-sm);
   line-height: 16px;
-  color: 3D3D4D_1;
+  color: var(--color-text-primary);
   cursor: text;
 }
 
 .reminders__input {
   flex: 1;
   font-size: var(--font-size-sm);
-  color: 3D3D4D_1;
+  color: var(--color-text-primary);
   background: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -520,10 +628,8 @@ img.reminder-card__emoji {
 }
 
 .reminders__empty {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   color: var(--color-text-muted);
-  text-align: center;
-  padding: var(--space-sm) 0;
 }
 
 /* Meals */
@@ -534,7 +640,7 @@ img.reminder-card__emoji {
 }
 
 .meals__title {
-  font-size: var(--font-size-sm);
+  font-size: 0.8rem;
   font-weight: var(--font-weight-medium);
   color: var(--color-primary);
   margin-bottom: var(--space-sm);
@@ -556,7 +662,8 @@ img.reminder-card__emoji {
 }
 
 .meal-card__label {
-  font-size: 0.65rem;
+  font-size: 0.7rem;
+  line-height: 0.7rem;
   font-weight: var(--font-weight-medium);
   color: var(--color-text-secondary);
   flex-shrink: 0;
@@ -570,23 +677,26 @@ img.reminder-card__emoji {
   flex-wrap: wrap;
   align-items: stretch;
   gap: var(--space-xs);
-  min-height: 48px;
+  min-height: 68px;
 }
 
 .meal-mini {
   position: relative;
-  flex: 0 0 calc((100% - 3 * var(--space-xs)) / 4);
-  max-width: calc((100% - 3 * var(--space-xs)) / 4);
+  flex: 0 0 calc((100% - 2 * var(--space-xs)) / 3);
+  max-width: calc((100% - 2 * var(--space-xs)) / 3);
   min-width: 0;
+  height: 68px;
   border-radius: var(--radius-sm);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   cursor: pointer;
+  background: var(--color-surface);
 }
 
 .meal-mini__photo {
-  aspect-ratio: 16 / 9;
+  flex: 1;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -610,7 +720,7 @@ img.reminder-card__emoji {
 .meal-mini__title {
   font-size: 0.6rem;
   font-weight: var(--font-weight-medium);
-  color: 3D3D4D_1;
+  color: var(--color-text-primary);
   padding: 3px var(--space-xs);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -639,10 +749,10 @@ img.reminder-card__emoji {
 }
 
 .meal-add {
-  flex: 0 0 calc((100% - 3 * var(--space-xs)) / 4);
-  max-width: calc((100% - 3 * var(--space-xs)) / 4);
+  flex: 0 0 calc((100% - 2 * var(--space-xs)) / 3);
+  max-width: calc((100% - 2 * var(--space-xs)) / 3);
   align-self: stretch;
-  min-height: 48px;
+  height: 68px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -780,6 +890,217 @@ img.reminder-card__emoji {
   color: var(--color-text-muted);
 }
 
+/* Medicamentos del día */
+.day-view__meals-row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-md);
+  flex: 0 0 auto;
+}
+
+/* Todo + Recordatorios en una misma fila (escritorio/iPad). Crecen para ocupar
+   el alto disponible cuando hay poco contenido (flex-grow), pero no se encogen
+   (flex-shrink: 0): cuando el contenido excede el alto, la columna lateral hace
+   scroll general de las cuatro tarjetas. */
+.day-view__top-row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-md);
+  flex: 1 0 auto;
+}
+
+.day-view__top-row > * {
+  min-width: 0;
+}
+
+/* Mismas proporciones que la fila de comidas: Todo alineado con Comidas (1.5) y
+   Recordatorios alineado con Medicamentos (1). */
+.day-view__top-row > *:first-child {
+  flex: 1.5;
+}
+
+.day-view__top-row > *:last-child {
+  flex: 1;
+}
+
+.day-view__meals-row > * {
+  min-width: 0;
+}
+
+.day-view__meals-row .meals {
+  flex: 1.5;
+}
+
+.day-view__meals-row .day-meds {
+  flex: 1;
+}
+
+/* Sin medicamentos: Comidas queda sola en la fila y ocupa todo el ancho. En ese
+   caso las mini-cards se reparten en 4 columnas (más pequeñas), aunque el máximo
+   sigue siendo 3 cards, dejando libre el 4º hueco. */
+.day-view__meals-row .meals:only-child .meal-mini,
+.day-view__meals-row .meals:only-child .meal-add {
+  flex: 0 0 calc((100% - 3 * var(--space-xs)) / 4);
+  max-width: calc((100% - 3 * var(--space-xs)) / 4);
+}
+
+.day-meds {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+}
+
+.day-meds__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+}
+
+.day-meds__title {
+  font-size: 0.8rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+}
+
+.day-meds__go {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  background: transparent;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s ease;
+}
+
+.day-meds__go:hover,
+.day-meds__go:active {
+  color: var(--color-primary-dark);
+}
+
+.day-meds__empty {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.day-meds__plan {
+  margin-bottom: var(--space-xs);
+}
+
+.day-meds__plan:last-child {
+  margin-bottom: 0;
+}
+
+.day-meds__plan-name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-xs);
+}
+
+.day-meds__plan-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.day-meds__plan-go {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: calc(-1 * var(--space-sm));
+  background: transparent;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  transition: opacity 0.15s ease;
+}
+
+.day-meds__plan-go:hover,
+.day-meds__plan-go:active {
+  opacity: 0.7;
+}
+
+.day-meds__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.day-meds__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.day-meds__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.day-meds__check {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-bg);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.day-meds__check:hover {
+  border-color: var(--todo-check);
+}
+
+.day-meds__check--on {
+  border-color: var(--todo-check);
+  background: var(--todo-check);
+}
+
+.day-meds__time {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+  min-width: 52px;
+}
+
+.day-meds__time--done {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+}
+
+.day-meds__name {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.day-meds__name--done {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+}
+
 /* Tablet (iPad 10) */
 @media (min-width: 768px) {
   .day-view__title {
@@ -789,7 +1110,7 @@ img.reminder-card__emoji {
   /* Header: el heading (fecha + breadcrumbs) tiene un ancho FIJO calculado para
      la fecha mÃ¡s larga posible ("MiÃ©rcoles Â· 30 de Septiembre 2026"), y las
      pills toman TODO el espacio restante (que es fijo porque el heading lo es).
-     AsÃ­ las pills no se amontonan ni se mueven al cambiar el largo de la fecha. */
+     AsÃ las pills no se amontonan ni se mueven al cambiar el largo de la fecha. */
   .day-view__heading {
     flex: 0 0 250px;
     width: 250px;
@@ -822,12 +1143,21 @@ img.reminder-card__emoji {
 
   /* Bigger meals labels and cards */
   .meals__title {
-    font-size: var(--font-size-base);
+    font-size: 0.8rem;
   }
 
-  .meal-card__label {
-    font-size: var(--font-size-sm);
-    width: 64px;
+  /* En iPad/escritorio los labels (Desayuno/Almuerzo/Cena) se muestran ARRIBA
+     de cada grupo de cards, como encabezado de sección. */
+  .day-view__meals-row .meal-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-xs);
+  }
+
+  .day-view__meals-row .meal-card__label {
+    width: auto;
+    padding-top: 0;
+    font-size: 0.7rem;
   }
 
   .meal-mini__title {

@@ -8,6 +8,7 @@ import {
   getMonthWeeks,
   getMonthDays,
   getISOWeek,
+  isYearAvailable,
 } from "../utils/calendar";
 import { getEventType, formatTime } from "../utils/events";
 import {
@@ -390,8 +391,12 @@ function MonthView() {
       m = 0;
       y += 1;
     }
+    if (!isYearAvailable(y)) return;
     navigate(`/year/${y}/month/${m}`);
   };
+
+  const canPrevMonth = isYearAvailable(monthNumber === 0 ? yearNumber - 1 : yearNumber);
+  const canNextMonth = isYearAvailable(monthNumber === 11 ? yearNumber + 1 : yearNumber);
 
   return (
     <div className="month-view">
@@ -416,6 +421,7 @@ function MonthView() {
             <button
               className="month-view__nav-btn"
               onClick={() => goMonth(-1)}
+              disabled={!canPrevMonth}
               aria-label="Mes anterior"
             >
               ‹
@@ -423,6 +429,7 @@ function MonthView() {
             <button
               className="month-view__nav-btn"
               onClick={() => goMonth(1)}
+              disabled={!canNextMonth}
               aria-label="Mes siguiente"
             >
               ›

@@ -393,6 +393,8 @@
   border-radius: var(--radius-sm);
   background: var(--color-bg);
   cursor: grab;
+  /* Evita que el gesto de reordenar haga scroll de la lista en touch (iPad). */
+  touch-action: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
 }
 
@@ -832,6 +834,20 @@ img.reminder-card__emoji {
   max-height: 50vh;
   overflow-y: auto;
   margin-bottom: var(--space-md);
+}
+
+/* Selector de receta: un solo scroll (el interno de la lista). El modal no
+   scrollea; se vuelve columna flexible y la lista ocupa el espacio restante. */
+.modal--picker {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal--picker .meal-picker__list {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
 }
 
 .meal-picker__item {

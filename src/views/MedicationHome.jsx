@@ -1,5 +1,3 @@
-
-
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePersistedState } from "../utils/storage";
@@ -13,6 +11,7 @@ import {
 import { TreatmentPlanCard } from "../components/MedicationCards";
 import { DeleteTreatmentPlanModal } from "../components/MedicationModals";
 import ConfirmDialog from "../components/ConfirmDialog";
+import EmojiImg from "../components/EmojiImg";
 import "./MedicationHome.css";
 
 const FILTERS = [
@@ -159,7 +158,7 @@ function MedicationHome() {
 
       {visible.length === 0 ? (
         <div className="medication-home__empty">
-          <span className="medication-home__empty-icon">:pill:</span>
+          <EmojiImg emoji=":pill:" code="1f48a" className="medication-home__empty-icon" />
           <p className="medication-home__empty-text">
             {plans.length === 0
               ? "Aún no tienes planes de tratamiento."

@@ -77,11 +77,6 @@
   color: var(--color-primary-dark);
 }
 
-/* FAB is mobile-only */
-.side-menu__fab {
-  display: none;
-}
-
 .side-menu__logout:hover,
 .side-menu__logout:active,
 .side-menu__settings:hover,
@@ -89,117 +84,176 @@
   color: var(--color-primary);
 }
 
-/* Mobile: bottom navigation bar with HOY in the middle */
-@media (max-width: 767px) {
-  .side-menu {
-    top: auto;
-    right: 0;
-    left: 0;
-    bottom: 0;
-    width: 100%;
-    height: auto;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-around;
-    gap: 0;
-    padding: var(--space-xs) var(--space-md);
-    padding-bottom: calc(var(--space-xs) + env(safe-area-inset-bottom));
-    background: var(--color-bg);
-    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
-  }
+/* ===== Móvil: barra inferior propia (renderizada solo en móvil vía JS) ===== */
+.mobile-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md);
+  padding-bottom: calc(var(--space-xs) + env(safe-area-inset-bottom));
+  background: var(--color-bg);
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
+}
 
-  /* Reorder so the quick-jump FAB sits in the middle:
-     Dashboard, Comidas, [FAB], Metas, Settings */
-  .side-menu__item:nth-child(2) {
-    order: 0;
-  }
+.mobile-nav__item {
+  flex: 1 1 0;
+  height: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  background: transparent;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
 
-  .side-menu__item:nth-child(3) {
-    order: 1;
-  }
+.mobile-nav__item:active {
+  color: var(--color-text-primary);
+}
 
-  .side-menu__jump {
-    order: 2;
-    position: relative;
-    z-index: 2;
-    width: 54px;
-    height: 54px;
-    flex: 0 0 auto;
-  }
+.mobile-nav__item--active {
+  color: var(--color-primary);
+}
 
-  .side-menu__fab {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 54px;
-    height: 54px;
-    border-radius: var(--radius-full);
-    background: var(--color-primary);
-    color: white;
-    font-size: 0.7rem;
-    font-weight: var(--font-weight-semibold);
-    letter-spacing: 0.5px;
-    box-shadow: var(--shadow-md);
-    cursor: pointer;
-  }
+.mobile-nav__item--text {
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.5px;
+}
 
-  .side-menu__fab:active {
-    background: var(--color-primary-dark);
-    color: white;
-  }
+.mobile-nav__text-main {
+  font-size: 0.72rem;
+  line-height: 1;
+}
 
-  /* Speed-dial: pops up above the FAB when open, laid out horizontally */
-  .side-menu__jump-actions {
-    position: absolute;
-    flex-direction: row;
-    bottom: calc(100% + var(--space-sm));
-    left: 50%;
-    transform: translateX(-50%) translateY(8px);
-    gap: var(--space-sm);
+.mobile-nav__text-sub {
+  font-size: 0.6rem;
+  line-height: 1;
+  opacity: 0.85;
+}
+
+.mobile-nav__fab {
+  flex: 0 0 auto;
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: white;
+  font-size: 0.72rem;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.5px;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  transform: translateY(-8px);
+}
+
+.mobile-nav__fab:active {
+  background: var(--color-primary-dark);
+  color: white;
+}
+
+/* Menú hamburguesa: hoja inferior con el resto de vistas */
+.mobile-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 950;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(0, 0, 0, 0.35);
+  animation: mobile-sheet-fade 0.15s ease;
+}
+
+.mobile-sheet {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  padding-bottom: calc(var(--space-lg) + env(safe-area-inset-bottom));
+  background: var(--color-surface);
+  border-top-left-radius: var(--radius-xl);
+  border-top-right-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  animation: mobile-sheet-up 0.2s ease;
+}
+
+.mobile-sheet__handle {
+  width: 40px;
+  height: 4px;
+  margin: var(--space-xs) auto var(--space-sm);
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+}
+
+.mobile-sheet__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  width: 100%;
+  padding: var(--space-md);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-primary);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.mobile-sheet__item:active {
+  background: var(--color-surface-hover);
+}
+
+.mobile-sheet__item--active {
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.mobile-sheet__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-hover);
+  color: inherit;
+  flex: 0 0 auto;
+}
+
+.mobile-sheet__item--active .mobile-sheet__icon {
+  background: var(--color-primary);
+  color: white;
+}
+
+.mobile-sheet__label {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+}
+
+@keyframes mobile-sheet-fade {
+  from {
     opacity: 0;
-    pointer-events: none;
-    transition:
-      opacity 0.18s ease,
-      transform 0.18s ease;
   }
-
-  .side-menu__jump-actions.is-open {
+  to {
     opacity: 1;
-    pointer-events: auto;
-    transform: translateX(-50%) translateY(0);
   }
+}
 
-  .side-menu__jump-btn {
-    width: 48px;
-    height: 48px;
-    border-radius: var(--radius-full);
-    background: var(--color-primary);
-    color: white;
-    font-size: 0.62rem;
-    font-weight: var(--font-weight-regular);
-    letter-spacing: 0.3px;
-    box-shadow: var(--shadow-md);
+@keyframes mobile-sheet-up {
+  from {
+    transform: translateY(100%);
   }
-
-  .side-menu__jump-btn:hover,
-  .side-menu__jump-btn:active {
-    background: var(--color-primary-dark);
-    color: white;
-  }
-
-  /* Tap-away backdrop to close the speed-dial */
-  .side-menu__jump-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 1;
-    background: transparent;
-  }
-
-  .side-menu__item:nth-child(4) {
-    order: 3;
-  }
-
-  .side-menu__settings {
-    order: 4;
+  to {
+    transform: translateY(0);
   }
 }

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePersistedState, goalsKey } from "../utils/storage";
 import { GoalModal, categoryById, goalProgress } from "../components/GoalModal";
+import EmojiImg from "../components/EmojiImg";
 import "./Metas.css";
 
 const FILTERS = [
@@ -53,7 +54,10 @@ function GoalCard({ goal, onClick }) {
             </span>
           )}
           {goal.targetDate && (
-            <span className="goal-card__date">:dart: {goal.targetDate}</span>
+            <span className="goal-card__date">
+              <EmojiImg emoji=":dart:" code="1f3af" className="goal-card__date-icon" />{" "}
+              {goal.targetDate}
+            </span>
           )}
         </div>
       </div>
@@ -121,7 +125,7 @@ function Metas() {
 
       {filtered.length === 0 ? (
         <div className="metas__empty">
-          <span className="metas__empty-icon">:dart:</span>
+          <EmojiImg emoji=":dart:" code="1f3af" className="metas__empty-icon" />
           <p className="metas__empty-text">
             {goals.length === 0
               ? "Aún no tienes metas. ¡Crea la primera!"

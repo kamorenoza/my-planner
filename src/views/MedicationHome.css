@@ -1,5 +1,3 @@
-
-
 /* Márgenes de página igual que Metas/Comidas */
 .medication-home {
   padding-top: var(--space-lg);
@@ -107,7 +105,8 @@
 }
 
 .medication-home__empty-icon {
-  font-size: 2.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
 }
 
 .medication-home__empty-text {

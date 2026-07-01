@@ -121,7 +121,7 @@
   height: 20px;
   font-size: 0.7rem;
   color: #fff;
-  background: #3f8f5c;
+  background: #3F8F5C;
   border-radius: var(--radius-full);
 }
 
@@ -162,6 +162,18 @@
   color: var(--color-text-secondary);
 }
 
+.goal-card__date {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.goal-card__date-icon {
+  width: 0.9rem;
+  height: 0.9rem;
+  vertical-align: middle;
+}
+
 /* Progress bar (shared card + detail) */
 .goal-progress {
   width: 100%;
@@ -188,7 +200,8 @@
 }
 
 .metas__empty-icon {
-  font-size: 2.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
   opacity: 0.6;
 }
 
@@ -285,5 +298,5 @@
 
 .goal-done-toggle--on {
   color: #fff;
-  background: #3f8f5c;
+  background: #3F8F5C;
 }

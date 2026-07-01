@@ -1,5 +1,3 @@
-
-
 import EmojiImg from "./EmojiImg";
 import {
   colorById,
@@ -222,7 +220,7 @@ export function MedicationCard({
           <span>{frequencyLabel(med.frequency)}</span>
           {med.takeWithFood && (
             <span className="medication-card__food" title="Tomar con comida">
-              :knife_fork_plate:
+              <EmojiImg emoji=":knife_fork_plate:" code="1f37d-fe0f" className="medication-card__food-icon" />
             </span>
           )}
         </div>

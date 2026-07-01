@@ -425,6 +425,36 @@ function Todo({ storageKey, date, year, week, weekdayIndex }) {
     setOverId(null)
   }
 
+  // El drag & drop HTML5 no funciona con touch en iPad/iOS, así que en modo
+  // reordenar añadimos gestos táctiles: localizamos la fila bajo el dedo con
+  // elementFromPoint y reordenamos al soltar.
+  const todoIdAtPoint = (x, y) => {
+    const el = document.elementFromPoint(x, y)
+    const row = el && el.closest('[data-todo-id]')
+    return row ? row.getAttribute('data-todo-id') : null
+  }
+
+  const handleTouchStart = (id) => {
+    setDragId(id)
+    setOverId(id)
+  }
+
+  const handleTouchMove = (e) => {
+    const touch = e.touches[0]
+    if (!touch) return
+    const id = todoIdAtPoint(touch.clientX, touch.clientY)
+    if (id && id !== overId) setOverId(id)
+  }
+
+  const handleTouchEnd = () => {
+    if (overId != null && overId !== dragId) {
+      handleDrop(overId)
+    } else {
+      setDragId(null)
+      setOverId(null)
+    }
+  }
+
   return (
     <div className="todo" ref={rootRef}>
       <div className="todo__head-bar">
@@ -500,6 +530,7 @@ function Todo({ storageKey, date, year, week, weekdayIndex }) {
         {items.map((item) => (
           <div
             key={item.id}
+            data-todo-id={item.id}
             className={`todo__item${reordering ? ' todo__item--reorder' : ''}${
               reordering && dragId === item.id ? ' todo__item--dragging' : ''
             }${reordering && overId === item.id && dragId !== item.id ? ' todo__item--over' : ''}`}
@@ -522,6 +553,9 @@ function Todo({ storageKey, date, year, week, weekdayIndex }) {
                   }
                 : undefined
             }
+            onTouchStart={reordering ? () => handleTouchStart(item.id) : undefined}
+            onTouchMove={reordering ? handleTouchMove : undefined}
+            onTouchEnd={reordering ? handleTouchEnd : undefined}
           >
             {reordering ? (
               <span className="todo__drag-handle" aria-hidden="true">
@@ -756,7 +790,7 @@ function MealPicker({ tag, recipes, onPick, onAddOther, onClose }) {
   }
   return (
     <div className="modal-overlay">
-      <div className="modal modal--form" onClick={(e) => e.stopPropagation()}>
+      <div className="modal modal--form modal--picker" onClick={(e) => e.stopPropagation()}>
         <h2 className="modal__title">Elegir receta</h2>
 
         <input

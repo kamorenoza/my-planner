@@ -124,7 +124,9 @@
 /* Desktop */
 @media (min-width: 1024px) {
   :root {
-    --max-width: 1200px;
+    /* La app ocupa todo el ancho disponible; el menú lateral queda fijo al
+       borde y el contenido se separa con --app-pad-right. */
+    --max-width: 100%;
     --page-padding: var(--space-xl);
   }
 }

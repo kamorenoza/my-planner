@@ -1,5 +1,3 @@
-
-
 // ---------------------------------------------------------------------------
 // Widget "Medicamentos para hoy" para Scriptable (iPhone)
 // ---------------------------------------------------------------------------
@@ -14,8 +12,8 @@
 //   4. Pulsa ▶︎ para probar. Luego añade el widget y elige este script.
 //
 // Contenido:
-//   MEDICAMENTOS PARA HOY
-//   (tag del plan) 8:00am Nombre del medicamento
+//   MEDICAMENTOS HOY
+//   ●  8:00am Nombre del medicamento  (círculo con el color del plan a la izq.)
 //   ... (máximo 6; si hay más, un badge "+N" con los restantes)
 // ---------------------------------------------------------------------------
 
@@ -68,7 +66,7 @@ function buildWidget(data) {
 
   const meds = data.medications || []
 
-  const head = w.addText('MEDICAMENTOS PARA HOY')
+  const head = w.addText('MEDICAMENTOS')
   head.font = Font.semiboldSystemFont(12)
   head.textColor = COLOR_HEADER
   head.leftAlignText()
@@ -90,16 +88,11 @@ function buildWidget(data) {
     const line = w.addStack()
     line.centerAlignContent()
 
-    // Tag del plan: pastilla con el nombre del plan en su color.
-    const tagColor = planHex(med)
-    const tag = line.addStack()
-    tag.backgroundColor = new Color(tagColor, 0.15)
-    tag.cornerRadius = 4
-    tag.setPadding(1, 6, 1, 6)
-    const tagText = tag.addText(med.plan || 'Plan')
-    tagText.font = Font.semiboldSystemFont(11)
-    tagText.textColor = hex(tagColor)
-    tagText.lineLimit = 1
+    // Círculo con el color del plan, alineado a la izquierda (sin nombre del plan).
+    const dot = line.addStack()
+    dot.size = new Size(10, 10)
+    dot.cornerRadius = 5
+    dot.backgroundColor = hex(planHex(med))
 
     line.addSpacer(6)
 

@@ -3,6 +3,27 @@
 Registro de cambios realizados por el agente de mantenimiento de My Planner.
 Las entradas más recientes van al principio.
 
+## 2026-07-06 — Medicamentos terminados dejan de aparecer (planner, plan y widget)
+- **Qué:** nuevo helper `isMedActiveOn(med, plan, day)` en
+  `src/utils/medications.js` que considera la pausa y el rango de fechas propio
+  del medicamento (`startDate`/`endDate`, con respaldo en las del plan). Se
+  aplica en: el recuadro "Medicamentos" del planner diario (`DayView.jsx`), la
+  sección "Próximas dosis" del detalle del plan (`TreatmentPlanDetails.jsx`) y
+  el `functions/index.js` (notificaciones programadas + endpoint `todayPlanner`
+  del widget, con un espejo del helper).
+- **Por qué:** un medicamento cuya fecha de fin ya pasó (p. ej. terminó el 3 de
+  julio) seguía mostrando dosis y "próxima toma" hoy, y disparaba
+  notificaciones y salía en el widget, porque solo se filtraba por `paused` y
+  por el estado del plan (que seguía activo). `computeDoseTimes`/`medDoseMinutes`
+  no acotan por rango de fechas.
+- **Archivos:** src/utils/medications.js, src/views/DayView.jsx,
+  src/views/TreatmentPlanDetails.jsx, functions/index.js.
+- **Notas:** `npm run lint` sigue con los mismos errores preexistentes
+  (`react/prop-types` en vistas y globals de Scriptable en `widget/*.js`); no se
+  introdujeron errores nuevos. El cambio en `functions/index.js` requiere
+  redesplegar las Cloud Functions (`firebase deploy --only functions`) para que
+  las notificaciones y el widget dejen de incluir medicamentos terminados.
+
 ## 2026-07-01 — Escritorio: la app ocupa todo el ancho disponible
 - **Qué:** en escritorio (≥1024px) se quitó el tope `--max-width: 1200px` (ahora
   `100%`), así `#root` deja de centrarse con espacio vacío a los lados y el

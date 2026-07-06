@@ -41,6 +41,7 @@ import {
   medHistoryKey,
   planStatus,
   computeDoseTimes,
+  isMedActiveOn,
   colorById,
   newId,
 } from '../utils/medications'
@@ -1081,7 +1082,9 @@ function DayMedications({ dayISO }) {
     .map((plan) => {
       const doses = []
       ;(plan.medications || []).forEach((med) => {
-        if (med.status === 'paused') return
+        // Excluye medicamentos pausados o cuyo rango de fechas ya no cubre el
+        // día (p. ej. un medicamento que terminó antes de hoy).
+        if (!isMedActiveOn(med, plan, dayISO)) return
         computeDoseTimes(med).forEach((time) => {
           doses.push({ medId: med.id, name: med.name, time })
         })

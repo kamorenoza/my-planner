@@ -1,5 +1,3 @@
-
-
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { usePersistedState } from "../utils/storage";
@@ -23,6 +21,7 @@ import {
   formatDateLabel,
   computeDoseTimes,
   nextReminderLabel,
+  isMedActiveOn,
   todayISO,
   addDaysISO,
   newId,
@@ -208,7 +207,7 @@ function TreatmentPlanDetails() {
             : 1440 - nowMin + toMin(times[0]);
       return { med, label: nextReminderLabel(med), times, key };
     })
-    .filter((u) => u.times.length > 0)
+    .filter((u) => u.times.length > 0 && isMedActiveOn(u.med, plan))
     .sort((a, b) => a.key - b.key);
 
   // Histórico: todas las tomas registradas, agrupadas por fecha (desc).

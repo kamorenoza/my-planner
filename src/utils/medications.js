@@ -1,5 +1,3 @@
-
-
 // Dominio del módulo de medicación. Funciones puras: estados, progreso,
 // días restantes y cálculo de horarios de dosis. Sin acceso a localStorage
 // (eso lo manejan las vistas con usePersistedState) ni a la nube.
@@ -212,6 +210,19 @@ export function medTotalDoses(med) {
 
 export function isPlanReadOnly(plan, today = todayISO()) {
   return planStatus(plan, today) === "completed";
+}
+
+// ¿El medicamento está vigente (debe producir dosis) en un día dado?
+// Considera la pausa y su propio rango de fechas, con respaldo en las fechas
+// del plan. Un medicamento con endDate ya pasada no genera dosis (no aparece en
+// el planner diario, ni en "Próximas dosis", ni en las notificaciones/widget).
+export function isMedActiveOn(med, plan, day = todayISO()) {
+  if (!med || med.status === "paused") return false;
+  const start = med.startDate || plan?.startDate;
+  const end = med.endDate || plan?.endDate;
+  if (start && day < start) return false;
+  if (end && day > end) return false;
+  return true;
 }
 
 // ─── Cálculo de horarios de dosis ────────────────────────────

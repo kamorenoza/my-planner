@@ -110,6 +110,20 @@ function medDoseMinutes(med) {
   return out.length ? out : [start]
 }
 
+// ¿El medicamento está vigente (debe producir dosis) en un día dado? Espejo de
+// isMedActiveOn() del cliente (src/utils/medications.js): respeta la pausa y el
+// rango de fechas propio del medicamento, con respaldo en las fechas del plan.
+// Así un medicamento terminado no dispara notificaciones ni aparece en el
+// widget aunque el plan siga activo.
+function isMedActiveOn(med, plan, dateKey) {
+  if (!med || med.status === 'paused') return false
+  const start = med.startDate || plan?.startDate
+  const end = med.endDate || plan?.endDate
+  if (start && dateKey < start) return false
+  if (end && dateKey > end) return false
+  return true
+}
+
 function isHoliday(reminder) {
   return reminder && reminder.holiday === true
 }
@@ -280,7 +294,7 @@ export const sendPlannerNotifications = onSchedule(
         if (!plan || !plan.startDate || !plan.endDate) return
         if (dateKey < plan.startDate || dateKey > plan.endDate) return
         ;(plan.medications || []).forEach((med) => {
-          if (!med || med.status === 'paused') return
+          if (!isMedActiveOn(med, plan, dateKey)) return
           medDoseMinutes(med).forEach((doseMin) => {
             // Dentro de la ventana [minutes, minutes + intervalo).
             if (doseMin >= minutes && doseMin < minutes + RUN_INTERVAL_MIN) {
@@ -437,7 +451,7 @@ export const todayPlanner = onRequest(
       if (!isPlanActiveOn(plan, dateKey)) return
       const planColor = PLAN_COLOR_HEX[plan.color] || PLAN_COLOR_HEX.purple
       ;(plan.medications || []).forEach((med) => {
-        if (!med || med.status === 'paused') return
+        if (!isMedActiveOn(med, plan, dateKey)) return
         medDoseMinutes(med).forEach((doseMin) => {
           const sched = `${dateKey}T${minToHHMM(doseMin)}`
           const taken = ((medHistory && medHistory[med.id]) || []).some(

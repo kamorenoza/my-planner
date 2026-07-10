@@ -24,8 +24,22 @@
 .goal-view__head-main {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: var(--space-sm);
   min-width: 0;
+}
+
+/* El tag de categoría ocupa solo el ancho de su texto */
+.goal-view__category {
+  align-self: flex-start;
+  width: auto;
+  max-width: max-content;
+}
+
+.goal-view__fact-icon {
+  width: 0.9rem;
+  height: 0.9rem;
+  vertical-align: middle;
 }
 
 .goal-view__title {
@@ -43,10 +57,17 @@
 .goal-view__facts {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-md);
   margin-top: var(--space-xs);
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
+}
+
+.goal-view__fact {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
 }
 
 .goal-view__head-actions {
@@ -112,6 +133,107 @@
 
 /* ─── Plan Semanal (Accordions) ─────────────────────────── */
 
+/* Agrupación por meses (Plan y Seguimiento) */
+.goal-view__months {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.month-plan {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.month-plan__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding-bottom: var(--space-xs);
+  border-bottom: 2px solid var(--color-border);
+}
+
+/* Modo lectura: "Mes 1: título" + lápiz */
+.month-plan__title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.month-plan__label {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  flex-shrink: 0;
+}
+
+.month-plan__title-text {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.month-plan__edit {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  background: transparent;
+  padding: var(--space-xs);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.month-plan__edit:hover {
+  color: var(--color-primary);
+  background: var(--color-surface-hover);
+}
+
+.month-plan__desc-text {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+/* Encabezado de mes en Seguimiento (clicable → va al plan) */
+.month-track {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.month-track__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: var(--space-xs) 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.month-track__title {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.month-track__arrow {
+  font-size: var(--font-size-lg);
+  color: var(--color-text-muted);
+  transition: color 0.15s ease;
+}
+
+.month-track__head:hover .month-track__arrow {
+  color: var(--color-primary);
+}
+
 .goal-view__accordions {
   display: flex;
   flex-direction: column;
@@ -129,14 +251,14 @@
   gap: var(--space-sm);
   width: 100%;
   padding: var(--space-sm) var(--space-md);
-  background: #f0f0f0;
+  background: #F0F0F0;
   cursor: pointer;
   text-align: left;
   transition: background 0.15s ease;
 }
 
 .week-accordion__header:hover {
-  background: #e8e8e8;
+  background: #E8E8E8;
 }
 
 .week-accordion__arrow {
@@ -149,6 +271,21 @@
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-regular);
   color: var(--color-text);
+}
+
+/* Tag "Completado" (se muestra cuando la semana está completa en Seguimiento) */
+.week-accordion__done {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 0.65rem;
+  font-weight: var(--font-weight-regular);
+  /* Verde "Completado": fondo claro y letra en verde oscuro */
+  color: rgb(63, 125, 98);
+  background: rgb(201, 232, 216);
+  padding: 1px var(--space-xs);
+  border-radius: var(--radius-md);
+  white-space: nowrap;
 }
 
 .week-accordion__range {
@@ -176,8 +313,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
-  background: #fafafa;
-  border-top: 1px solid #e8e8e8;
+  background: #FAFAFA;
+  border-top: 1px solid #E8E8E8;
 }
 
 .week-accordion__add {
@@ -252,21 +389,18 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-xs);
 }
 
-.week-plan-item__task {
-  position: relative;
-  padding-left: var(--space-md);
-  font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
-}
-
-.week-plan-item__task::before {
-  content: "•";
-  position: absolute;
-  left: 2px;
-  color: var(--color-text-muted);
+/* Tarea del plan con check (sincronizada con Seguimiento) */
+.week-plan-task {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
 }
 
 .week-plan-item__actions {
@@ -288,7 +422,7 @@
   flex-direction: column;
   gap: var(--space-sm);
   padding: var(--space-md);
-  background: #f0f0f0;
+  background: #F0F0F0;
   border-radius: var(--radius-lg);
 }
 
@@ -299,9 +433,20 @@
 }
 
 .week-track-card__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text);
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s ease;
+}
+
+.week-track-card__label:hover {
+  color: var(--color-primary);
 }
 
 .week-track-card__range {
@@ -381,18 +526,11 @@
 
 .week-track-check__del:hover {
   background: var(--color-danger-bg, rgba(220, 80, 80, 0.12));
-  color: var(--color-danger, #d65050);
+  color: var(--color-danger, #D65050);
 }
 
 .week-track-check:hover .week-track-check__del {
   opacity: 1;
-}
-
-/* Touch devices have no hover: keep the delete button visible */
-@media (hover: none) {
-  .week-track-check__del {
-    opacity: 1;
-  }
 }
 
 .week-track-card__bar {
@@ -409,7 +547,7 @@
 
 .week-track-card__bar .goal-progress__fill {
   height: 100%;
-  background: #9cc4a4;
+  background: #9CC4A4;
   border-radius: var(--radius-sm);
   transition: width 0.3s ease;
 }
@@ -438,8 +576,8 @@
 }
 
 .subtask__check--done {
-  background: #9cc4a4;
-  border-color: #9cc4a4;
+  background: #9CC4A4;
+  border-color: #9CC4A4;
 }
 
 .subtask__text {

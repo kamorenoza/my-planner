@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePersistedState, goalsKey } from "../utils/storage";
 import { GoalModal, categoryById, goalProgress } from "../components/GoalModal";
+import { formatFullDate } from "../utils/calendar";
 import EmojiImg from "../components/EmojiImg";
 import "./Metas.css";
 
@@ -56,7 +57,7 @@ function GoalCard({ goal, onClick }) {
           {goal.targetDate && (
             <span className="goal-card__date">
               <EmojiImg emoji=":dart:" code="1f3af" className="goal-card__date-icon" />{" "}
-              {goal.targetDate}
+              {formatFullDate(goal.targetDate)}
             </span>
           )}
         </div>

@@ -28,6 +28,14 @@ export const MONTHS_SHORT = [
   "Dic",
 ];
 
+// Formatea una clave de fecha "YYYY-MM-DD" a "01 Jun 2026".
+export function formatFullDate(dk) {
+  if (!dk) return "";
+  const [y, m, d] = String(dk).split("-").map(Number);
+  if (!y || !m || !d) return dk;
+  return `${String(d).padStart(2, "0")} ${MONTHS_SHORT[m - 1]} ${y}`;
+}
+
 export const WEEKDAYS = ["L", "M", "M", "J", "V", "S", "D"];
 
 export const WEEKDAYS_FULL = [

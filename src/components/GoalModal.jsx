@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { formatFullDate } from "../utils/calendar";
+import EmojiImg from "./EmojiImg";
 
 export const GOAL_CATEGORIES = [
   {
@@ -209,7 +211,14 @@ export function GoalDetailModal({
             {cat.label}
           </span>
           {goal.targetDate && (
-            <span className="goal-detail__date">:dart: {goal.targetDate}</span>
+            <span className="goal-detail__date">
+              <EmojiImg
+                emoji=":dart:"
+                code="1f3af"
+                className="goal-detail__date-icon"
+              />{" "}
+              {formatFullDate(goal.targetDate)}
+            </span>
           )}
         </div>
 

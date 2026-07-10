@@ -3,6 +3,135 @@
 Registro de cambios realizados por el agente de mantenimiento de My Planner.
 Las entradas más recientes van al principio.
 
+## 2026-07-10 — Metas: tag "Completado" sin borde
+- **Qué:** se quitó el borde de la pill "✓ Completado".
+- **Por qué:** feedback del usuario.
+- **Archivos:** src/views/GoalView.css.
+
+## 2026-07-10 — Metas: tag "Completado" con colores definidos
+- **Qué:** la pill "✓ Completado" usa fondo `rgb(201, 232, 216)` y letra
+  `rgb(63, 125, 98)`.
+- **Por qué:** feedback del usuario (colores específicos).
+- **Archivos:** src/views/GoalView.css.
+
+## 2026-07-10 — Metas: tag "Completado" con fondo más claro
+- **Qué:** la pill "✓ Completado" ahora tiene fondo claro (verde
+  `rgb(63,125,98)` al 15% con blanco), borde suave (35%) y letra en el verde
+  oscuro.
+- **Por qué:** feedback del usuario (pill más clarita).
+- **Archivos:** src/views/GoalView.css.
+
+## 2026-07-10 — Metas: tag "Completado" con verde rgb(63, 125, 98)
+- **Qué:** el fondo y borde del tag "✓ Completado" ahora usan el verde
+  `rgb(63, 125, 98)` con letra blanca.
+- **Por qué:** feedback del usuario (verde específico solicitado).
+- **Archivos:** src/views/GoalView.css.
+
+## 2026-07-10 — Metas: tag "Completado" con fondo oscuro y letra blanca
+- **Qué:** se invirtió el tag "✓ Completado": fondo verde oscuro (verde de los
+  checks `#9cc4a4` mezclado al 75% con negro) y letra blanca.
+- **Por qué:** feedback del usuario.
+- **Archivos:** src/views/GoalView.css.
+
+## 2026-07-10 — Metas: borde del tag "Completado" más oscuro
+- **Qué:** el borde del tag "✓ Completado" pasó de 45% a 70% del verde de los
+  checks (`#9cc4a4`), quedando más marcado.
+- **Por qué:** feedback del usuario.
+- **Archivos:** src/views/GoalView.css.
+
+## 2026-07-10 — Metas: borde en el tag "Completado"
+- **Qué:** se añadió un borde de 1px al tag "✓ Completado" usando el verde de
+  los checks (`#9cc4a4` mezclado al 45% con blanco).
+- **Por qué:** feedback del usuario para ver cómo se ve con borde.
+- **Archivos:** src/views/GoalView.css.
+
+## 2026-07-10 — Metas: tag "Completado" con el verde de los checks
+- **Qué:** el tag "✓ Completado" ahora usa el mismo verde de los checks
+  (`#9cc4a4`) vía `color-mix`: letra en tono oscuro (70% verde + negro) y fondo
+  claro (22% verde + blanco).
+- **Por qué:** feedback del usuario (antes usaba `--color-accent-green`, que no
+  coincide con el verde de los checks).
+- **Archivos:** src/views/GoalView.css.
+
+## 2026-07-10 — Metas: tag "Completado" más pequeño y sin bold
+- **Qué:** el tag "✓ Completado" del acordeón del plan se hizo más pequeño
+  (`font-size: 0.65rem`, padding reducido) y con peso normal
+  (`--font-weight-regular`) en lugar de negrita.
+- **Por qué:** feedback del usuario.
+- **Archivos:** src/views/GoalView.css.
+
+## 2026-07-10 — Metas: header de mes por modal y tag "Completado" más visible
+- **Qué:**
+  1. `MonthPlanHeader` ya no usa placeholder "Sin título": muestra solo
+     "Mes N" cuando no hay título y "Mes N: título" cuando sí lo hay. El lápiz
+     ahora abre un modal (`MonthModal`) para editar título y descripción, en vez
+     de la edición inline.
+  2. El tag "✓ Completado" del acordeón del plan se rediseñó: menos ovalado
+     (`--radius-md` en lugar de `--radius-full`), relleno sólido con el verde de
+     la vista (`--color-accent-green`) y texto claro, para que resalte más.
+- **Por qué:** feedback del usuario.
+- **Archivos:** src/views/GoalView.jsx, src/views/GoalView.css.
+- **Notas:** se eliminaron los estilos de edición inline del mes que quedaron
+  sin uso (`month-plan__title-input`, `__desc-input`, `__done`,
+  `__head--editing`, `__title-text--empty`). `npm run lint` mantiene solo los
+  errores preexistentes (`react/prop-types` y globals de Scriptable).
+
+## 2026-07-10 — Metas: ajustes de detalle (facts, header de mes, scroll y flecha)
+- **Qué:** correcciones sobre los cambios previos de la vista de metas:
+  1. Los facts del encabezado (fecha meta :dart: y "N semanas") se alinean
+     verticalmente (`goal-view__facts` con `align-items: center` y nuevo
+     `goal-view__fact` inline-flex).
+  2. `MonthPlanHeader` ahora tiene modo lectura y edición: en lectura muestra
+     "Mes N: título" con un lápiz para editar y la descripción debajo solo si
+     existe (ya no se ve un textarea/placeholder vacío). En edición aparecen el
+     input de título, el textarea de descripción y un botón "Listo".
+  3. El modal de crear plan centra el campo activo al escribir/agregar
+     (`scrollIntoView` con `block: "center"`) para que el footer fijo de
+     Guardar/Cancelar no lo tape.
+  4. En Seguimiento la flecha `›` se quitó de las semanas y quedó solo en el
+     título del mes.
+- **Por qué:** feedback del usuario tras la primera iteración.
+- **Archivos:** src/views/GoalView.jsx, src/views/GoalView.css.
+- **Notas:** `npm run lint` sigue solo con errores preexistentes
+  (`react/prop-types` y globals de Scriptable en `widget/*.js`).
+
+## 2026-07-10 — Metas: arreglos en detalle de meta, plan por meses y seguimiento
+- **Qué:** ocho ajustes en la vista de metas:
+  1. En el detalle de la meta (`GoalView`) el tag de categoría ahora ocupa solo
+     el ancho de su texto (`goal-view__category`), el icono `:dart:` se reemplazó
+     por el emoji real (`EmojiImg` :dart:) y la fecha se muestra formateada como
+     `01 Jun 2026` (nuevo helper `formatFullDate` en `utils/calendar.js`, aplicado
+     también en la tarjeta de `Metas` y en `GoalDetailModal`).
+  2. Plan y Seguimiento se agrupan por meses de 4 semanas
+     (`groupWeeksByMonth`). En Plan cada mes tiene título y descripción editables
+     (`MonthPlanHeader`, guardados en `goal.months[monthIdx]`) y sus 4 semanas
+     reetiquetadas "Semana 1..4". En Seguimiento se muestra el título del mes +
+     las 4 cards.
+  3. En Seguimiento las X de eliminar de los checks ya no se ven siempre en
+     táctil: se quitó la regla `@media (hover: none)` para que aparezcan solo al
+     hover/tap, igual que los TODOs de la vista diaria.
+  4. El modal de crear plan hace scroll (`scrollIntoView`) al enfocar o agregar
+     un link/tarea para mantener visible el campo activo.
+  5. Al guardar el plan, si quedó texto sin confirmar con Enter en link o tarea,
+     se agrega automáticamente.
+  6. En Seguimiento, click en el título de una semana abre esa semana en el Plan;
+     click en el título del mes (con flecha `›` a la derecha) salta a ese mes del
+     Plan (acordeones controlados + scroll con `pendingScroll`).
+  7. Cuando una semana queda completa en Seguimiento, aparece el tag
+     "✓ Completado" en su acordeón del Plan (`isWeekComplete`).
+  8. En el Plan las tareas se muestran con check y comparten estado con
+     Seguimiento (mismas `plan.tasks`, `togglePlanTask` en ambas pestañas).
+- **Por qué:** mejorar la legibilidad del detalle de la meta, organizar el plan
+  a largo plazo por meses y sincronizar plan/seguimiento según lo pedido.
+- **Archivos:** src/views/GoalView.jsx, src/views/GoalView.css,
+  src/components/GoalModal.jsx, src/views/Metas.jsx, src/views/Metas.css,
+  src/utils/calendar.js.
+- **Notas:** `npm run lint` mantiene solo los errores preexistentes
+  (`react/prop-types` en vistas/componentes y globals de Scriptable en
+  `widget/*.js`); no se introdujeron errores nuevos. La metadata de meses se
+  guarda en el nuevo campo `goal.months` (respaldado por el backup automático de
+  localStorage a Firestore sin cambios adicionales).
+
 ## 2026-07-06 — Medicamentos terminados dejan de aparecer (planner, plan y widget)
 - **Qué:** nuevo helper `isMedActiveOn(med, plan, day)` en
   `src/utils/medications.js` que considera la pausa y el rango de fechas propio

@@ -212,9 +212,18 @@
 
 /* Detail modal */
 .goal-detail__date {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
   align-self: center;
+}
+
+.goal-detail__date-icon {
+  width: 0.9rem;
+  height: 0.9rem;
+  vertical-align: middle;
 }
 
 .goal-detail__progress {

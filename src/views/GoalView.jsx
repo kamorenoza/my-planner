@@ -1,10 +1,32 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { usePersistedState, goalsKey } from "../utils/storage";
 import { GoalModal, categoryById, goalProgress } from "../components/GoalModal";
+import { formatFullDate } from "../utils/calendar";
+import EmojiImg from "../components/EmojiImg";
 import Breadcrumbs from "../components/Breadcrumbs";
 import ConfirmDialog from "../components/ConfirmDialog";
 import "./GoalView.css";
+
+const WEEKS_PER_MONTH = 4;
+
+// Agrupa las semanas en bloques de 4 (un "mes" del plan). Reetiqueta cada
+// semana como "Semana 1..4" dentro de su mes.
+function groupWeeksByMonth(weeks) {
+  const map = new Map();
+  weeks.forEach((w) => {
+    const monthIdx = Math.floor(w.index / WEEKS_PER_MONTH);
+    if (!map.has(monthIdx)) map.set(monthIdx, []);
+    map.get(monthIdx).push({
+      ...w,
+      label: `Semana ${(w.index % WEEKS_PER_MONTH) + 1}`,
+    });
+  });
+  return [...map.entries()].map(([monthIdx, weeksInMonth]) => ({
+    monthIdx,
+    weeks: weeksInMonth,
+  }));
+}
 
 function getWeeks(targetDate) {
   const now = new Date();
@@ -59,12 +81,22 @@ function PlanModal({ plan, onClose, onSave }) {
     plan?.tasks ? plan.tasks.map((t) => ({ ...t })) : [],
   );
   const [newTask, setNewTask] = useState("");
+  const linkInputRef = useRef(null);
+  const taskInputRef = useRef(null);
+
+  // Mantiene visible el campo activo mientras se escribe/agrega. Se centra
+  // para que no lo tape el footer fijo de acciones (Guardar/Cancelar).
+  const scrollIntoView = (el) =>
+    requestAnimationFrame(() =>
+      el?.scrollIntoView({ block: "center", behavior: "smooth" }),
+    );
 
   const addLink = () => {
     const t = newLink.trim();
     if (!t) return;
     setLinks((prev) => [...prev, t]);
     setNewLink("");
+    scrollIntoView(linkInputRef.current);
   };
 
   const removeLink = (i) =>
@@ -78,6 +110,7 @@ function PlanModal({ plan, onClose, onSave }) {
       { id: `tk-${Date.now()}-${prev.length}`, text: t, done: false },
     ]);
     setNewTask("");
+    scrollIntoView(taskInputRef.current);
   };
 
   const removeTask = (id) =>
@@ -86,12 +119,24 @@ function PlanModal({ plan, onClose, onSave }) {
   const canSave = title.trim();
   const submit = () => {
     if (!canSave) return;
+    // Si quedó texto sin confirmar con Enter, se agrega igualmente.
+    const finalLinks = newLink.trim() ? [...links, newLink.trim()] : links;
+    const finalTasks = newTask.trim()
+      ? [
+          ...tasks,
+          {
+            id: `tk-${Date.now()}-${tasks.length}`,
+            text: newTask.trim(),
+            done: false,
+          },
+        ]
+      : tasks;
     onSave({
       id: plan?.id || `p-${Date.now()}`,
       title: title.trim(),
       description: description.trim(),
-      links,
-      tasks,
+      links: finalLinks,
+      tasks: finalTasks,
     });
   };
 
@@ -138,9 +183,11 @@ function PlanModal({ plan, onClose, onSave }) {
           ))}
           <div className="ingredient-row">
             <input
+              ref={linkInputRef}
               className="field__input"
               value={newLink}
               onChange={(e) => setNewLink(e.target.value)}
+              onFocus={(e) => scrollIntoView(e.target)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
@@ -171,9 +218,11 @@ function PlanModal({ plan, onClose, onSave }) {
           ))}
           <div className="ingredient-row">
             <input
+              ref={taskInputRef}
               className="field__input"
               value={newTask}
               onChange={(e) => setNewTask(e.target.value)}
+              onFocus={(e) => scrollIntoView(e.target)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
@@ -215,14 +264,25 @@ function getLinkLabel(url) {
   }
 }
 
-function WeekAccordion({ week, plans, onAddPlan, onEditPlan, onDeletePlan }) {
-  const [open, setOpen] = useState(false);
-
+function WeekAccordion({
+  week,
+  plans,
+  open,
+  onToggle,
+  complete,
+  onAddPlan,
+  onEditPlan,
+  onDeletePlan,
+  onTogglePlanTask,
+}) {
   return (
-    <div className="week-accordion">
-      <button className="week-accordion__header" onClick={() => setOpen(!open)}>
+    <div className="week-accordion" id={`plan-week-${week.index}`}>
+      <button className="week-accordion__header" onClick={onToggle}>
         <span className="week-accordion__arrow">{open ? "▾" : "▸"}</span>
         <span className="week-accordion__label">{week.label}</span>
+        {complete && (
+          <span className="week-accordion__done">✓ Completado</span>
+        )}
         <span className="week-accordion__range">{week.range}</span>
         {plans.length > 0 && (
           <span className="week-accordion__count">{plans.length}</span>
@@ -255,13 +315,27 @@ function WeekAccordion({ week, plans, onAddPlan, onEditPlan, onDeletePlan }) {
                   </div>
                 )}
                 {plan.tasks && plan.tasks.length > 0 && (
-                  <ul className="week-plan-item__tasks">
+                  <div className="week-plan-item__tasks">
                     {plan.tasks.map((task) => (
-                      <li key={task.id} className="week-plan-item__task">
-                        {task.text}
-                      </li>
+                      <button
+                        key={task.id}
+                        type="button"
+                        className="week-plan-task"
+                        onClick={() => onTogglePlanTask(plan.id, task.id)}
+                      >
+                        <span
+                          className={`subtask__check${task.done ? " subtask__check--done" : ""}`}
+                        >
+                          {task.done ? "✓" : ""}
+                        </span>
+                        <span
+                          className={`subtask__text${task.done ? " subtask__text--done" : ""}`}
+                        >
+                          {task.text}
+                        </span>
+                      </button>
                     ))}
-                  </ul>
+                  </div>
                 )}
               </div>
               <div className="week-plan-item__actions">
@@ -322,6 +396,7 @@ function WeekTrackCard({
   week,
   plans,
   checks,
+  onOpenPlan,
   onTogglePlanTask,
   onDeletePlanTask,
   onToggle,
@@ -349,7 +424,13 @@ function WeekTrackCard({
   return (
     <div className="week-track-card">
       <div className="week-track-card__header">
-        <span className="week-track-card__label">{week.label}</span>
+        <button
+          className="week-track-card__label"
+          onClick={onOpenPlan}
+          title="Ver en el plan"
+        >
+          {week.label}
+        </button>
         <span className="week-track-card__range">{week.range}</span>
         <button
           className="week-track-card__add-btn"
@@ -466,6 +547,96 @@ function WeekTrackCard({
   );
 }
 
+// ─── Encabezado de mes (Plan) ────────────────────────────────
+
+function MonthPlanHeader({ monthIdx, meta, onEdit }) {
+  return (
+    <div className="month-plan__head">
+      <div className="month-plan__title-row">
+        <span className="month-plan__label">
+          Mes {monthIdx + 1}
+          {meta.title ? ": " : ""}
+        </span>
+        {meta.title && (
+          <span className="month-plan__title-text">{meta.title}</span>
+        )}
+        <button
+          type="button"
+          className="month-plan__edit"
+          onClick={onEdit}
+          title="Editar mes"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="14"
+            height="14"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 20h9" />
+            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+          </svg>
+        </button>
+      </div>
+      {meta.description && (
+        <p className="month-plan__desc-text">{meta.description}</p>
+      )}
+    </div>
+  );
+}
+
+// ─── Modal editar mes ────────────────────────────────────────
+
+function MonthModal({ monthIdx, meta, onClose, onSave }) {
+  const [title, setTitle] = useState(meta.title ?? "");
+  const [desc, setDesc] = useState(meta.description ?? "");
+
+  const submit = () =>
+    onSave({ title: title.trim(), description: desc.trim() });
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal modal--form" onClick={(e) => e.stopPropagation()}>
+        <h2 className="modal__title">Mes {monthIdx + 1}</h2>
+
+        <label className="field">
+          <span className="field__label">Título</span>
+          <input
+            className="field__input"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Título del mes"
+            autoFocus
+          />
+        </label>
+
+        <label className="field">
+          <span className="field__label">Descripción</span>
+          <textarea
+            className="field__input field__input--area"
+            rows={3}
+            value={desc}
+            onChange={(e) => setDesc(e.target.value)}
+            placeholder="Descripción del mes (opcional)"
+          />
+        </label>
+
+        <div className="modal__actions">
+          <button className="modal__btn modal__btn--cancel" onClick={onClose}>
+            Cancelar
+          </button>
+          <button className="modal__btn modal__btn--primary" onClick={submit}>
+            Guardar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main View ──────────────────────────────────────────────
 
 function GoalView() {
@@ -478,6 +649,42 @@ function GoalView() {
   const [planModal, setPlanModal] = useState(null);
   const [planWeekIdx, setPlanWeekIdx] = useState(null);
   const [confirmPlan, setConfirmPlan] = useState(null);
+  const [monthModal, setMonthModal] = useState(null);
+  const [openWeeks, setOpenWeeks] = useState(() => new Set());
+  // { type: "week" | "month", idx } — destino al saltar desde Seguimiento.
+  const [pendingScroll, setPendingScroll] = useState(null);
+
+  const toggleWeekOpen = (weekIdx) =>
+    setOpenWeeks((prev) => {
+      const next = new Set(prev);
+      if (next.has(weekIdx)) next.delete(weekIdx);
+      else next.add(weekIdx);
+      return next;
+    });
+
+  // Desde Seguimiento: abre el plan en la semana indicada.
+  const goToPlanWeek = (weekIdx) => {
+    setOpenWeeks((prev) => new Set(prev).add(weekIdx));
+    setTab("plan");
+    setPendingScroll({ type: "week", idx: weekIdx });
+  };
+
+  // Desde Seguimiento: abre el plan en el mes indicado.
+  const goToPlanMonth = (monthIdx) => {
+    setTab("plan");
+    setPendingScroll({ type: "month", idx: monthIdx });
+  };
+
+  useEffect(() => {
+    if (tab !== "plan" || !pendingScroll) return;
+    const id =
+      pendingScroll.type === "week"
+        ? `plan-week-${pendingScroll.idx}`
+        : `plan-month-${pendingScroll.idx}`;
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    setPendingScroll(null);
+  }, [tab, pendingScroll]);
 
   const goal = goals.find((g) => g.id === id);
 
@@ -497,10 +704,21 @@ function GoalView() {
 
   const cat = categoryById(goal.category);
   const weeks = getWeeks(goal.targetDate);
+  const months = groupWeeksByMonth(weeks);
 
   // Overall progress = average of each week's check completion
   const weeklyChecksMap = goal.weeklyChecks || {};
   const weeklyPlansMap = goal.weeklyPlans || {};
+
+  // Una semana está "completada" si tiene items y todos están marcados.
+  const isWeekComplete = (weekIdx) => {
+    const checks = weeklyChecksMap[weekIdx] || [];
+    const planTasks = (weeklyPlansMap[weekIdx] || []).flatMap(
+      (p) => p.tasks || [],
+    );
+    const items = [...checks, ...planTasks];
+    return items.length > 0 && items.every((i) => i.done);
+  };
   const progress =
     weeks.length > 0
       ? Math.round(
@@ -520,6 +738,16 @@ function GoalView() {
 
   const updateGoal = (updater) =>
     setGoals((prev) => prev.map((g) => (g.id === id ? updater(g) : g)));
+
+  // Título/descripción editables por mes del plan.
+  const getMonthMeta = (monthIdx) => (goal.months && goal.months[monthIdx]) || {};
+
+  const setMonthMeta = (monthIdx, patch) =>
+    updateGoal((g) => {
+      const monthsMeta = { ...(g.months || {}) };
+      monthsMeta[monthIdx] = { ...(monthsMeta[monthIdx] || {}), ...patch };
+      return { ...g, months: monthsMeta };
+    });
 
   const saveGoal = (updated) => {
     setGoals((prev) => prev.map((g) => (g.id === updated.id ? updated : g)));
@@ -627,7 +855,7 @@ function GoalView() {
       >
         <div className="goal-view__head-main">
           <span
-            className="goal-card__category"
+            className="goal-card__category goal-view__category"
             style={{ color: cat.color, background: cat.bg }}
           >
             {cat.label}
@@ -639,7 +867,12 @@ function GoalView() {
           <div className="goal-view__facts">
             {goal.targetDate && (
               <span className="goal-view__fact">
-                :dart: Meta: {goal.targetDate}
+                <EmojiImg
+                  emoji=":dart:"
+                  code="1f3af"
+                  className="goal-view__fact-icon"
+                />{" "}
+                Meta: {formatFullDate(goal.targetDate)}
               </span>
             )}
             {weeks.length > 0 && (
@@ -724,45 +957,88 @@ function GoalView() {
           Agrega una fecha meta para generar el plan semanal.
         </p>
       ) : tab === "plan" ? (
-        <div className="goal-view__accordions">
-          {weeks.map((week) => (
-            <WeekAccordion
-              key={week.index}
-              week={week}
-              plans={getPlans(week.index)}
-              onAddPlan={() => {
-                setPlanWeekIdx(week.index);
-                setPlanModal({});
-              }}
-              onEditPlan={(plan) => {
-                setPlanWeekIdx(week.index);
-                setPlanModal(plan);
-              }}
-              onDeletePlan={(plan) =>
-                setConfirmPlan({ weekIdx: week.index, plan })
-              }
-            />
+        <div className="goal-view__months">
+          {months.map(({ monthIdx, weeks: monthWeeks }) => (
+            <section
+              key={monthIdx}
+              id={`plan-month-${monthIdx}`}
+              className="month-plan"
+            >
+              <MonthPlanHeader
+                monthIdx={monthIdx}
+                meta={getMonthMeta(monthIdx)}
+                onEdit={() =>
+                  setMonthModal({ monthIdx, meta: getMonthMeta(monthIdx) })
+                }
+              />
+              <div className="goal-view__accordions">
+                {monthWeeks.map((week) => (
+                  <WeekAccordion
+                    key={week.index}
+                    week={week}
+                    plans={getPlans(week.index)}
+                    open={openWeeks.has(week.index)}
+                    onToggle={() => toggleWeekOpen(week.index)}
+                    complete={isWeekComplete(week.index)}
+                    onTogglePlanTask={(planId, taskId) =>
+                      togglePlanTask(week.index, planId, taskId)
+                    }
+                    onAddPlan={() => {
+                      setPlanWeekIdx(week.index);
+                      setPlanModal({});
+                    }}
+                    onEditPlan={(plan) => {
+                      setPlanWeekIdx(week.index);
+                      setPlanModal(plan);
+                    }}
+                    onDeletePlan={(plan) =>
+                      setConfirmPlan({ weekIdx: week.index, plan })
+                    }
+                  />
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       ) : (
-        <div className="goal-view__track-grid">
-          {weeks.map((week) => (
-            <WeekTrackCard
-              key={week.index}
-              week={week}
-              plans={getPlans(week.index)}
-              checks={getChecks(week.index)}
-              onTogglePlanTask={(planId, taskId) =>
-                togglePlanTask(week.index, planId, taskId)
-              }
-              onDeletePlanTask={(planId, taskId) =>
-                deletePlanTask(week.index, planId, taskId)
-              }
-              onToggle={(checkId) => toggleCheck(week.index, checkId)}
-              onAdd={(text) => addCheck(week.index, text)}
-              onDelete={(checkId) => deleteCheck(week.index, checkId)}
-            />
-          ))}
+        <div className="goal-view__months">
+          {months.map(({ monthIdx, weeks: monthWeeks }) => {
+            const meta = getMonthMeta(monthIdx);
+            return (
+              <section key={monthIdx} className="month-track">
+                <button
+                  className="month-track__head"
+                  onClick={() => goToPlanMonth(monthIdx)}
+                  title="Ver en el plan"
+                >
+                  <span className="month-track__title">
+                    {meta.title || `Mes ${monthIdx + 1}`}
+                  </span>
+                  <span className="month-track__arrow">›</span>
+                </button>
+                <div className="goal-view__track-grid">
+                  {monthWeeks.map((week) => (
+                    <WeekTrackCard
+                      key={week.index}
+                      week={week}
+                      plans={getPlans(week.index)}
+                      checks={getChecks(week.index)}
+                      onOpenPlan={() => goToPlanWeek(week.index)}
+                      onTogglePlanTask={(planId, taskId) =>
+                        togglePlanTask(week.index, planId, taskId)
+                      }
+                      onDeletePlanTask={(planId, taskId) =>
+                        deletePlanTask(week.index, planId, taskId)
+                      }
+                      onToggle={(checkId) => toggleCheck(week.index, checkId)}
+                      onAdd={(text) => addCheck(week.index, text)}
+                      onDelete={(checkId) => deleteCheck(week.index, checkId)}
+                    />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
         </div>
       )}
 
@@ -782,6 +1058,18 @@ function GoalView() {
             setPlanWeekIdx(null);
           }}
           onSave={savePlan}
+        />
+      )}
+
+      {monthModal && (
+        <MonthModal
+          monthIdx={monthModal.monthIdx}
+          meta={monthModal.meta}
+          onClose={() => setMonthModal(null)}
+          onSave={(patch) => {
+            setMonthMeta(monthModal.monthIdx, patch);
+            setMonthModal(null);
+          }}
         />
       )}
 

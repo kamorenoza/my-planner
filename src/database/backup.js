@@ -2,7 +2,6 @@ import {
   doc,
   getDoc,
   setDoc,
-  onSnapshot,
   serverTimestamp,
   collection,
   getDocs,
@@ -14,10 +13,11 @@ import { db } from './firebase'
 import {
   getAllPlannerData,
   subscribeToSaves,
-  applyRemote,
   load,
   save,
   recipesKey,
+  setAllPlannerData,
+  clearPlannerData,
 } from './localStore'
 import { compressOversizedRecipePhotos } from './migrate'
 
@@ -38,7 +38,39 @@ const userDoc = (uid) => doc(db, 'users', uid)
 async function getCloudPlanner(uid) {
   const snap = await getDoc(userDoc(uid))
   const data = snap.data()
-  return (data && data.planner) || {}
+  const planner = (data && data.planner) || {}
+  return planner
+}
+
+async function getCloudPlannerSnapshot(uid) {
+  const snap = await getDoc(userDoc(uid))
+  const data = snap.data() || {}
+  return typeof data.plannerSnapshot === 'string' ? data.plannerSnapshot : null
+}
+
+function parsePlannerSnapshot(raw) {
+  if (typeof raw !== 'string') return null
+  try {
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+export async function pullPlannerSnapshot(uid) {
+  const snap = await getDoc(userDoc(uid))
+  const data = snap.data() || {}
+  const snapshot = parsePlannerSnapshot(data.plannerSnapshot)
+  if (!snapshot) return false
+
+  const currentRaw = JSON.stringify(getAllPlannerData())
+  const snapshotRaw = JSON.stringify(snapshot)
+  if (currentRaw === snapshotRaw) return false
+
+  clearPlannerData()
+  setAllPlannerData(snapshot)
+  return true
 }
 
 // Sube SOLO las claves indicadas (merge a nivel de campo dentro de `planner`).
@@ -49,6 +81,17 @@ async function pushKeysMap(uid, map) {
     { planner: map, updatedAt: serverTimestamp() },
     { merge: true },
   )
+}
+
+export async function pushPlannerSnapshot(uid) {
+  const data = getAllPlannerData()
+  if (!data || Object.keys(data).length === 0) return false
+  await setDoc(
+    userDoc(uid),
+    { plannerSnapshot: JSON.stringify(data), updatedAt: serverTimestamp() },
+    { merge: true },
+  )
+  return true
 }
 
 // Sube al cloud las claves locales indicadas (toma su valor actual de
@@ -73,55 +116,22 @@ export async function pushBackup(uid) {
 //  - clave solo en la nube            -> se baja
 //  - clave en ambos y distinta        -> gana la nube (evita que un dispositivo
 //                                        desactualizado pise datos más nuevos)
-// A partir de ahí, los listeners en tiempo real mantienen ambos al día.
-// Devuelve true si algo cambió localmente (para refrescar la UI).
-//
-// isPending(k): predicado opcional. Si una clave tiene una edición local aún
-// sin subir (p. ej. recién hecha al abrir la app), gana lo LOCAL y se sube en
-// vez de bajar la versión vieja de la nube. Evita perder cambios al arrancar.
-export async function reconcilePlanner(uid, isPending = () => false) {
+// En este modo manual, el pull solo se hace al recargar la app.
+export async function reconcilePlanner(uid) {
   const cloud = await getCloudPlanner(uid)
   const local = getAllPlannerData()
   const keys = new Set([...Object.keys(cloud), ...Object.keys(local)])
   const toPush = {}
-  let pulled = false
   keys.forEach((k) => {
     const c = cloud[k]
     const l = local[k]
     if (c === undefined && l !== undefined) {
       toPush[k] = l
-    } else if (typeof c === 'string' && c !== l) {
-      if (isPending(k)) {
-        // Edición local pendiente de subir: gana lo local, la subimos.
-        if (l !== undefined) toPush[k] = l
-      } else {
-        applyRemote(k, c)
-        pulled = true
-      }
     }
   })
   if (Object.keys(toPush).length > 0) await pushKeysMap(uid, toPush)
-  return pulled
-}
-
-// Listener en tiempo real del documento grande: baja a localStorage las claves
-// que cambien en la nube (gana la nube) y llama onRemoteChange() si algo cambió.
-// isPending(k): no pisa las claves con una edición local sin subir.
-export function watchPlanner(uid, onRemoteChange, isPending = () => false) {
-  return onSnapshot(userDoc(uid), (snap) => {
-    const data = snap.data()
-    const planner = (data && data.planner) || null
-    if (!planner) return
-    const local = getAllPlannerData()
-    let changed = false
-    Object.entries(planner).forEach(([k, v]) => {
-      if (typeof v === 'string' && local[k] !== v && !isPending(k)) {
-        applyRemote(k, v)
-        changed = true
-      }
-    })
-    if (changed) onRemoteChange()
-  })
+  const snapshotChanged = await pullPlannerSnapshot(uid)
+  return snapshotChanged
 }
 
 // ---------------------------------------------------------------------------
@@ -273,15 +283,13 @@ export async function migrateRecipesToSubcollection(uid) {
   return true
 }
 
-// Listener en tiempo real de la subcolección de recetas: baja a localStorage
-// los cambios hechos en otro dispositivo (sin volver a subirlos) y llama
-// onRemoteChange() si la lista local cambió.
+// Recetas: se leen desde la subcolección cuando la app recarga; localStorage
+// solo sirve como caché temporal para la UI en la sesión actual.
 export function watchRecipes(uid, onRemoteChange) {
   return onSnapshot(recipesCol(uid), (snap) => {
     const recipes = snap.docs.map((d) => d.data())
     if (stableRecipes(load(recipesKey(), [])) !== stableRecipes(recipes)) {
-      // applyRemote = escribe sin notificar (evita el bucle push/pull).
-      applyRemote(recipesKey(), JSON.stringify(recipes))
+      save(recipesKey(), recipes)
       onRemoteChange()
     }
   })
@@ -322,6 +330,7 @@ export function startAutoBackup(uid, { delay = 1500 } = {}) {
     const tasks = []
     if (keys.length) tasks.push(pushKeys(uid, keys))
     if (doRecipes) tasks.push(pushRecipes(uid))
+    tasks.push(pushPlannerSnapshot(uid))
     inFlight = Promise.all(tasks)
       .catch(() => {
         // Falló (red/permiso): marca de nuevo como pendiente para reintentar
@@ -348,16 +357,8 @@ export function startAutoBackup(uid, { delay = 1500 } = {}) {
 
   const unsubscribe = subscribeToSaves(schedule)
 
-  const onVisibility = () => {
-    if (document.visibilityState === 'hidden') flush()
-  }
-  document.addEventListener('visibilitychange', onVisibility)
-  window.addEventListener('pagehide', flush)
-
   const stop = () => {
     flush() // sube cualquier cambio pendiente antes de soltar los listeners
-    document.removeEventListener('visibilitychange', onVisibility)
-    window.removeEventListener('pagehide', flush)
     unsubscribe()
   }
   // Exponemos flush para poder forzar la subida antes de un pull.

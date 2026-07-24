@@ -7,9 +7,8 @@ import {
 import {
   reconcilePlanner,
   startAutoBackup,
-  watchPlanner,
-  watchRecipes,
   pullRecipes,
+  pullPlannerSnapshot,
   getLegacyRecipes,
   stripLegacyRecipesFromBigDoc,
   migrateRecipesToSubcollection,
@@ -35,45 +34,46 @@ export function AuthProvider({ children }) {
   // Bumped only when a background cloud pull brings data that differs from what
   // is already in localStorage, forcing the routed views to reload it.
   const [dataVersion, setDataVersion] = useState(0)
-  // Holds the teardown for the active session's listeners (watch + backup).
-  const cleanupRef = useRef(null)
-  // Holds the active auto-backup handle so we can flush pending writes before a
-  // background pull (avoids the pull clobbering just-made local edits).
+  // Holds the active backup handle so pending writes can be flushed before
+  // leaving the app or before a manual reload sync.
   const backupRef = useRef(null)
 
   useEffect(() => {
     const bump = () => setDataVersion((v) => v + 1)
 
-    // Multi-dispositivo SIN expulsión: en lugar de vigilar una "sesión activa"
-    // y desloguear a los demás, escuchamos en tiempo real los cambios en la
-    // nube (planner + recetas) y subimos los cambios locales. Varios
-    // dispositivos pueden estar logueados a la vez y se mantienen en sync.
+    const syncFromCloud = async (uid) => {
+      try {
+        if (backupRef.current?.flush) {
+          await backupRef.current.flush()
+        }
+
+        const migrated = await migrateRecipesToSubcollection(uid)
+        await stripLegacyRecipesFromBigDoc(uid)
+
+        const pulled = await reconcilePlanner(uid)
+        const snapshotPulled = await pullPlannerSnapshot(uid)
+        const recipesChanged = await pullRecipes(uid)
+
+        if (pulled || snapshotPulled || recipesChanged || migrated) bump()
+      } catch {
+        // Offline: seguimos con datos locales; los listeners ya están adjuntos y
+        // sincronizarán cuando vuelva la conexión.
+      }
+    }
+
     const attach = (uid) => {
-      // El auto-backup se inicia PRIMERO: así queda suscrito a los guardados y
-      // cualquier edición hecha nada más abrir la app se registra como pendiente
-      // de subir. Su predicado isPending protege esas claves para que la
-      // conciliación / el listener no las pisen con la versión vieja de la nube.
+      // El auto-backup queda activo para subir cambios locales al hacer save.
       const stopBackup = startAutoBackup(uid)
       backupRef.current = stopBackup
-      const stopPlanner = watchPlanner(uid, bump, stopBackup.isPending)
-      const stopRecipes = watchRecipes(uid, bump)
-      cleanupRef.current = () => {
-        stopPlanner()
-        stopRecipes()
-        stopBackup()
-        backupRef.current = null
-      }
       return stopBackup
     }
 
     const unsub = onAuth(async (fbUser) => {
-      // Tear down listeners from any previous session.
-      if (cleanupRef.current) {
-        cleanupRef.current()
-        cleanupRef.current = null
-      }
 
       if (!fbUser) {
+        if (backupRef.current?.flush) {
+          await backupRef.current.flush()
+        }
         setUser(null)
         setLoading(false)
         setSyncing(false)
@@ -109,41 +109,25 @@ export function AuthProvider({ children }) {
         return
       }
 
-      // Restored session for the same account: trust localStorage and render
-      // immediately so startup is instant. Then reconcile with the cloud and
-      // attach the real-time listeners in the background.
+      // Restored session for the same account: wait for the cloud snapshot so
+      // Firebase remains the single source of truth, then render the app.
       localStorage.setItem(PLANNER_OWNER_KEY, fbUser.uid)
-      setUser(fbUser)
-      setLoading(false)
-      setSyncing(false)
+      setSyncing(true)
       ;(async () => {
-        // Adjuntamos PRIMERO (auto-backup + listeners). Así, si el usuario toca
-        // algo apenas abre la app, ese cambio queda pendiente de subir y la
-        // conciliación de abajo NO lo pisa con la versión vieja de la nube.
-        const stopBackup = attach(fbUser.uid)
-        try {
-          // Recetas: migración única del documento grande viejo a la
-          // subcolección (reescala fotos grandes, fusiona y siembra la nube).
-          const migrated = await migrateRecipesToSubcollection(fbUser.uid)
-          await stripLegacyRecipesFromBigDoc(fbUser.uid)
-
-          // Conciliación inicial a nivel de campo: sube lo solo-local, baja lo
-          // de la nube y respeta las ediciones locales sin subir (gana local).
-          const pulled = await reconcilePlanner(fbUser.uid, stopBackup.isPending)
-          const recipesChanged = await pullRecipes(fbUser.uid)
-
-          if (pulled || recipesChanged || migrated) bump()
-        } catch {
-          // Offline: seguimos con datos locales; los listeners ya están
-          // adjuntos y sincronizarán cuando vuelva la conexión.
-        }
+        attach(fbUser.uid)
+        await syncFromCloud(fbUser.uid)
+        setUser(fbUser)
+        setSyncing(false)
+        setLoading(false)
       })()
       return
     })
 
     return () => {
       unsub()
-      if (cleanupRef.current) cleanupRef.current()
+      if (backupRef.current?.flush) {
+        backupRef.current.flush()
+      }
     }
   }, [])
 

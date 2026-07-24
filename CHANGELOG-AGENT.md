@@ -3,6 +3,24 @@
 Registro de cambios realizados por el agente de mantenimiento de My Planner.
 Las entradas más recientes van al principio.
 
+## 2026-07-24 — Sincronización multi-dispositivo: snapshot completo del planner en la nube
+- **Qué:** se añadió una instantánea completa del planner en Firestore y un pull desde esa snapshot al sincronizar, para que cualquier dispositivo recargue el estado más reciente aunque la sincronización por claves individuales se retrase o falle.
+- **Por qué:** el problema persistía porque el cambio local no siempre se veía reflejado cuando el otro dispositivo recargaba, especialmente al volver a abrir la app o al alternar entre dispositivos.
+- **Archivos:** src/database/backup.js.
+- **Notas:** la subida sigue siendo incremental por claves y además ahora se escribe un snapshot completo del planner para servir de respaldo de sincronización.
+
+## 2026-07-24 — Sincronización multi-dispositivo: refresco al volver al foco y al reconectar
+- **Qué:** se añadió un refresco automático de la nube cuando la app vuelve a estar visible o recupera conexión, para que los cambios hechos en otro dispositivo se reflejen sin depender solo del listener en tiempo real.
+- **Por qué:** en algunos casos el cambio se subía a Firebase pero no se aplicaba de inmediato en el otro dispositivo, especialmente al alternar entre apps o al volver a abrir la pantalla.
+- **Archivos:** src/context/AuthContext.jsx.
+- **Notas:** se mantiene el flujo de subida por cambios locales y la conciliación por conflicto; ahora además se fuerza un pull desde la nube al recuperar foco/conexión.
+
+## 2026-07-24 — Backup multi-dispositivo: evitar sobrescritura de datos por sincronización
+- **Qué:** se añadió una capa de resolución de conflictos para el planner sincronizado en Firestore, priorizando la versión más reciente de la clave y evitando que una copia antigua de la nube sobrescriba cambios recientes del dispositivo.
+- **Por qué:** el problema era que al abrir un dispositivo con datos antiguos, la conciliación podía devolver la versión vieja de la nube y borrar cambios recién hechos en otro dispositivo (como iPad → celular).
+- **Archivos:** src/database/backup.js, src/database/conflict.js, src/database/conflict.test.mjs.
+- **Notas:** se añadió una marca de timestamp por clave en localStorage para comparar cambios locales y cloud de forma más precisa; se validó con pruebas unitarias y con build de Vite.
+
 ## 2026-07-10 — Metas: tag "Completado" sin borde
 - **Qué:** se quitó el borde de la pill "✓ Completado".
 - **Por qué:** feedback del usuario.

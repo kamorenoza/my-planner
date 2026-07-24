@@ -43,7 +43,7 @@ export function GoalModal({ goal, onClose, onSave }) {
   const [form, setForm] = useState(() => ({
     ...EMPTY,
     ...goal,
-    milestones: goal ? goal.milestones.map((m) => ({ ...m })) : [],
+    milestones: goal?.milestones ? goal.milestones.map((m) => ({ ...m })) : [],
   }));
 
   const set = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
@@ -52,7 +52,11 @@ export function GoalModal({ goal, onClose, onSave }) {
 
   const submit = () => {
     if (!canSave) return;
+    // Conservamos todos los campos existentes de la meta (weeklyPlans,
+    // weeklyChecks, months, createdAt, ...) para no borrar el plan semanal al
+    // editar los datos básicos.
     onSave({
+      ...goal,
       id: goal?.id || `g-${Date.now()}`,
       title: form.title.trim(),
       description: form.description.trim(),

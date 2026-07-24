@@ -256,9 +256,15 @@ function PlanModal({ plan, onClose, onSave }) {
 
 // ─── Plan Semanal Tab ────────────────────────────────────────
 
+// Asegura que el enlace tenga protocolo. Sin "https://" el navegador trata
+// "google.com" como ruta relativa y lo abre DENTRO de la app en vez del sitio.
+function linkHref(url) {
+  return /^[a-z]+:\/\//i.test(url) ? url : `https://${url}`;
+}
+
 function getLinkLabel(url) {
   try {
-    return new URL(url).hostname.replace("www.", "");
+    return new URL(linkHref(url)).hostname.replace("www.", "");
   } catch {
     return url.length > 25 ? url.slice(0, 25) + "…" : url;
   }
@@ -305,7 +311,7 @@ function WeekAccordion({
                       <a
                         key={i}
                         className="week-plan-item__link"
-                        href={link}
+                        href={linkHref(link)}
                         target="_blank"
                         rel="noopener noreferrer"
                       >

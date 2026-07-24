@@ -49,16 +49,21 @@ export function AuthProvider({ children }) {
     // nube (planner + recetas) y subimos los cambios locales. Varios
     // dispositivos pueden estar logueados a la vez y se mantienen en sync.
     const attach = (uid) => {
-      const stopPlanner = watchPlanner(uid, bump)
-      const stopRecipes = watchRecipes(uid, bump)
+      // El auto-backup se inicia PRIMERO: así queda suscrito a los guardados y
+      // cualquier edición hecha nada más abrir la app se registra como pendiente
+      // de subir. Su predicado isPending protege esas claves para que la
+      // conciliación / el listener no las pisen con la versión vieja de la nube.
       const stopBackup = startAutoBackup(uid)
       backupRef.current = stopBackup
+      const stopPlanner = watchPlanner(uid, bump, stopBackup.isPending)
+      const stopRecipes = watchRecipes(uid, bump)
       cleanupRef.current = () => {
         stopPlanner()
         stopRecipes()
         stopBackup()
         backupRef.current = null
       }
+      return stopBackup
     }
 
     const unsub = onAuth(async (fbUser) => {
@@ -112,7 +117,10 @@ export function AuthProvider({ children }) {
       setLoading(false)
       setSyncing(false)
       ;(async () => {
-        let attached = false
+        // Adjuntamos PRIMERO (auto-backup + listeners). Así, si el usuario toca
+        // algo apenas abre la app, ese cambio queda pendiente de subir y la
+        // conciliación de abajo NO lo pisa con la versión vieja de la nube.
+        const stopBackup = attach(fbUser.uid)
         try {
           // Recetas: migración única del documento grande viejo a la
           // subcolección (reescala fotos grandes, fusiona y siembra la nube).
@@ -120,21 +128,17 @@ export function AuthProvider({ children }) {
           await stripLegacyRecipesFromBigDoc(fbUser.uid)
 
           // Conciliación inicial a nivel de campo: sube lo solo-local, baja lo
-          // de la nube. No pierde ediciones de otros dispositivos.
-          const pulled = await reconcilePlanner(fbUser.uid)
+          // de la nube y respeta las ediciones locales sin subir (gana local).
+          const pulled = await reconcilePlanner(fbUser.uid, stopBackup.isPending)
           const recipesChanged = await pullRecipes(fbUser.uid)
-
-          // Ahora sí: escucha en tiempo real y respalda cambios locales.
-          attach(fbUser.uid)
-          attached = true
 
           if (pulled || recipesChanged || migrated) bump()
         } catch {
-          // Offline: keep using local data; attach listeners so we sync when
-          // the connection returns.
-          if (!attached) attach(fbUser.uid)
+          // Offline: seguimos con datos locales; los listeners ya están
+          // adjuntos y sincronizarán cuando vuelva la conexión.
         }
       })()
+      return
     })
 
     return () => {

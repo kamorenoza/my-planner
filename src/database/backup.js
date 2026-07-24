@@ -75,7 +75,11 @@ export async function pushBackup(uid) {
 //                                        desactualizado pise datos más nuevos)
 // A partir de ahí, los listeners en tiempo real mantienen ambos al día.
 // Devuelve true si algo cambió localmente (para refrescar la UI).
-export async function reconcilePlanner(uid) {
+//
+// isPending(k): predicado opcional. Si una clave tiene una edición local aún
+// sin subir (p. ej. recién hecha al abrir la app), gana lo LOCAL y se sube en
+// vez de bajar la versión vieja de la nube. Evita perder cambios al arrancar.
+export async function reconcilePlanner(uid, isPending = () => false) {
   const cloud = await getCloudPlanner(uid)
   const local = getAllPlannerData()
   const keys = new Set([...Object.keys(cloud), ...Object.keys(local)])
@@ -87,8 +91,13 @@ export async function reconcilePlanner(uid) {
     if (c === undefined && l !== undefined) {
       toPush[k] = l
     } else if (typeof c === 'string' && c !== l) {
-      applyRemote(k, c)
-      pulled = true
+      if (isPending(k)) {
+        // Edición local pendiente de subir: gana lo local, la subimos.
+        if (l !== undefined) toPush[k] = l
+      } else {
+        applyRemote(k, c)
+        pulled = true
+      }
     }
   })
   if (Object.keys(toPush).length > 0) await pushKeysMap(uid, toPush)
@@ -97,7 +106,8 @@ export async function reconcilePlanner(uid) {
 
 // Listener en tiempo real del documento grande: baja a localStorage las claves
 // que cambien en la nube (gana la nube) y llama onRemoteChange() si algo cambió.
-export function watchPlanner(uid, onRemoteChange) {
+// isPending(k): no pisa las claves con una edición local sin subir.
+export function watchPlanner(uid, onRemoteChange, isPending = () => false) {
   return onSnapshot(userDoc(uid), (snap) => {
     const data = snap.data()
     const planner = (data && data.planner) || null
@@ -105,7 +115,7 @@ export function watchPlanner(uid, onRemoteChange) {
     const local = getAllPlannerData()
     let changed = false
     Object.entries(planner).forEach(([k, v]) => {
-      if (typeof v === 'string' && local[k] !== v) {
+      if (typeof v === 'string' && local[k] !== v && !isPending(k)) {
         applyRemote(k, v)
         changed = true
       }
@@ -288,7 +298,9 @@ export function watchRecipes(uid, onRemoteChange) {
 export function startAutoBackup(uid, { delay = 1500 } = {}) {
   let timer = null
   const pendingKeys = new Set() // claves del doc grande pendientes de subir
+  const inFlightKeys = new Set() // claves en pleno push (aún no confirmadas)
   let pendingRecipes = false
+  let inFlightRecipes = false
   let inFlight = null
 
   const flush = () => {
@@ -303,6 +315,10 @@ export function startAutoBackup(uid, { delay = 1500 } = {}) {
     const doRecipes = pendingRecipes
     pendingKeys.clear()
     pendingRecipes = false
+    // Se mantienen como "pendientes" (en vuelo) hasta confirmar la subida, para
+    // que la conciliación/listener no pisen la clave mientras se sube.
+    keys.forEach((k) => inFlightKeys.add(k))
+    if (doRecipes) inFlightRecipes = true
     const tasks = []
     if (keys.length) tasks.push(pushKeys(uid, keys))
     if (doRecipes) tasks.push(pushRecipes(uid))
@@ -314,6 +330,8 @@ export function startAutoBackup(uid, { delay = 1500 } = {}) {
         if (doRecipes) pendingRecipes = true
       })
       .finally(() => {
+        keys.forEach((k) => inFlightKeys.delete(k))
+        if (doRecipes) inFlightRecipes = false
         inFlight = null
       })
     return inFlight
@@ -344,6 +362,12 @@ export function startAutoBackup(uid, { delay = 1500 } = {}) {
   }
   // Exponemos flush para poder forzar la subida antes de un pull.
   stop.flush = flush
-  stop.hasPending = () => pendingKeys.size > 0 || pendingRecipes
+  stop.hasPending = () =>
+    pendingKeys.size > 0 ||
+    pendingRecipes ||
+    inFlightKeys.size > 0 ||
+    inFlightRecipes
+  // ¿Hay una edición local sin subir para esta clave? (pendiente o en vuelo)
+  stop.isPending = (key) => pendingKeys.has(key) || inFlightKeys.has(key)
   return stop
 }

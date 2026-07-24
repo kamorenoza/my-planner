@@ -3,6 +3,28 @@
   padding-bottom: var(--space-2xl);
 }
 
+/* En móvil el menú inferior fijo tapa el final del contenido. Reservamos su
+   alto (+ safe-area) como el resto de vistas para poder ver el último bloque
+   del plan semanal. */
+@media (max-width: 767px) {
+  .goal-view {
+    padding-bottom: calc(
+      var(--nav-height) + var(--space-2xl) + env(safe-area-inset-bottom)
+    );
+  }
+
+  /* Encabezado de mes apilado: "Mes 1:" (con lápiz) / título / descripción,
+     cada uno en su línea. En una sola fila el título largo se veía raro. */
+  .month-plan__title-row {
+    flex-wrap: wrap;
+    align-items: baseline;
+  }
+
+  .month-plan__title-text {
+    flex-basis: 100%;
+  }
+}
+
 .goal-view__missing {
   color: var(--color-text-muted);
   margin: var(--space-lg) 0;

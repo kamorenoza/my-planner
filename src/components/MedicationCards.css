@@ -130,12 +130,40 @@
   margin-right: auto;
 }
 
+.plan-details__completed {
+  margin-top: var(--space-md);
+}
+
+.plan-details__completed-toggle {
+  width: 100%;
+  text-align: left;
+  padding: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  border: none;
+  cursor: pointer;
+}
+
+.plan-details__completed-toggle:hover {
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
+.plan-details__completed-list {
+  padding: var(--space-sm) 0 0;
+  display: grid;
+  gap: var(--space-sm);
+}
+
 /* Tarjeta de medicación */
 .medication-card {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-md);
+  width: 100%;
+  box-sizing: border-box;
   padding: var(--space-md);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -144,8 +172,11 @@
 
 .medication-card__main {
   display: flex;
+  flex: 1 1 100%;
   flex-direction: column;
   gap: var(--space-xs);
+  width: 100%;
+  max-width: 100%;
   min-width: 0;
 }
 
@@ -223,6 +254,31 @@
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
   font-style: italic;
+}
+
+.medication-card__med-progress {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-top: var(--space-xs);
+  width: 100%;
+  max-width: 100%;
+}
+
+.medication-card__med-progress .med-progress {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  flex: 1 1 100%;
+}
+
+.medication-card__progress-num {
+  min-width: 2.5rem;
+  text-align: right;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
 }
 
 .medication-card__actions {

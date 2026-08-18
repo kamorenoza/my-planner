@@ -46,15 +46,27 @@ function MedicationHome() {
       return planStatus(p) === filter;
     });
     list = [...list].sort((a, b) => {
-      if (sort === "name") return a.name.localeCompare(b.name);
-      if (sort === "start") return (a.startDate || "").localeCompare(b.startDate || "");
-      if (sort === "end") return (a.endDate || "").localeCompare(b.endDate || "");
-      if (sort === "progress")
+      const aUpdated = a.updatedAt || a.createdAt || "";
+      const bUpdated = b.updatedAt || b.createdAt || "";
+      const byUpdated = (bUpdated || "").localeCompare(aUpdated || "");
+
+      if (sort === "name") {
+        return byUpdated || a.name.localeCompare(b.name);
+      }
+      if (sort === "start") {
+        return byUpdated || (b.startDate || "").localeCompare(a.startDate || "");
+      }
+      if (sort === "end") {
+        return byUpdated || (b.endDate || "").localeCompare(a.endDate || "");
+      }
+      if (sort === "progress") {
         return (
+          byUpdated ||
           planDoseProgress(b, b.medications, history) -
-          planDoseProgress(a, a.medications, history)
+            planDoseProgress(a, a.medications, history)
         );
-      return 0;
+      }
+      return byUpdated;
     });
     return list;
   }, [plans, search, filter, sort, history]);

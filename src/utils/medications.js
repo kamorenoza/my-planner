@@ -222,6 +222,24 @@ export function isMedActiveOn(med, plan, day = todayISO()) {
   const end = med.endDate || plan?.endDate;
   if (start && day < start) return false;
   if (end && day > end) return false;
+
+  const freq = frequencyById(med.frequency);
+  if (freq.weekly && start) {
+    const startDate = parseISO(start);
+    const currentDate = parseISO(day);
+    if (!startDate || !currentDate) return false;
+    return currentDate.getDay() === startDate.getDay();
+  }
+
+  if (med.frequency === "custom" && med.repeat?.mode === "interval") {
+    const interval = Number(med.repeat.interval) || 1;
+    const unit = med.repeat.intervalUnit || "hours";
+    if (unit === "days" && start) {
+      const diff = daysBetween(start, day);
+      return diff >= 0 && diff % interval === 0;
+    }
+  }
+
   return true;
 }
 
@@ -273,13 +291,48 @@ export function computeDoseTimes(med) {
   return out.length ? out : [start];
 }
 
-// Etiqueta del próximo recordatorio (hoy si queda alguna dosis, si no mañana).
+// Etiqueta del próximo recordatorio: usa el formato solicitado en español y
+// conserva los nombres cortos de día/mes para evitar texto largo en la UI.
 export function nextReminderLabel(med, now = new Date()) {
   const times = computeDoseTimes(med);
   if (times.length === 0) return "—";
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-  const next = times.find((t) => timeToMin(t) >= nowMin);
-  return next ? `Hoy ${next}` : `Mañana ${times[0]}`;
+
+  if (med?.startDate) {
+    const start = parseISO(med.startDate);
+    if (start && now < start) return `Comienza ${formatDateLabel(med.startDate)}`;
+  }
+
+  const shortWeekdays = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sab"];
+  const shortMonths = [
+    "Ene", "Feb", "Mar", "Abr", "May", "Jun",
+    "Jul", "Ago", "Sep", "Oct", "Nov", "Dic",
+  ];
+
+  const formatTime = (date, withSpace = false) => {
+    const hours = date.getHours() % 12 || 12;
+    const minutes = pad(date.getMinutes());
+    const suffix = date.getHours() >= 12 ? "pm" : "am";
+    return withSpace ? `${hours}:${minutes} ${suffix}` : `${hours}:${minutes}${suffix}`;
+  };
+
+  const today = new Date();
+  const sameDay =
+    now.getFullYear() === today.getFullYear() &&
+    now.getMonth() === today.getMonth() &&
+    now.getDate() === today.getDate();
+
+  const nextTime = (() => {
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    return times.find((t) => timeToMin(t) >= nowMin) || times[0];
+  })();
+
+  const timeDate = new Date(`${now.toISOString().slice(0, 10)}T${nextTime}:00`);
+  if (sameDay) return `Hoy, ${formatTime(timeDate, false)}`;
+
+  const dayLabel = shortWeekdays[timeDate.getDay()];
+  const dayNum = pad(timeDate.getDate());
+  const monthLabel = shortMonths[timeDate.getMonth()];
+  return `${dayLabel}, ${dayNum} ${monthLabel}, ${formatTime(timeDate, true)}`;
 }
 
 // ─── Historial de dosis ──────────────────────────────────────

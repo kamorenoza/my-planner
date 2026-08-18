@@ -22,6 +22,8 @@ import {
   computeDoseTimes,
   nextReminderLabel,
   isMedActiveOn,
+  frequencyById,
+  medStatus,
   todayISO,
   addDaysISO,
   newId,
@@ -44,6 +46,8 @@ function nextDose(med, plan, history = {}) {
   // Rango del medicamento (con respaldo en el plan).
   const start = med?.startDate || plan?.startDate || todayISO();
   const end = med?.endDate || plan?.endDate || null;
+  const now = new Date();
+  const nowISO = `${todayISO()}T${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 
   const scheduled = (history[med.id] || [])
     .map((e) => e.scheduledTime)
@@ -52,12 +56,29 @@ function nextDose(med, plan, history = {}) {
   // Última dosis registrada (tomada o saltada).
   const last = scheduled.slice().sort().pop();
 
-  // Recorre las franjas desde 'start' y devuelve la primera que cumpla cond.
+  // Recorre las franjas desde 'start' y devuelve la primera posterior a ahora
+  // que no esté marcada. Esto corrige medicamentos semanales sin fin: si hoy es
+  // un día programado pero la hora ya pasó, se toma la siguiente semana.
+  const freq = frequencyById(med.frequency);
+  const startWeekday = (() => {
+    try {
+      return new Date(start + "T00:00:00").getDay();
+    } catch {
+      return null;
+    }
+  })();
+
   const scan = (cond) => {
     let cursor = start;
-    // Límite de seguridad por si las fechas están mal configuradas.
     for (let i = 0; i < 3660; i += 1) {
       if (end && cursor > end) break;
+      if (freq?.weekly && startWeekday != null) {
+        const curWeekday = new Date(cursor + "T00:00:00").getDay();
+        if (curWeekday !== startWeekday) {
+          cursor = addDaysISO(cursor, 1);
+          continue;
+        }
+      }
       for (const t of times) {
         const slot = `${cursor}T${t}`;
         if (cond(slot)) return { date: cursor, time: t };
@@ -67,16 +88,14 @@ function nextDose(med, plan, history = {}) {
     return null;
   };
 
-  // Con dosis previa: la siguiente franja posterior no marcada.
-  // Sin dosis previa: la primera del medicamento no marcada.
   const next = last
-    ? scan((slot) => slot > last && !marked.has(slot))
-    : scan((slot) => !marked.has(slot));
+    ? scan((slot) => slot > nowISO && slot > last && !marked.has(slot))
+    : scan((slot) => slot > nowISO && !marked.has(slot));
   if (next) return next;
 
-  // Nada pendiente: última franja del último día del medicamento.
-  const lastDay = end || todayISO();
-  return { date: lastDay, time: times[times.length - 1] };
+  // Nada pendiente: última franja del último día del medicamento o de hoy.
+  const fallbackDate = end || todayISO();
+  return { date: fallbackDate, time: times[times.length - 1] };
 }
 
 function TreatmentPlanDetails() {
@@ -91,6 +110,7 @@ function TreatmentPlanDetails() {
   const [doseModal, setDoseModal] = useState(null); // { med, entry?, defaultTime? }
   const [deletingMed, setDeletingMed] = useState(null);
   const [duplicatingMed, setDuplicatingMed] = useState(null);
+  const [showCompletedMeds, setShowCompletedMeds] = useState(false);
 
   if (!plan) {
     return (
@@ -116,6 +136,8 @@ function TreatmentPlanDetails() {
   const readOnly = isPlanReadOnly(plan);
   const medications = plan.medications || [];
   const progress = planDoseProgress(plan, medications, history);
+  const activeMeds = medications.filter((m) => medStatus(m, plan, history) !== "completed");
+  const completedMeds = medications.filter((m) => medStatus(m, plan, history) === "completed");
 
   const updatePlan = (updater) =>
     setPlans((prev) => prev.map((p) => (p.id === plan.id ? updater(p) : p)));
@@ -187,27 +209,28 @@ function TreatmentPlanDetails() {
     setDoseModal(null);
   };
 
-  // Próximas dosis del día: una entrada por medicación con su próximo horario,
-  // ordenadas por la dosis que toca primero.
-  const now = new Date();
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-  const toMin = (t) => {
-    const [h, m] = (t || "").split(":").map(Number);
-    return (h || 0) * 60 + (m || 0);
-  };
+  // Próximas dosis: mostramos la siguiente franja futura del medicamento,
+  // incluso cuando la frecuencia es semanal y no coincide con el día actual.
   const upcoming = medications
+    .filter((med) => medStatus(med, plan, history) !== "completed")
     .map((med) => {
       const times = computeDoseTimes(med);
-      const next = times.find((t) => toMin(t) >= nowMin);
-      const key =
-        times.length === 0
-          ? Infinity
-          : next != null
-            ? toMin(next) - nowMin
-            : 1440 - nowMin + toMin(times[0]);
-      return { med, label: nextReminderLabel(med), times, key };
+      const next = nextDose(med, plan, history);
+      const slot = new Date(`${next.date}T${next.time}:00`);
+      return {
+        med,
+        label: nextReminderLabel(med, slot),
+        times,
+        key: slot.getTime(),
+      };
     })
-    .filter((u) => u.times.length > 0 && isMedActiveOn(u.med, plan))
+    .filter(({ key, med }) => {
+      const now = Date.now();
+      if (key < now) return false;
+      if (!med.endDate) return true;
+      const end = new Date(`${med.endDate}T23:59:59`);
+      return end.getTime() >= now;
+    })
     .sort((a, b) => a.key - b.key);
 
   // Histórico: todas las tomas registradas, agrupadas por fecha (desc).
@@ -295,16 +318,22 @@ function TreatmentPlanDetails() {
         </div>
 
         <div className="plan-details__progress">
-          <span className="plan-details__progress-label">
-            {progress}% completado
-          </span>
-          <ProgressBar value={progress} color={color.color} />
+          {plan.endDate ? (
+            <>
+              <span className="plan-details__progress-label">
+                {progress}% completado
+              </span>
+              <ProgressBar value={progress} color={color.color} />
+            </>
+          ) : null}
           <div className="plan-details__meta">
             <span>
               {formatDateLabel(plan.startDate)} →{" "}
               {plan.endDate ? formatDateLabel(plan.endDate) : "Sin fin"}
             </span>
-            {status.id === "active" && <span>{remaining} días restantes</span>}
+            {status.id === "active" && plan.endDate && (
+              <span>{remaining} días restantes</span>
+            )}
           </div>
         </div>
       </header>
@@ -328,7 +357,7 @@ function TreatmentPlanDetails() {
           </p>
         ) : (
           <div className="plan-details__med-list">
-            {medications.map((med) => (
+            {activeMeds.map((med) => (
               <MedicationCard
                 key={med.id}
                 med={med}
@@ -348,6 +377,40 @@ function TreatmentPlanDetails() {
                 }}
               />
             ))}
+            {completedMeds.length > 0 && (
+              <div className="plan-details__completed">
+                <button
+                  className="plan-details__completed-toggle"
+                  onClick={() => setShowCompletedMeds((s) => !s)}
+                >
+                  Medicamentos terminados ({completedMeds.length}) {showCompletedMeds ? "▲" : "▼"}
+                </button>
+                {showCompletedMeds && (
+                  <div className="plan-details__completed-list">
+                    {completedMeds.map((med) => (
+                      <MedicationCard
+                        key={med.id}
+                        med={med}
+                        plan={plan}
+                        history={history}
+                        readOnly={readOnly}
+                        onEdit={() => setMedModal({ med })}
+                        onDelete={() => setDeletingMed(med)}
+                        onDuplicate={() => setDuplicatingMed(med)}
+                        onMarkDose={() => {
+                          const nd = nextDose(med, plan, history);
+                          setDoseModal({
+                            med,
+                            defaultDate: nd.date,
+                            defaultTime: nd.time,
+                          });
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </section>

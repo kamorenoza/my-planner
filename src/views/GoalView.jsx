@@ -28,17 +28,26 @@ function groupWeeksByMonth(weeks) {
   }));
 }
 
-function getWeeks(targetDate) {
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  const end = new Date(targetDate + "T00:00:00");
-  if (isNaN(end.getTime()) || end <= now) return [];
-  const diff = end - now;
+function getWeeks(targetDate, startDateISO) {
+  // Weeks are calculated from the goal creation/start date (if provided)
+  // otherwise from today. This ensures week ranges are stable and tied to
+  // the goal's creation, not the current date.
+  const startRef = new Date();
+  if (startDateISO) {
+    const parsedStart = new Date(`${startDateISO}T00:00:00`);
+    if (!Number.isNaN(parsedStart.getTime())) {
+      startRef.setTime(parsedStart.getTime());
+    }
+  }
+  startRef.setHours(0, 0, 0, 0);
+  const end = new Date(`${targetDate}T00:00:00`);
+  if (isNaN(end.getTime()) || end <= startRef) return [];
+  const diff = end - startRef;
   const totalDays = Math.ceil(diff / (1000 * 60 * 60 * 24));
   const totalWeeks = Math.max(1, Math.ceil(totalDays / 7));
   const weeks = [];
   for (let i = 0; i < totalWeeks; i++) {
-    const start = new Date(now.getTime() + i * 7 * 24 * 60 * 60 * 1000);
+    const start = new Date(startRef.getTime() + i * 7 * 24 * 60 * 60 * 1000);
     const endW = new Date(start.getTime() + 6 * 24 * 60 * 60 * 1000);
     if (endW > end) endW.setTime(end.getTime());
     weeks.push({
@@ -709,7 +718,7 @@ function GoalView() {
   }
 
   const cat = categoryById(goal.category);
-  const weeks = getWeeks(goal.targetDate);
+  const weeks = getWeeks(goal.targetDate, goal.startDate || goal.createdAt);
   const months = groupWeeksByMonth(weeks);
 
   // Overall progress = average of each week's check completion

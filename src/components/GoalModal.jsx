@@ -24,6 +24,27 @@ export const categoryById = (id) =>
   GOAL_CATEGORIES.find((c) => c.id === id) || GOAL_CATEGORIES[0];
 
 export function goalProgress(goal) {
+  // If the goal contains weekly plans / checks, compute progress based on
+  // those items (average completion across weeks). Otherwise fallback to
+  // milestone-based progress.
+  const weeklyChecksMap = goal.weeklyChecks || {};
+  const weeklyPlansMap = goal.weeklyPlans || {};
+  const weekKeys = new Set([
+    ...Object.keys(weeklyChecksMap).map((k) => Number(k)),
+    ...Object.keys(weeklyPlansMap).map((k) => Number(k)),
+  ]);
+  if (weekKeys.size > 0) {
+    const weeks = [...weekKeys].sort((a, b) => a - b);
+    const totalPct = weeks.reduce((acc, w) => {
+      const checks = weeklyChecksMap[w] || [];
+      const planTasks = (weeklyPlansMap[w] || []).flatMap((p) => p.tasks || []);
+      const items = [...checks, ...planTasks];
+      const pct = items.length ? (items.filter((c) => c.done).length / items.length) * 100 : 0;
+      return acc + pct;
+    }, 0);
+    return Math.round(totalPct / weeks.length);
+  }
+
   if (!goal.milestones || goal.milestones.length === 0) {
     return goal.done ? 100 : 0;
   }
@@ -35,14 +56,20 @@ const EMPTY = {
   title: "",
   description: "",
   category: "personal",
+  startDate: new Date().toISOString().slice(0, 10),
   targetDate: "",
   milestones: [],
 };
 
 export function GoalModal({ goal, onClose, onSave }) {
+  const initialStartDate =
+    goal?.startDate ||
+    (goal?.createdAt ? String(goal.createdAt).slice(0, 10) : EMPTY.startDate);
+
   const [form, setForm] = useState(() => ({
     ...EMPTY,
     ...goal,
+    startDate: initialStartDate,
     milestones: goal?.milestones ? goal.milestones.map((m) => ({ ...m })) : [],
   }));
 
@@ -55,15 +82,19 @@ export function GoalModal({ goal, onClose, onSave }) {
     // Conservamos todos los campos existentes de la meta (weeklyPlans,
     // weeklyChecks, months, createdAt, ...) para no borrar el plan semanal al
     // editar los datos básicos.
+    const startDate = form.startDate || new Date().toISOString().slice(0, 10);
+
     onSave({
       ...goal,
       id: goal?.id || `g-${Date.now()}`,
       title: form.title.trim(),
       description: form.description.trim(),
       category: form.category,
+      startDate,
       targetDate: form.targetDate,
       milestones: form.milestones,
       done: goal?.done || false,
+      createdAt: goal?.createdAt || startDate,
     });
   };
 
@@ -114,6 +145,16 @@ export function GoalModal({ goal, onClose, onSave }) {
             })}
           </div>
         </div>
+
+        <label className="field">
+          <span className="field__label">Fecha de inicio</span>
+          <input
+            type="date"
+            className="field__input"
+            value={form.startDate}
+            onChange={(e) => set("startDate", e.target.value)}
+          />
+        </label>
 
         <label className="field">
           <span className="field__label">Fecha meta</span>

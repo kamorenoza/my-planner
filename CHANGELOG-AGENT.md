@@ -3,6 +3,52 @@
 Registro de cambios realizados por el agente de mantenimiento de My Planner.
 Las entradas más recientes van al principio.
 
+## 2026-08-18 — Medicamentos: próximas dosis semanales y progreso visible
+- **Qué:** corregimos que los medicamentos con frecuencia semanal aparezcan en
+  la sección de “Próximas dosis” y ajustamos el color y el ancho de la barra de
+  progreso del medicamento para que se vea correctamente en la tarjeta.
+- **Por qué:** la sección de próximas dosis estaba filtrando por “activo hoy” y
+  ocultaba los medicamentos semanales que tienen una dosis en un día futuro; la
+  barra del medicamento quedaba demasiado débil visualmente y no ocupaba bien el
+  espacio disponible.
+- **Archivos:**
+  - src/views/TreatmentPlanDetails.jsx
+  - src/components/MedicationCards.jsx
+  - src/components/MedicationCards.css
+- **Notas:** la próxima dosis se calcula usando la siguiente franja futura del
+  medicamento en lugar de depender del día actual; la barra del medicamento usa
+  el color principal del tema para mejorar contraste y legibilidad.
+
+## 2026-08-11 — Varios fixes: metas y planes de medicación
+- **Qué:** Correcciones múltiples relacionadas con la vista de `Metas` y los
+  planes de `Medicamentos`: cálculo de progreso en la lista principal de metas
+  (ahora responde a checklists semanales), semanas del plan calculadas desde
+  la fecha de creación de la meta, comportamiento y cálculo de dosis
+  (próxima dosis, frecuencias semanales), y UI condicional de progreso.
+- **Por qué:** varios bugs reportados: barras de progreso que no reflejan los
+  checks, semanas que cambiaban con la fecha actual, dosis sugeridas antes de
+  la fecha de inicio, medicamentos completados mostrando en medio, y barras
+  de progreso globales en planes sin fecha de fin.
+- **Archivos:**
+  - src/components/GoalModal.jsx
+  - src/views/GoalView.jsx
+  - src/utils/medications.js
+  - src/views/TreatmentPlanDetails.jsx
+  - src/components/MedicationCards.jsx
+- **Notas:**
+  - `goalProgress` ahora considera `weeklyPlans`/`weeklyChecks` si están
+    presentes. Si no, usa los `milestones` como antes.
+  - Las semanas del `GoalView` se calculan desde `goal.createdAt` cuando está
+    disponible, en lugar de la fecha actual.
+  - `nextReminderLabel` evita mostrar "Hoy/Mañana" para medicamentos que
+    aún no comenzaron; muestra la fecha de inicio.
+  - `nextDose` respeta la frecuencia `weekly` (solo propone dosis en el día de
+    la semana correspondiente al `startDate`).
+  - Los medicamentos completados se agrupan al final en una sección plegable
+    dentro de `TreatmentPlanDetails`.
+  - La barra de progreso del plan se oculta si el plan no tiene `endDate` y
+    los días restantes solo se muestran para planes con `endDate`.
+
 ## 2026-07-24 — Sincronización multi-dispositivo: snapshot completo del planner en la nube
 - **Qué:** se añadió una instantánea completa del planner en Firestore y un pull desde esa snapshot al sincronizar, para que cualquier dispositivo recargue el estado más reciente aunque la sincronización por claves individuales se retrase o falle.
 - **Por qué:** el problema persistía porque el cambio local no siempre se veía reflejado cuando el otro dispositivo recargaba, especialmente al volver a abrir la app o al alternar entre dispositivos.

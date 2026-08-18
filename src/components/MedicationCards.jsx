@@ -10,6 +10,7 @@ import {
   medTotalDoses,
   MED_STATUS,
   nextReminderLabel,
+  isMedActiveOn,
   lastTaken,
   formatDateLabel,
   formatDateTimeLabel,
@@ -136,11 +137,11 @@ export function TreatmentPlanCard({ plan, history, onOpen, onEdit, onDelete, onD
       )}
 
       <div className="treatment-card__footer">
-        <ProgressBar value={progress} color={color.color} />
+        {plan.endDate ? <ProgressBar value={progress} color={color.color} /> : null}
         <div className="treatment-card__meta">
           <span className="treatment-card__progress-num">{progress}%</span>
           <span>{medCount} medicamentos</span>
-          {status.id === "active" && <span>{remaining} días rest.</span>}
+          {status.id === "active" && plan.endDate && <span>{remaining} días rest.</span>}
         </div>
         <div className="treatment-card__dates">
           {formatDateLabel(plan.startDate)} →{" "}
@@ -202,6 +203,9 @@ export function MedicationCard({
     (e) => e.status === "Taken"
   ).length;
   const done = status === "completed";
+  const activeToday = isMedActiveOn(med, plan);
+  const showMedProgress = !!med?.endDate;
+  const medProgress = total > 0 ? Math.round((taken / total) * 100) : 0;
 
   return (
     <div className="medication-card">
@@ -225,7 +229,11 @@ export function MedicationCard({
           )}
         </div>
         <div className="medication-card__reminder">
-          {!done && <span>Próximo: {nextReminderLabel(med)}</span>}
+          {!done && (
+            <span>
+              Próximo: {activeToday ? nextReminderLabel(med) : med.startDate ? `Comienza ${formatDateLabel(med.startDate)}` : "—"}
+            </span>
+          )}
           {total > 0 && (
             <span className="medication-card__last">
               {taken} de {total} dosis
@@ -238,6 +246,12 @@ export function MedicationCard({
           )}
         </div>
         {med.notes && <p className="medication-card__notes">{med.notes}</p>}
+        {showMedProgress && (
+          <div className="medication-card__med-progress">
+            <ProgressBar value={medProgress} color="var(--color-primary)" />
+            <span className="medication-card__progress-num">{medProgress}%</span>
+          </div>
+        )}
       </div>
 
       <div className="medication-card__actions">

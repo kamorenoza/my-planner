@@ -8,11 +8,8 @@ import {
   reconcilePlanner,
   startAutoBackup,
   pullRecipes,
-  pullPlannerSnapshot,
   getLegacyRecipes,
   stripLegacyRecipesFromBigDoc,
-  migrateRecipesToSubcollection,
-  markRecipesMigrated,
 } from '../database/backup'
 import { clearPlannerData } from '../database/localStore'
 
@@ -42,23 +39,12 @@ export function AuthProvider({ children }) {
     const bump = () => setDataVersion((v) => v + 1)
 
     const syncFromCloud = async (uid) => {
-      try {
-        if (backupRef.current?.flush) {
-          await backupRef.current.flush()
-        }
+      const legacy = await getLegacyRecipes(uid)
+      const pulled = await reconcilePlanner(uid)
+      const recipesChanged = await pullRecipes(uid, legacy)
+      if (legacy) await stripLegacyRecipesFromBigDoc(uid)
 
-        const migrated = await migrateRecipesToSubcollection(uid)
-        await stripLegacyRecipesFromBigDoc(uid)
-
-        const pulled = await reconcilePlanner(uid)
-        const snapshotPulled = await pullPlannerSnapshot(uid)
-        const recipesChanged = await pullRecipes(uid)
-
-        if (pulled || snapshotPulled || recipesChanged || migrated) bump()
-      } catch {
-        // Offline: seguimos con datos locales; los listeners ya están adjuntos y
-        // sincronizarán cuando vuelva la conexión.
-      }
+      if (pulled || recipesChanged) bump()
     }
 
     const attach = (uid) => {
@@ -96,11 +82,11 @@ export function AuthProvider({ children }) {
           // grande aún tiene recetas heredadas, se siembran desde ahí.
           const legacy = await getLegacyRecipes(fbUser.uid)
           await pullRecipes(fbUser.uid, legacy)
-          await stripLegacyRecipesFromBigDoc(fbUser.uid)
-          markRecipesMigrated()
+          if (legacy) await stripLegacyRecipesFromBigDoc(fbUser.uid)
           localStorage.setItem(PLANNER_OWNER_KEY, fbUser.uid)
         } catch {
-          // Network/permission issue – continue with local data.
+          // Firebase es obligatorio: no se muestra la caché local si falla la carga.
+          return
         }
         attach(fbUser.uid)
         setUser(fbUser)
@@ -114,8 +100,8 @@ export function AuthProvider({ children }) {
       localStorage.setItem(PLANNER_OWNER_KEY, fbUser.uid)
       setSyncing(true)
       ;(async () => {
-        attach(fbUser.uid)
         await syncFromCloud(fbUser.uid)
+        attach(fbUser.uid)
         setUser(fbUser)
         setSyncing(false)
         setLoading(false)

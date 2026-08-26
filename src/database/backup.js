@@ -6,6 +6,7 @@ import {
   collection,
   getDocs,
   writeBatch,
+  deleteDoc,
   updateDoc,
   deleteField,
 } from 'firebase/firestore'
@@ -17,9 +18,7 @@ import {
   save,
   recipesKey,
   setAllPlannerData,
-  clearPlannerData,
 } from './localStore'
-import { compressOversizedRecipePhotos } from './migrate'
 
 const userDoc = (uid) => doc(db, 'users', uid)
 
@@ -30,9 +29,8 @@ const userDoc = (uid) => doc(db, 'users', uid)
 // logueados a la vez. Para que las ediciones no se pisen entre sí escribimos a
 // NIVEL DE CAMPO: cada clave del planner (events-FECHA, todos-FECHA, etc.) se
 // sube por separado con merge, así editar el día 1 en el celular no borra la
-// edición del día 2 hecha en el iPad. Un listener en tiempo real (onSnapshot)
-// baja los cambios del otro dispositivo. Costo: 1 lectura por cambio y por
-// dispositivo conectado — muy por debajo del nivel gratuito.
+// edición del día 2 hecha en el iPad. Los cambios del otro dispositivo se
+// descargan únicamente al recargar.
 
 // Lee el mapa `planner` del documento grande (una sola lectura).
 async function getCloudPlanner(uid) {
@@ -40,12 +38,6 @@ async function getCloudPlanner(uid) {
   const data = snap.data()
   const planner = (data && data.planner) || {}
   return planner
-}
-
-async function getCloudPlannerSnapshot(uid) {
-  const snap = await getDoc(userDoc(uid))
-  const data = snap.data() || {}
-  return typeof data.plannerSnapshot === 'string' ? data.plannerSnapshot : null
 }
 
 function parsePlannerSnapshot(raw) {
@@ -58,21 +50,6 @@ function parsePlannerSnapshot(raw) {
   }
 }
 
-export async function pullPlannerSnapshot(uid) {
-  const snap = await getDoc(userDoc(uid))
-  const data = snap.data() || {}
-  const snapshot = parsePlannerSnapshot(data.plannerSnapshot)
-  if (!snapshot) return false
-
-  const currentRaw = JSON.stringify(getAllPlannerData())
-  const snapshotRaw = JSON.stringify(snapshot)
-  if (currentRaw === snapshotRaw) return false
-
-  clearPlannerData()
-  setAllPlannerData(snapshot)
-  return true
-}
-
 // Sube SOLO las claves indicadas (merge a nivel de campo dentro de `planner`).
 async function pushKeysMap(uid, map) {
   if (!map || Object.keys(map).length === 0) return
@@ -81,17 +58,6 @@ async function pushKeysMap(uid, map) {
     { planner: map, updatedAt: serverTimestamp() },
     { merge: true },
   )
-}
-
-export async function pushPlannerSnapshot(uid) {
-  const data = getAllPlannerData()
-  if (!data || Object.keys(data).length === 0) return false
-  await setDoc(
-    userDoc(uid),
-    { plannerSnapshot: JSON.stringify(data), updatedAt: serverTimestamp() },
-    { merge: true },
-  )
-  return true
 }
 
 // Sube al cloud las claves locales indicadas (toma su valor actual de
@@ -105,12 +71,6 @@ export async function pushKeys(uid, keys) {
   await pushKeysMap(uid, map)
 }
 
-// Sube todo el planner local clave por clave (merge). Se usa la primera vez que
-// un dispositivo siembra la nube.
-export async function pushBackup(uid) {
-  await pushKeysMap(uid, getAllPlannerData())
-}
-
 // Conciliación inicial al entrar (una sola lectura). Política determinista:
 //  - clave solo local (nunca subida)  -> se sube
 //  - clave solo en la nube            -> se baja
@@ -119,19 +79,8 @@ export async function pushBackup(uid) {
 // En este modo manual, el pull solo se hace al recargar la app.
 export async function reconcilePlanner(uid) {
   const cloud = await getCloudPlanner(uid)
-  const local = getAllPlannerData()
-  const keys = new Set([...Object.keys(cloud), ...Object.keys(local)])
-  const toPush = {}
-  keys.forEach((k) => {
-    const c = cloud[k]
-    const l = local[k]
-    if (c === undefined && l !== undefined) {
-      toPush[k] = l
-    }
-  })
-  if (Object.keys(toPush).length > 0) await pushKeysMap(uid, toPush)
-  const snapshotChanged = await pullPlannerSnapshot(uid)
-  return snapshotChanged
+  setAllPlannerData(cloud)
+  return true
 }
 
 // ---------------------------------------------------------------------------
@@ -141,10 +90,6 @@ export async function reconcilePlanner(uid) {
 // planner harían que superara el límite de 1 MiB de Firestore (subida fallida
 // en silencio -> pérdida de fotos). Con un documento por receta cada uno pesa
 // poco (~200-270 KB) y caben cientos sin problema.
-
-// Marca (por dispositivo) de que ya se migraron las recetas del documento
-// grande antiguo a la subcolección.
-const RECIPES_MIGRATED_KEY = 'recipes-subcol-migrated'
 
 const recipesCol = (uid) => collection(db, 'users', uid, 'recipes')
 const recipeDoc = (uid, id) => doc(db, 'users', uid, 'recipes', id)
@@ -159,32 +104,13 @@ function stableRecipes(list) {
   )
 }
 
-// Sube al cloud las recetas locales que difieran y borra las que ya no existen
-// localmente. Diff-based: si nada cambió no escribe. Devuelve true si escribió.
-export async function pushRecipes(uid) {
-  const recipes = load(recipesKey(), [])
-  if (!Array.isArray(recipes)) return false
-  const snap = await getDocs(recipesCol(uid))
-  const cloud = new Map(snap.docs.map((d) => [d.id, JSON.stringify(d.data())]))
-  const localIds = new Set(recipes.map((r) => r && r.id).filter(Boolean))
+export async function saveRecipeToCloud(uid, recipe) {
+  if (!uid || !recipe?.id) return
+  await setDoc(recipeDoc(uid, recipe.id), recipe)
+}
 
-  const batch = writeBatch(db)
-  let writes = 0
-  recipes.forEach((r) => {
-    if (!r || !r.id) return
-    if (cloud.get(r.id) !== JSON.stringify(r)) {
-      batch.set(recipeDoc(uid, r.id), r)
-      writes += 1
-    }
-  })
-  cloud.forEach((_, id) => {
-    if (!localIds.has(id)) {
-      batch.delete(recipeDoc(uid, id))
-      writes += 1
-    }
-  })
-  if (writes > 0) await batch.commit()
-  return writes > 0
+export async function deleteRecipeFromCloud(uid, recipeId) {
+  await deleteDoc(recipeDoc(uid, recipeId))
 }
 
 // Baja las recetas del cloud a localStorage. Si la subcolección está vacía pero
@@ -214,14 +140,22 @@ export async function pullRecipes(uid, legacyRecipes = null) {
 // Lee las recetas heredadas que aún viven en el documento grande (formato viejo).
 export async function getLegacyRecipes(uid) {
   const snap = await getDoc(userDoc(uid))
-  const raw = snap.data() && snap.data().planner && snap.data().planner.recipes
-  if (typeof raw !== 'string') return null
-  try {
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : null
-  } catch {
-    return null
+  const data = snap.data() || {}
+  const legacyRaw = data.planner && data.planner.recipes
+  const snapshot = parsePlannerSnapshot(data.plannerSnapshot)
+  const snapshotRaw = snapshot && snapshot.recipes
+  const raw = typeof legacyRaw === 'string' ? legacyRaw : snapshotRaw
+
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+    } catch {
+      // Try the other legacy source if this value is malformed.
+    }
   }
+
+  return null
 }
 
 // Elimina el campo heredado planner.recipes del documento grande.
@@ -233,69 +167,7 @@ export async function stripLegacyRecipesFromBigDoc(uid) {
   }
 }
 
-export function markRecipesMigrated() {
-  try {
-    localStorage.setItem(RECIPES_MIGRATED_KEY, '1')
-  } catch {
-    // almacenamiento no disponible – se reintentará en el próximo arranque
-  }
-}
-
-// Migración única (por dispositivo): mueve las recetas del documento grande
-// antiguo a la subcolección. Reescala fotos viejas grandes, fusiona con lo que
-// ya haya en la nube (la nube gana en conflicto, para no pisar una foto que
-// otro dispositivo ya subió) y conserva las recetas que solo existen local.
-export async function migrateRecipesToSubcollection(uid) {
-  try {
-    if (localStorage.getItem(RECIPES_MIGRATED_KEY)) return false
-  } catch {
-    return false
-  }
-
-  // Reescala fotos viejas (>300 KB) para que cada doc quede pequeño.
-  await compressOversizedRecipePhotos()
-
-  const local = load(recipesKey(), [])
-  const localArr = Array.isArray(local) ? local : []
-  const snap = await getDocs(recipesCol(uid))
-  const cloud = new Map(snap.docs.map((d) => [d.id, d.data()]))
-
-  // Fusión: la nube gana en conflicto; se añaden las recetas solo locales.
-  const merged = []
-  cloud.forEach((data) => merged.push(data))
-  localArr.forEach((r) => {
-    if (r && r.id && !cloud.has(r.id)) merged.push(r)
-  })
-
-  // Sube a la nube las recetas que solo existen localmente.
-  const batch = writeBatch(db)
-  let writes = 0
-  localArr.forEach((r) => {
-    if (r && r.id && !cloud.has(r.id)) {
-      batch.set(recipeDoc(uid, r.id), r)
-      writes += 1
-    }
-  })
-  if (writes > 0) await batch.commit()
-
-  save(recipesKey(), merged)
-  markRecipesMigrated()
-  return true
-}
-
-// Recetas: se leen desde la subcolección cuando la app recarga; localStorage
-// solo sirve como caché temporal para la UI en la sesión actual.
-export function watchRecipes(uid, onRemoteChange) {
-  return onSnapshot(recipesCol(uid), (snap) => {
-    const recipes = snap.docs.map((d) => d.data())
-    if (stableRecipes(load(recipesKey(), [])) !== stableRecipes(recipes)) {
-      save(recipesKey(), recipes)
-      onRemoteChange()
-    }
-  })
-}
-
-// Auto-backup: push to the cloud (debounced) whenever planner data changes.
+// Auto-backup: sube al cloud (con debounce) los cambios explícitos de la sesión.
 //
 // CRÍTICO (iOS PWA): el debounce con setTimeout NO se dispara si el sistema
 // congela/suspende la página al cambiar de app o cerrarla. Eso hacía que la
@@ -307,8 +179,6 @@ export function startAutoBackup(uid, { delay = 1500 } = {}) {
   let timer = null
   const pendingKeys = new Set() // claves del doc grande pendientes de subir
   const inFlightKeys = new Set() // claves en pleno push (aún no confirmadas)
-  let pendingRecipes = false
-  let inFlightRecipes = false
   let inFlight = null
 
   const flush = () => {
@@ -316,31 +186,24 @@ export function startAutoBackup(uid, { delay = 1500 } = {}) {
       clearTimeout(timer)
       timer = null
     }
-    if (pendingKeys.size === 0 && !pendingRecipes) {
+    if (pendingKeys.size === 0) {
       return inFlight || Promise.resolve()
     }
     const keys = [...pendingKeys]
-    const doRecipes = pendingRecipes
     pendingKeys.clear()
-    pendingRecipes = false
-    // Se mantienen como "pendientes" (en vuelo) hasta confirmar la subida, para
-    // que la conciliación/listener no pisen la clave mientras se sube.
+    // Se mantienen pendientes hasta confirmar la subida, para evitar perder
+    // cambios locales mientras una escritura está en vuelo.
     keys.forEach((k) => inFlightKeys.add(k))
-    if (doRecipes) inFlightRecipes = true
     const tasks = []
     if (keys.length) tasks.push(pushKeys(uid, keys))
-    if (doRecipes) tasks.push(pushRecipes(uid))
-    tasks.push(pushPlannerSnapshot(uid))
     inFlight = Promise.all(tasks)
       .catch(() => {
         // Falló (red/permiso): marca de nuevo como pendiente para reintentar
         // en el próximo cambio o flush.
         keys.forEach((k) => pendingKeys.add(k))
-        if (doRecipes) pendingRecipes = true
       })
       .finally(() => {
         keys.forEach((k) => inFlightKeys.delete(k))
-        if (doRecipes) inFlightRecipes = false
         inFlight = null
       })
     return inFlight
@@ -349,25 +212,33 @@ export function startAutoBackup(uid, { delay = 1500 } = {}) {
   const schedule = (key) => {
     // Las recetas se sincronizan en su subcolección; el resto va al doc grande
     // clave por clave (field-level) para no pisar ediciones de otro dispositivo.
-    if (key === recipesKey()) pendingRecipes = true
-    else pendingKeys.add(key)
+    if (key === recipesKey()) return
+    pendingKeys.add(key)
     if (timer) clearTimeout(timer)
     timer = setTimeout(flush, delay)
   }
 
   const unsubscribe = subscribeToSaves(schedule)
+  const flushOnHide = () => {
+    flush()
+  }
+  const flushOnPageHide = () => {
+    flush()
+  }
+  document.addEventListener('visibilitychange', flushOnHide)
+  window.addEventListener('pagehide', flushOnPageHide)
 
   const stop = () => {
     flush() // sube cualquier cambio pendiente antes de soltar los listeners
+    document.removeEventListener('visibilitychange', flushOnHide)
+    window.removeEventListener('pagehide', flushOnPageHide)
     unsubscribe()
   }
   // Exponemos flush para poder forzar la subida antes de un pull.
   stop.flush = flush
   stop.hasPending = () =>
     pendingKeys.size > 0 ||
-    pendingRecipes ||
-    inFlightKeys.size > 0 ||
-    inFlightRecipes
+    inFlightKeys.size > 0
   // ¿Hay una edición local sin subir para esta clave? (pendiente o en vuelo)
   stop.isPending = (key) => pendingKeys.has(key) || inFlightKeys.has(key)
   return stop

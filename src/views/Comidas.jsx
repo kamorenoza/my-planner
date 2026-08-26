@@ -1,10 +1,15 @@
 import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
 import { usePersistedState, recipesKey } from "../utils/storage";
 import {
   RecipeModal,
   RecipeDetailModal,
   TAG_COLORS,
 } from "../components/RecipeModal";
+import {
+  deleteRecipeFromCloud,
+  saveRecipeToCloud,
+} from "../database/backup";
 import ConfirmDialog from "../components/ConfirmDialog";
 import PlateIcon from "../components/PlateIcon";
 import "./Comidas.css";
@@ -113,6 +118,7 @@ function Section({ tag, label, recipes, open, filtering, onToggle, onOpen }) {
 }
 
 function Comidas() {
+  const { user } = useAuth();
   const [recipes, setRecipes] = usePersistedState(recipesKey(), []);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -138,7 +144,8 @@ function Comidas() {
     setShowForm(true);
   };
 
-  const saveRecipe = (recipe) => {
+  const saveRecipe = async (recipe) => {
+    await saveRecipeToCloud(user.uid, recipe);
     setRecipes((prev) => {
       const exists = prev.some((r) => r.id === recipe.id);
       return exists
@@ -149,8 +156,9 @@ function Comidas() {
     setEditing(null);
   };
 
-  const deleteRecipe = () => {
+  const deleteRecipe = async () => {
     const id = confirmDelete.id;
+    await deleteRecipeFromCloud(user.uid, id);
     setRecipes((prev) => prev.filter((r) => r.id !== id));
     setConfirmDelete(null);
     setDetail(null);

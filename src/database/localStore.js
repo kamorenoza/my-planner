@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 const pad = (n) => String(n).padStart(2, '0')
 
@@ -163,17 +163,22 @@ export function subscribeToSaves(listener) {
 export function usePersistedState(key, initial) {
   const [state, setState] = useState(() => load(key, initial))
   const [prevKey, setPrevKey] = useState(key)
+  const lastSaved = useRef(state)
 
   // When the key changes (e.g. navigating to another day), reload the value
   // for the new key during render so we never persist stale data under it.
   if (key !== prevKey) {
+    const nextState = load(key, initial)
+    lastSaved.current = nextState
     setPrevKey(key)
-    setState(load(key, initial))
+    setState(nextState)
   }
 
   useEffect(() => {
+    if (JSON.stringify(lastSaved.current) === JSON.stringify(state)) return
     save(key, state)
-  }, [key, state])
+    lastSaved.current = state
+  }, [key, state, prevKey])
 
   return [state, setState]
 }

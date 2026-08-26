@@ -3,6 +3,12 @@
 Registro de cambios realizados por el agente de mantenimiento de My Planner.
 Las entradas más recientes van al principio.
 
+## 2026-08-26 — Recetas siempre desde Firebase
+- **Qué:** la carga autenticada de recetas ahora usa únicamente la subcolección y los snapshots heredados de Firebase; dejó de migrar o priorizar recetas de localStorage. Cada receta se guarda directamente en su propio documento, sin comparar toda la colección.
+- **Por qué:** Firebase debe ser la fuente de verdad y la caché local vacía estaba ocultando las recetas existentes en la nube.
+- **Archivos:** src/context/AuthContext.jsx, src/database/backup.js, src/views/Comidas.jsx
+- **Notas:** la app espera la sincronización de Firebase antes de activar el backup; la conciliación es solo cloud → caché, no hay listeners en tiempo real ni snapshots completos de escritura, y el otro dispositivo debe recargar. Cada acción sube solo su clave o documento; se eliminó el backup global y la carga inicial ya no provoca escrituras automáticas. Las recetas solo se eliminan mediante una acción explícita en Firebase. Las escrituras pendientes se fuerzan al ocultar o cerrar la página. El borrado del campo heredado solo se ejecuta cuando existe.
+
 ## 2026-08-18 — Medicamentos: próximas dosis semanales y progreso visible
 - **Qué:** corregimos que los medicamentos con frecuencia semanal aparezcan en
   la sección de “Próximas dosis” y ajustamos el color y el ancho de la barra de

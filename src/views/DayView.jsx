@@ -1615,7 +1615,6 @@ function DayView() {
       {isMobile ? (
         <div className="day-view__mobile">
           <Reminders items={reminders} setItems={setReminders} date={defaultDate} />
-          <Notes items={notes} setItems={setNotes} date={defaultDate} />
           <Todo
             storageKey={todosKey(defaultDate)}
             date={defaultDate}
@@ -1623,6 +1622,7 @@ function DayView() {
             week={weekNumber}
             weekdayIndex={weekdayIndex}
           />
+          <Notes items={notes} setItems={setNotes} date={defaultDate} />
           <div className="day-view__col--schedule">
             <Schedule
               events={events}

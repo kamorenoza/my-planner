@@ -127,7 +127,7 @@
 .day-view__columns {
   flex: 1;
   display: grid;
-  grid-template-columns: 0.6fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: var(--space-md);
   min-height: 0;
 }
@@ -136,12 +136,20 @@
   min-height: 0;
 }
 
-.day-view__col--side {
+.day-view__col--side-left {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
   min-height: 0;
   overflow-y: auto;
+}
+
+.day-view__col--side-right {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* Schedule */
@@ -562,6 +570,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
+  min-height: 2.8rem;
 }
 
 .reminder-card {
@@ -914,56 +923,39 @@ img.reminder-card__emoji {
   flex: 0 0 auto;
 }
 
-/* Todo + Recordatorios en una misma fila (escritorio/iPad). Crecen para ocupar
-   el alto disponible cuando hay poco contenido (flex-grow), pero no se encogen
-   (flex-shrink: 0): cuando el contenido excede el alto, la columna lateral hace
-   scroll general de las cuatro tarjetas. */
+/* TODO solo en su propia fila */
 .day-view__top-row {
   display: flex;
   align-items: stretch;
   gap: var(--space-md);
-  flex: 1 0 auto;
+  flex: 0 0 auto;
 }
 
 .day-view__top-row > * {
   min-width: 0;
-}
-
-/* Mismas proporciones que la fila de comidas: Todo alineado con Comidas (1.5) y
-   Recordatorios alineado con Medicamentos (1). */
-.day-view__top-row > *:first-child {
-  flex: 1.5;
-}
-
-.day-view__top-row > *:last-child {
   flex: 1;
+}
+
+.day-view__meals-row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-md);
+  flex: 0 0 auto;
 }
 
 .day-view__meals-row > * {
   min-width: 0;
-}
-
-.day-view__meals-row .meals {
-  flex: 1.5;
-}
-
-.day-view__meals-row .day-meds {
   flex: 1;
-}
-
-/* Sin medicamentos: Comidas queda sola en la fila y ocupa todo el ancho. En ese
-   caso las mini-cards se reparten en 4 columnas (más pequeñas), aunque el máximo
-   sigue siendo 3 cards, dejando libre el 4º hueco. */
-.day-view__meals-row .meals:only-child .meal-mini,
-.day-view__meals-row .meals:only-child .meal-add {
-  flex: 0 0 calc((100% - 3 * var(--space-xs)) / 4);
-  max-width: calc((100% - 3 * var(--space-xs)) / 4);
 }
 
 .day-meds {
   background: var(--color-surface);
   border-radius: var(--radius-md);
   padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .day-meds__header {
@@ -1061,6 +1053,8 @@ img.reminder-card__emoji {
   list-style: none;
   margin: 0;
   padding: 0;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .day-meds__row {
@@ -1115,6 +1109,149 @@ img.reminder-card__emoji {
 .day-meds__name--done {
   text-decoration: line-through;
   color: var(--color-text-muted);
+}
+
+/* Notes */
+.notes {
+  background: color-mix(in srgb, var(--accent-yellow-bg) 50%, #fff);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.notes__head-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+}
+
+.notes__title {
+  font-size: 0.8rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--accent-yellow);
+}
+
+.notes__add-btn {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--accent-yellow);
+  background: var(--accent-yellow-soft);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  transition: background 0.2s ease;
+}
+
+.notes__add-btn:hover {
+  background: var(--accent-yellow);
+  color: #fff;
+}
+
+.notes__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-height: 2.8rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.note-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.note-item--with-check {
+  /* check visible */
+}
+
+.note-item--no-check {
+  /* nota sin check - más compacta */
+}
+
+.note-item__check-icon {
+  width: auto;
+  flex-shrink: 0;
+  font-size: 1rem;
+  color: var(--color-text-muted);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.note-item__check-toggle {
+  width: auto;
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  font-size: 1.1rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.note-item__check-toggle:hover {
+  color: var(--accent-yellow);
+  transform: scale(1.15);
+}
+
+.note-item__check-toggle--on {
+  color: var(--accent-yellow);
+}
+
+.note-item__text {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  cursor: text;
+}
+
+.note-item__text--done {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+}
+
+.note-item__input {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+}
+
+.note-item__remove {
+  font-size: var(--font-size-lg);
+  line-height: 1;
+  color: var(--color-text-muted);
+  opacity: 0;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.note-item:hover .note-item__remove {
+  opacity: 1;
+}
+
+.note-item__remove:hover {
+  color: var(--color-accent-red);
+}
+
+.notes__empty {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: var(--space-sm) 0;
 }
 
 /* Tablet (iPad 10) */

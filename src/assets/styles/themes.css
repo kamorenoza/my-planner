@@ -38,6 +38,11 @@
   --accent-blue-bg: #E7EDF7;
   --accent-blue-soft: #D8E2F1;
 
+  /* Notes accent – pastel yellow (warmer for masculine theme) */
+  --accent-yellow: #C49E4F;
+  --accent-yellow-bg: #FBF4E1;
+  --accent-yellow-soft: #F7EAC7;
+
   /* Mini calendar highlight becomes muted red */
   --cal-active-bg: #F6E0DE;
   --cal-active-text: #A8514A;

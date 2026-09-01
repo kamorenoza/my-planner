@@ -51,6 +51,7 @@ export const eventsKey = (dk) => `events-${dk}`
 export const todosKey = (dk) => `todos-${dk}`
 export const mealsKey = (dk) => `meals-${dk}`
 export const remindersKey = (dk) => `reminders-${dk}`
+export const notesKey = (dk) => `notes-${dk}`
 export const habitsKey = () => 'habits'
 export const checksKey = (year, week) => `checks-${year}-W${week}`
 export const recipesKey = () => 'recipes'

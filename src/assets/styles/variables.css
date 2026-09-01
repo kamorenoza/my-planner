@@ -52,6 +52,11 @@
   --accent-blue-bg: #EEF2FB;
   --accent-blue-soft: #DDE7F6;
 
+  /* Notes accent – pastel yellow */
+  --accent-yellow: #D4B84F;
+  --accent-yellow-bg: #FEF7E6;
+  --accent-yellow-soft: #FDF0CC;
+
   /* Mini calendar highlight (themeable pink) */
   --cal-active-bg: #F8D7E3;
   --cal-active-text: #B03A6E;

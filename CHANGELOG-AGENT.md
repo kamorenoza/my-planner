@@ -3,6 +3,17 @@
 Registro de cambios realizados por el agente de mantenimiento de My Planner.
 Las entradas más recientes van al principio.
 
+## 2026-09-01 — Sección de Notas en planner diario + ajustes de tamaños
+- **Qué:** nueva sección "Notas" en el DayView con fondo amarillo pastel, permite agregar notas con checks opcionales. Las notas sin check muestran un cuadrado vacío (☐) claramente clickeable que se ilumina y agranda al hover, indicando que se puede presionar para agregar un check. Se ajustó el tamaño mínimo de Recordatorios a 2 líneas (con crecimiento automático) y se limitó Medicamentos a máximo 4 líneas visible (con scroll si hay más). En desktop, el layout cambió de 2 a 3 columnas iguales: Schedule | TODO + Comidas | Recordatorios + Notas + Medicamentos. Notas y Medicamentos se expanden para ocupar el alto disponible en la tercera columna.
+- **Por qué:** feedback del usuario para agregar notas rápidas con o sin check en el planner diario, mejorar la UI de notas sin check (cuadrado visible en lugar de punto casi invisible), hacer más intuitivo convertir notas a checks, mejorar la proporción visual de las secciones, reorganizar mejor los elementos en el desktop.
+- **Archivos:** 
+  - src/assets/styles/variables.css (nuevas variables `--accent-yellow*`)
+  - src/assets/styles/themes.css (override de amarillo para tema masculino)
+  - src/database/localStore.js (nueva clave `notesKey()`)
+  - src/views/DayView.jsx (componente `Notes`, restructuración del layout desktop, checks opcionales con UI mejorada)
+  - src/views/DayView.css (estilos para .notes, grid de 3 columnas iguales, flex properties, cuadrado vacío clickeable)
+- **Notas:** las notas se persisten en localStorage igual que recordatorios y tareas; cada nota tiene un campo `hasCheck` que indica si lleva check o no (por defecto `false`). Notas sin check muestran un cuadrado vacío (☐) que al hover se vuelve amarillo y se agranda ligeramente, indicando que es clickeable. Al click, la nota se convierte a nota con check. El amarillo pastel es temático (varía entre "Original" y "Azul"). La tercera columna es scrolleable cuando el contenido excede la altura disponible.
+
 ## 2026-08-26 — Recetas siempre desde Firebase
 - **Qué:** la carga autenticada de recetas ahora usa únicamente la subcolección y los snapshots heredados de Firebase; dejó de migrar o priorizar recetas de localStorage. Cada receta se guarda directamente en su propio documento, sin comparar toda la colección.
 - **Por qué:** Firebase debe ser la fuente de verdad y la caché local vacía estaba ocultando las recetas existentes en la nube.

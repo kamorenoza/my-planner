@@ -26,6 +26,7 @@ import {
   todosKey,
   mealsKey,
   remindersKey,
+  notesKey,
   recipesKey,
   habitsKey,
   checksKey,
@@ -766,6 +767,165 @@ function Reminders({ items, setItems, date }) {
   )
 }
 
+function Notes({ items, setItems, date }) {
+  const [adding, setAdding] = useState(false)
+  const [newText, setNewText] = useState('')
+  const [newHasCheck, setNewHasCheck] = useState(false)
+  const [editingId, setEditingId] = useState(null)
+  const [draft, setDraft] = useState('')
+  const [confirmItem, setConfirmItem] = useState(null)
+
+  const commitAdd = () => {
+    const text = newText.trim()
+    if (text) {
+      setItems((prev) => [...prev, { id: `n-${Date.now()}`, text, done: false, hasCheck: newHasCheck, date }])
+    }
+    setNewText('')
+    setNewHasCheck(false)
+    setAdding(false)
+  }
+
+  const toggle = (id) => {
+    setItems((prev) =>
+      prev.map((it) => (it.id === id ? { ...it, done: !it.done } : it)),
+    )
+  }
+
+  const toggleCheck = (id) => {
+    setItems((prev) =>
+      prev.map((it) => (it.id === id ? { ...it, hasCheck: !it.hasCheck, done: false } : it)),
+    )
+  }
+
+  const remove = (id) => {
+    setItems((prev) => prev.filter((it) => it.id !== id))
+  }
+
+  const startEdit = (item) => {
+    setEditingId(item.id)
+    setDraft(item.text)
+  }
+
+  const commitEdit = (id) => {
+    const text = draft.trim()
+    if (text) {
+      setItems((prev) =>
+        prev.map((it) => (it.id === id ? { ...it, text } : it)),
+      )
+    }
+    setEditingId(null)
+    setDraft('')
+  }
+
+  return (
+    <div className="notes">
+      <div className="notes__head-bar">
+        <h3 className="notes__title">Notas</h3>
+        <button className="notes__add-btn" onClick={() => setAdding(true)}>
+          + Agregar
+        </button>
+      </div>
+      <div className="notes__list">
+        {items.map((item) => (
+          <div key={item.id} className={`note-item${item.hasCheck ? ' note-item--with-check' : ' note-item--no-check'}`}>
+            {item.hasCheck ? (
+              <div className="note-item__check-icon">☑</div>
+            ) : (
+              <div className="note-item__check-icon">•</div>
+            )}
+            {editingId === item.id ? (
+              <>
+                <button
+                  className={`note-item__check-toggle${item.hasCheck ? ' note-item__check-toggle--on' : ''}`}
+                  onClick={() => toggleCheck(item.id)}
+                  aria-label={item.hasCheck ? 'Desactivar check' : 'Activar check'}
+                  title={item.hasCheck ? 'Desactivar check' : 'Activar check'}
+                >
+                  {item.hasCheck ? '☑' : '☐•'}
+                </button>
+                <input
+                  className="note-item__input"
+                  value={draft}
+                  autoFocus
+                  onChange={(e) => setDraft(e.target.value)}
+                  onBlur={() => commitEdit(item.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') commitEdit(item.id)
+                    if (e.key === 'Escape') {
+                      setEditingId(null)
+                      setDraft('')
+                    }
+                  }}
+                />
+              </>
+            ) : (
+              <span
+                className={`note-item__text${item.done ? ' note-item__text--done' : ''}`}
+                onClick={() => startEdit(item)}
+                title="Editar"
+              >
+                {item.text}
+              </span>
+            )}
+            {editingId !== item.id && (
+              <button
+                className="note-item__remove"
+                onClick={() => setConfirmItem(item)}
+                aria-label="Eliminar"
+              >
+                {'\u00D7'}
+              </button>
+            )}
+          </div>
+        ))}
+        {adding && (
+          <div className={`note-item${newHasCheck ? ' note-item--with-check' : ' note-item--no-check'}`}>
+            <button
+              className={`note-item__check-toggle${newHasCheck ? ' note-item__check-toggle--on' : ''}`}
+              onClick={() => setNewHasCheck(!newHasCheck)}
+              aria-label={newHasCheck ? 'Desactivar check' : 'Activar check'}
+              title={newHasCheck ? 'Desactivar check' : 'Activar check'}
+            >
+              {newHasCheck ? '☑' : '☐•'}
+            </button>
+            <input
+              className="note-item__input"
+              value={newText}
+              autoFocus
+              placeholder="Nueva nota"
+              onChange={(e) => setNewText(e.target.value)}
+              onBlur={commitAdd}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') commitAdd()
+                if (e.key === 'Escape') {
+                  setNewText('')
+                  setNewHasCheck(false)
+                  setAdding(false)
+                }
+              }}
+            />
+          </div>
+        )}
+        {items.length === 0 && !adding && (
+          <p className="notes__empty">Sin notas todavía</p>
+        )}
+      </div>
+
+      {confirmItem && (
+        <ConfirmDialog
+          title="Eliminar nota"
+          message={`¿Seguro que deseas eliminar "${confirmItem.text}"?`}
+          onConfirm={() => {
+            remove(confirmItem.id)
+            setConfirmItem(null)
+          }}
+          onCancel={() => setConfirmItem(null)}
+        />
+      )}
+    </div>
+  )
+}
+
 function MealPicker({ tag, recipes, onPick, onAddOther, onClose }) {
   const accent = TAG_COLORS[tag]
   const [query, setQuery] = useState('')
@@ -1244,6 +1404,7 @@ function DayView() {
     remindersKey(defaultDate),
     [],
   )
+  const [notes, setNotes] = usePersistedState(notesKey(defaultDate), [])
   const holidayReminder = reminders.find(isHolidayReminder)
 
   const refreshEvents = () => setEvents(load(eventsKey(defaultDate), []))
@@ -1376,6 +1537,7 @@ function DayView() {
       {isMobile ? (
         <div className="day-view__mobile">
           <Reminders items={reminders} setItems={setReminders} date={defaultDate} />
+          <Notes items={notes} setItems={setNotes} date={defaultDate} />
           <Todo
             storageKey={todosKey(defaultDate)}
             date={defaultDate}
@@ -1406,7 +1568,7 @@ function DayView() {
               onDelete={deleteEvent}
             />
           </div>
-          <div className="day-view__col day-view__col--side">
+          <div className="day-view__col day-view__col--side-left">
             <div className="day-view__top-row">
               <Todo
                 storageKey={todosKey(defaultDate)}
@@ -1415,12 +1577,13 @@ function DayView() {
                 week={weekNumber}
                 weekdayIndex={weekdayIndex}
               />
-              <Reminders items={reminders} setItems={setReminders} date={defaultDate} />
             </div>
-            <div className="day-view__meals-row">
-              <Meals storageKey={mealsKey(defaultDate)} />
-              <DayMedications dayISO={defaultDate} />
-            </div>
+            <Meals storageKey={mealsKey(defaultDate)} />
+          </div>
+          <div className="day-view__col day-view__col--side-right">
+            <Reminders items={reminders} setItems={setReminders} date={defaultDate} />
+            <Notes items={notes} setItems={setNotes} date={defaultDate} />
+            <DayMedications dayISO={defaultDate} />
           </div>
         </div>
       )}

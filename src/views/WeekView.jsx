@@ -180,18 +180,26 @@ function HabitsTable({
                 ))}
               </div>
               <div className="habits-m__checks">
-                {WEEKDAYS.map((_, i) => (
-                  <button
-                    key={i}
-                    className={`habits__check${
-                      checks[`${habit.id}-${i}`] ? " habits__check--on" : ""
-                    }`}
-                    onClick={() => onToggle(habit.id, i)}
-                    aria-label={`Marcar ${habit.name}`}
-                  >
-                    {checks[`${habit.id}-${i}`] ? "✓" : ""}
-                  </button>
-                ))}
+                {WEEKDAYS.map((_, i) => {
+                  const dayOff = !!checks[`off-${habit.id}-${i}`];
+                  return (
+                    <button
+                      key={i}
+                      className={`habits__check${
+                        checks[`${habit.id}-${i}`] ? " habits__check--on" : ""
+                      }${dayOff ? " habits__check--disabled" : ""}`}
+                      onClick={() => onToggle(habit.id, i)}
+                      aria-label={
+                        dayOff
+                          ? `Reactivar ${habit.name}`
+                          : `Marcar ${habit.name}`
+                      }
+                      title={dayOff ? "Día desactivado — clic para reactivar" : undefined}
+                    >
+                      {dayOff ? "–" : checks[`${habit.id}-${i}`] ? "✓" : ""}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ))}
@@ -303,19 +311,27 @@ function HabitsTable({
                 </>
               )}
             </span>
-            {WEEKDAYS.map((_, i) => (
-              <span key={i} className="habits__cell habits__cell--day">
-                <button
-                  className={`habits__check${
-                    checks[`${habit.id}-${i}`] ? " habits__check--on" : ""
-                  }`}
-                  onClick={() => onToggle(habit.id, i)}
-                  aria-label={`Marcar ${habit.name}`}
-                >
-                  {checks[`${habit.id}-${i}`] ? "✓" : ""}
-                </button>
-              </span>
-            ))}
+            {WEEKDAYS.map((_, i) => {
+              const dayOff = !!checks[`off-${habit.id}-${i}`];
+              return (
+                <span key={i} className="habits__cell habits__cell--day">
+                  <button
+                    className={`habits__check${
+                      checks[`${habit.id}-${i}`] ? " habits__check--on" : ""
+                    }${dayOff ? " habits__check--disabled" : ""}`}
+                    onClick={() => onToggle(habit.id, i)}
+                    aria-label={
+                      dayOff
+                        ? `Reactivar ${habit.name}`
+                        : `Marcar ${habit.name}`
+                    }
+                    title={dayOff ? "Día desactivado — clic para reactivar" : undefined}
+                  >
+                    {dayOff ? "–" : checks[`${habit.id}-${i}`] ? "✓" : ""}
+                  </button>
+                </span>
+              );
+            })}
           </div>
         ))}
         {adding && (
@@ -678,6 +694,16 @@ function WeekView() {
   );
 
   const toggle = (habitId, dayIndex) => {
+    const offKey = `off-${habitId}-${dayIndex}`;
+    if (checks[offKey]) {
+      // Día deshabilitado: un clic lo reactiva.
+      setChecks((prev) => {
+        const next = { ...prev };
+        delete next[offKey];
+        return next;
+      });
+      return;
+    }
     const key = `${habitId}-${dayIndex}`;
     setChecks((prev) => ({ ...prev, [key]: !prev[key] }));
   };

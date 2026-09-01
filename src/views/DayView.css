@@ -141,7 +141,7 @@
   flex-direction: column;
   gap: var(--space-md);
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .day-view__col--side-right {
@@ -335,6 +335,9 @@
   background: var(--color-surface);
   border-radius: var(--radius-md);
   padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .todo__head-bar {
@@ -433,6 +436,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .todo__item {
@@ -456,6 +462,61 @@
 .todo__item--habit .todo__text {
   cursor: default;
   font-weight: var(--font-weight-regular);
+}
+
+/* Hábito deshabilitado solo para este día */
+.todo__item--habit-off {
+  opacity: 0.6;
+}
+
+.todo__check--disabled {
+  width: 21px;
+  height: 21px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-hover);
+  border: 1px dashed var(--color-border);
+}
+
+.todo__text--off {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+}
+
+.todo__item--habit-off .todo__habit-tag {
+  color: var(--color-text-muted);
+  background: color-mix(in srgb, var(--color-text-muted) 14%, transparent);
+}
+
+.todo__habit-remove,
+.todo__habit-restore {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-md);
+  line-height: 1;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.todo__habit-remove:hover {
+  color: var(--color-accent-red);
+  background: color-mix(in srgb, var(--color-accent-red) 14%, transparent);
+}
+
+.todo__habit-restore {
+  color: var(--todo-check);
+}
+
+.todo__habit-restore:hover {
+  background: color-mix(in srgb, var(--todo-check) 14%, transparent);
 }
 
 .todo__check {
@@ -923,12 +984,13 @@ img.reminder-card__emoji {
   flex: 0 0 auto;
 }
 
-/* TODO solo en su propia fila */
+/* TODO solo en su propia fila; ocupa el alto disponible de la columna */
 .day-view__top-row {
   display: flex;
   align-items: stretch;
   gap: var(--space-md);
-  flex: 0 0 auto;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .day-view__top-row > * {
@@ -1184,29 +1246,80 @@ img.reminder-card__emoji {
   justify-content: center;
 }
 
-.note-item__check-toggle {
-  width: auto;
+/* Cuadro editable (agregar / editar): gris claro con viñeta; al activar el
+   check se ilumina y desaparece el punto. */
+.note-item__box {
+  width: 21px;
+  height: 21px;
   flex-shrink: 0;
-  background: transparent;
-  border: none;
-  font-size: 1.1rem;
-  color: var(--color-text-muted);
+  border-radius: var(--radius-sm);
+  background: var(--color-border);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  padding: 0;
   transition: all 0.15s ease;
-  line-height: 1;
+}
+
+.note-item__box:hover {
+  border-color: var(--accent-yellow);
+}
+
+.note-item__box--check {
+  background: var(--color-bg);
+  border-color: var(--accent-yellow);
+}
+
+.note-item__box-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-text-secondary);
+}
+
+/* Check real de una nota ya guardada */
+.note-item__check {
+  width: 21px;
+  height: 21px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.note-item__check:hover {
+  border-color: var(--accent-yellow);
+}
+
+.note-item__check--on {
+  background: var(--accent-yellow);
+  border-color: var(--accent-yellow);
+}
+
+/* Viñeta de una nota sin check ya guardada */
+.note-item__bullet {
+  width: 21px;
+  height: 21px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.note-item__check-toggle:hover {
-  color: var(--accent-yellow);
-  transform: scale(1.15);
-}
-
-.note-item__check-toggle--on {
-  color: var(--accent-yellow);
+.note-item__bullet::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-text-secondary);
 }
 
 .note-item__text {

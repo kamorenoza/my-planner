@@ -302,6 +302,19 @@
   color: white;
 }
 
+/* Día deshabilitado para un hábito (se reactiva al hacer clic) */
+.habits__check--disabled {
+  background: var(--color-surface-hover);
+  border-style: dashed;
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.habits__check--disabled:hover {
+  border-color: var(--todo-check);
+  color: var(--todo-check);
+}
+
 /* Row 2: 7 day columns */
 .week-view__days {
   flex: 1;

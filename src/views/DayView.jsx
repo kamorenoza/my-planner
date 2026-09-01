@@ -373,6 +373,23 @@ function Todo({ storageKey, date, year, week, weekdayIndex }) {
     setChecks((prev) => ({ ...prev, [key]: !prev[key] }))
   }
 
+  // Deshabilita un hábito solo para este día (se refleja en la vista semanal).
+  const disableHabitDay = (habitId) => {
+    setChecks((prev) => ({
+      ...prev,
+      [`off-${habitId}-${weekdayIndex}`]: true,
+      [`${habitId}-${weekdayIndex}`]: false,
+    }))
+  }
+
+  const enableHabitDay = (habitId) => {
+    setChecks((prev) => {
+      const next = { ...prev }
+      delete next[`off-${habitId}-${weekdayIndex}`]
+      return next
+    })
+  }
+
   const commitAdd = () => {
     const text = newText.trim()
     if (text) {
@@ -510,22 +527,52 @@ function Todo({ storageKey, date, year, week, weekdayIndex }) {
       </div>
       <div className="todo__list">
         {habits.map((habit) => {
+          const dayOff = !!checks[`off-${habit.id}-${weekdayIndex}`]
           const checked = !!checks[`${habit.id}-${weekdayIndex}`]
           return (
-            <div key={habit.id} className="todo__item todo__item--habit">
-              <button
-                className={`todo__check${checked ? ' todo__check--on' : ''}`}
-                onClick={() => toggleHabit(habit.id)}
-                aria-label={`Marcar ${habit.name}`}
-              >
-                {checked ? '\u2713' : ''}
-              </button>
+            <div
+              key={habit.id}
+              className={`todo__item todo__item--habit${dayOff ? ' todo__item--habit-off' : ''}`}
+            >
+              {dayOff ? (
+                <span
+                  className="todo__check todo__check--disabled"
+                  aria-hidden="true"
+                />
+              ) : (
+                <button
+                  className={`todo__check${checked ? ' todo__check--on' : ''}`}
+                  onClick={() => toggleHabit(habit.id)}
+                  aria-label={`Marcar ${habit.name}`}
+                >
+                  {checked ? '\u2713' : ''}
+                </button>
+              )}
               <span
-                className={`todo__text${checked ? ' todo__text--done' : ''}`}
+                className={`todo__text${checked && !dayOff ? ' todo__text--done' : ''}${dayOff ? ' todo__text--off' : ''}`}
               >
                 {habit.name}
               </span>
               <span className="todo__habit-tag">H&aacute;bito</span>
+              {dayOff ? (
+                <button
+                  className="todo__habit-restore"
+                  onClick={() => enableHabitDay(habit.id)}
+                  aria-label={`Reactivar ${habit.name} para este d\u00EDa`}
+                  title="Reactivar este d&iacute;a"
+                >
+                  {'\u21BA'}
+                </button>
+              ) : (
+                <button
+                  className="todo__habit-remove"
+                  onClick={() => disableHabitDay(habit.id)}
+                  aria-label={`Quitar ${habit.name} de este d\u00EDa`}
+                  title="Quitar de este d&iacute;a"
+                >
+                  {'\u00D7'}
+                </button>
+              )}
             </div>
           )
         })}
@@ -826,23 +873,32 @@ function Notes({ items, setItems, date }) {
         </button>
       </div>
       <div className="notes__list">
-        {items.map((item) => (
-          <div key={item.id} className={`note-item${item.hasCheck ? ' note-item--with-check' : ' note-item--no-check'}`}>
-            {item.hasCheck ? (
-              <div className="note-item__check-icon">☑</div>
-            ) : (
-              <div className="note-item__check-icon">•</div>
-            )}
-            {editingId === item.id ? (
-              <>
+        {items.map((item) => {
+          const isEditing = editingId === item.id
+          return (
+            <div key={item.id} className={`note-item${item.hasCheck ? ' note-item--with-check' : ' note-item--no-check'}`}>
+              {isEditing ? (
                 <button
-                  className={`note-item__check-toggle${item.hasCheck ? ' note-item__check-toggle--on' : ''}`}
+                  className={`note-item__box${item.hasCheck ? ' note-item__box--check' : ''}`}
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => toggleCheck(item.id)}
-                  aria-label={item.hasCheck ? 'Desactivar check' : 'Activar check'}
-                  title={item.hasCheck ? 'Desactivar check' : 'Activar check'}
+                  aria-label={item.hasCheck ? 'No será check' : 'Convertir en check'}
+                  title={item.hasCheck ? 'No será check' : 'Será un check'}
                 >
-                  {item.hasCheck ? '☑' : '☐•'}
+                  {!item.hasCheck && <span className="note-item__box-dot" />}
                 </button>
+              ) : item.hasCheck ? (
+                <button
+                  className={`note-item__check${item.done ? ' note-item__check--on' : ''}`}
+                  onClick={() => toggle(item.id)}
+                  aria-label={item.done ? 'Desmarcar' : 'Marcar'}
+                >
+                  {item.done ? '\u2713' : ''}
+                </button>
+              ) : (
+                <span className="note-item__bullet" aria-hidden="true" />
+              )}
+              {isEditing ? (
                 <input
                   className="note-item__input"
                   value={draft}
@@ -857,36 +913,36 @@ function Notes({ items, setItems, date }) {
                     }
                   }}
                 />
-              </>
-            ) : (
-              <span
-                className={`note-item__text${item.done ? ' note-item__text--done' : ''}`}
-                onClick={() => startEdit(item)}
-                title="Editar"
-              >
-                {item.text}
-              </span>
-            )}
-            {editingId !== item.id && (
-              <button
-                className="note-item__remove"
-                onClick={() => setConfirmItem(item)}
-                aria-label="Eliminar"
-              >
-                {'\u00D7'}
-              </button>
-            )}
-          </div>
-        ))}
+              ) : (<span
+                  className={`note-item__text${item.done ? ' note-item__text--done' : ''}`}
+                  onClick={() => startEdit(item)}
+                  title="Editar"
+                >
+                  {item.text}
+                </span>
+              )}
+              {!isEditing && (
+                <button
+                  className="note-item__remove"
+                  onClick={() => setConfirmItem(item)}
+                  aria-label="Eliminar"
+                >
+                  {'\u00D7'}
+                </button>
+              )}
+            </div>
+          )
+        })}
         {adding && (
           <div className={`note-item${newHasCheck ? ' note-item--with-check' : ' note-item--no-check'}`}>
             <button
-              className={`note-item__check-toggle${newHasCheck ? ' note-item__check-toggle--on' : ''}`}
+              className={`note-item__box${newHasCheck ? ' note-item__box--check' : ''}`}
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => setNewHasCheck(!newHasCheck)}
-              aria-label={newHasCheck ? 'Desactivar check' : 'Activar check'}
-              title={newHasCheck ? 'Desactivar check' : 'Activar check'}
+              aria-label={newHasCheck ? 'No será check' : 'Convertir en check'}
+              title={newHasCheck ? 'No será check' : 'Será un check'}
             >
-              {newHasCheck ? '☑' : '☐•'}
+              {!newHasCheck && <span className="note-item__box-dot" />}
             </button>
             <input
               className="note-item__input"

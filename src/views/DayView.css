@@ -141,7 +141,7 @@
   flex-direction: column;
   gap: var(--space-md);
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .day-view__col--side-right {
@@ -436,9 +436,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
 }
 
 .todo__item {
@@ -503,7 +500,20 @@
   line-height: 1;
   color: var(--color-text-muted);
   cursor: pointer;
+  opacity: 0;
   transition: all 0.15s ease;
+}
+
+.todo__item--active .todo__habit-remove,
+.todo__item--active .todo__habit-restore {
+  opacity: 1;
+}
+
+@media (hover: hover) {
+  .todo__item--habit:hover .todo__habit-remove,
+  .todo__item--habit:hover .todo__habit-restore {
+    opacity: 1;
+  }
 }
 
 .todo__habit-remove:hover {
@@ -577,8 +587,14 @@
   transition: opacity 0.15s ease, color 0.15s ease;
 }
 
-.todo__item:hover .todo__remove {
+.todo__item--active .todo__remove {
   opacity: 1;
+}
+
+@media (hover: hover) {
+  .todo__item:hover .todo__remove {
+    opacity: 1;
+  }
 }
 
 .todo__remove:hover {
@@ -984,12 +1000,12 @@ img.reminder-card__emoji {
   flex: 0 0 auto;
 }
 
-/* TODO solo en su propia fila; ocupa el alto disponible de la columna */
+/* TODO: mínimo el alto disponible de la columna; crece con su contenido (scroll en la columna) */
 .day-view__top-row {
   display: flex;
   align-items: stretch;
   gap: var(--space-md);
-  flex: 1 1 auto;
+  flex: 1 0 auto;
   min-height: 0;
 }
 
@@ -1361,10 +1377,8 @@ img.reminder-card__emoji {
 }
 
 .notes__empty {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   color: var(--color-text-muted);
-  text-align: center;
-  padding: var(--space-sm) 0;
 }
 
 /* Tablet (iPad 10) */

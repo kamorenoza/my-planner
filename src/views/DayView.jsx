@@ -351,7 +351,24 @@ function Todo({ storageKey, date, year, week, weekdayIndex }) {
   const [reordering, setReordering] = useState(false)
   const [dragId, setDragId] = useState(null)
   const [overId, setOverId] = useState(null)
+  const [activeId, setActiveId] = useState(null)
   const rootRef = useRef(null)
+
+  // En touch (iPad) revela la x al tocar una fila; se oculta al tocar fuera.
+  useEffect(() => {
+    if (activeId == null) return
+    const handleOutside = (e) => {
+      if (rootRef.current && !rootRef.current.contains(e.target)) {
+        setActiveId(null)
+      }
+    }
+    document.addEventListener('mousedown', handleOutside)
+    document.addEventListener('touchstart', handleOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleOutside)
+      document.removeEventListener('touchstart', handleOutside)
+    }
+  }, [activeId])
 
   useEffect(() => {
     if (!reordering) return
@@ -532,7 +549,8 @@ function Todo({ storageKey, date, year, week, weekdayIndex }) {
           return (
             <div
               key={habit.id}
-              className={`todo__item todo__item--habit${dayOff ? ' todo__item--habit-off' : ''}`}
+              className={`todo__item todo__item--habit${dayOff ? ' todo__item--habit-off' : ''}${activeId === habit.id ? ' todo__item--active' : ''}`}
+              onClick={() => setActiveId(habit.id)}
             >
               {dayOff ? (
                 <span
@@ -582,7 +600,10 @@ function Todo({ storageKey, date, year, week, weekdayIndex }) {
             data-todo-id={item.id}
             className={`todo__item${reordering ? ' todo__item--reorder' : ''}${
               reordering && dragId === item.id ? ' todo__item--dragging' : ''
-            }${reordering && overId === item.id && dragId !== item.id ? ' todo__item--over' : ''}`}
+            }${reordering && overId === item.id && dragId !== item.id ? ' todo__item--over' : ''}${
+              !reordering && activeId === item.id ? ' todo__item--active' : ''
+            }`}
+            onClick={reordering ? undefined : () => setActiveId(item.id)}
             draggable={reordering}
             onDragStart={reordering ? () => setDragId(item.id) : undefined}
             onDragOver={
@@ -863,7 +884,7 @@ function Notes({ items, setItems, date }) {
     setEditingId(null)
     setDraft('')
   }
-
+  
   return (
     <div className="notes">
       <div className="notes__head-bar">
@@ -913,7 +934,8 @@ function Notes({ items, setItems, date }) {
                     }
                   }}
                 />
-              ) : (<span
+              ) : (
+                <span
                   className={`note-item__text${item.done ? ' note-item__text--done' : ''}`}
                   onClick={() => startEdit(item)}
                   title="Editar"

@@ -48,6 +48,13 @@ export const WEEKDAYS_FULL = [
   "Domingo",
 ];
 
+// Indica si un hábito aplica para un día de la semana (0=Lunes..6=Domingo).
+// Retrocompatibilidad: hábitos sin arreglo `days` aplican todos los días.
+export function habitAppliesToDay(habit, dayIndex) {
+  if (!habit || !Array.isArray(habit.days)) return true;
+  return habit.days.includes(dayIndex);
+}
+
 export function getMonthDays(year, month) {
   const firstDay = new Date(year, month, 1);
   // getDay: 0=Sunday..6=Saturday -> convert to Monday-first (0=Monday)

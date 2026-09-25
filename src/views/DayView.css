@@ -5,7 +5,7 @@
   flex-direction: column;
   padding: var(--space-md) var(--page-padding);
   padding-right: var(--app-pad-right);
-  padding-top: calc(var(--space-md) + env(safe-area-inset-top));
+  padding-top: calc(var(--space-md) + env(safe-area-inset-top) + var(--pwa-safe-top));
   padding-bottom: calc(var(--space-md) + env(safe-area-inset-bottom));
   overflow: hidden;
 }
@@ -149,7 +149,29 @@
   flex-direction: column;
   gap: var(--space-md);
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
+}
+
+/* Las cards de la última columna crecen según su contenido; el scroll lo
+   tiene la columna, nunca las cards (sin scroll interno). */
+.day-view__col--side-right > * {
+  flex: 0 0 auto;
+  min-height: 0;
+}
+
+/* Resaltado temporal al entrar desde la semana a un evento/recordatorio. */
+.is-focused {
+  animation: day-focus-pulse 1.6s ease;
+}
+
+@keyframes day-focus-pulse {
+  0%,
+  100% {
+    box-shadow: none;
+  }
+  30% {
+    box-shadow: 0 0 0 3px var(--color-primary);
+  }
 }
 
 /* Schedule */
@@ -1032,7 +1054,7 @@ img.reminder-card__emoji {
   padding: var(--space-md);
   display: flex;
   flex-direction: column;
-  flex: 1;
+  flex: 1 0 auto;
   min-height: 0;
 }
 
@@ -1132,7 +1154,6 @@ img.reminder-card__emoji {
   margin: 0;
   padding: 0;
   flex: 1;
-  overflow-y: auto;
 }
 
 .day-meds__row {
@@ -1196,7 +1217,7 @@ img.reminder-card__emoji {
   padding: var(--space-md);
   display: flex;
   flex-direction: column;
-  flex: 1;
+  flex: 1 0 auto;
   min-height: 0;
 }
 
@@ -1234,7 +1255,6 @@ img.reminder-card__emoji {
   gap: var(--space-xs);
   min-height: 2.8rem;
   flex: 1;
-  overflow-y: auto;
 }
 
 .note-item {

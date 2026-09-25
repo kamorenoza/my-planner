@@ -299,6 +299,26 @@
     align-self: stretch;
     justify-content: flex-start;
   }
+
+  /* Card de plan más compacta en mobile: icono, nombre y tag más pequeños */
+  .treatment-card__icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .treatment-card__icon-img {
+    width: 16px;
+    height: 16px;
+  }
+
+  .treatment-card__title {
+    font-size: var(--font-size-sm);
+  }
+
+  .treatment-card__top .badge {
+    font-size: 0.6rem;
+    padding: 1px 6px;
+  }
 }
 
 /* ─── Modal de medicación: tabs de patrón, horas y preview ─── */

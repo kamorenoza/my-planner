@@ -77,7 +77,7 @@ export const DURATION_OPTIONS = [7, 10, 14, 21, 30];
 export const PLAN_STATUS = {
   upcoming: { id: "upcoming", label: "Próximo", badge: "badge--orange" },
   active: { id: "active", label: "Activo", badge: "badge--green" },
-  completed: { id: "completed", label: "Completado", badge: "badge--primary" },
+  completed: { id: "completed", label: "Terminado", badge: "badge--primary" },
 };
 
 export const MED_STATUS = {

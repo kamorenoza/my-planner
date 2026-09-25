@@ -108,6 +108,16 @@
   --page-padding: var(--space-lg);
   /* Right padding so content clears the fixed side menu */
   --app-pad-right: 3rem;
+  /* Margen superior extra solo cuando la app corre como PWA instalada
+     (evita el blur de la status bar en iOS 26/27). 0 en navegador normal. */
+  --pwa-safe-top: 0px;
+}
+
+/* PWA instalada (standalone): añade un respiro superior */
+@media (display-mode: standalone) {
+  :root {
+    --pwa-safe-top: var(--space-md);
+  }
 }
 
 /* Mobile: side menu becomes a bottom bar, so no extra right padding */

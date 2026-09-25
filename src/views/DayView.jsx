@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { MONTHS, WEEKDAYS_FULL, getISOWeek, getMonthDays, isYearAvailable } from '../utils/calendar'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
+import { MONTHS, WEEKDAYS_FULL, getISOWeek, getMonthDays, isYearAvailable, habitAppliesToDay } from '../utils/calendar'
+import { useSwipe } from '../utils/useSwipe'
 import {
   DAY_START_MIN,
   DAY_END_MIN,
@@ -82,6 +83,7 @@ function EventBlock({ event, expanded, onToggle, onEdit }) {
 
   return (
     <div
+      id={`ev-${event.id}`}
       className={`event-block${expanded ? ' event-block--expanded' : ''}${compact ? ' event-block--compact' : ''}`}
       style={{
         top: `${top}%`,
@@ -543,7 +545,9 @@ function Todo({ storageKey, date, year, week, weekdayIndex }) {
         </div>
       </div>
       <div className="todo__list">
-        {habits.map((habit) => {
+        {habits
+          .filter((habit) => habitAppliesToDay(habit, weekdayIndex))
+          .map((habit) => {
           const dayOff = !!checks[`off-${habit.id}-${weekdayIndex}`]
           const checked = !!checks[`${habit.id}-${weekdayIndex}`]
           return (
@@ -773,6 +777,7 @@ function Reminders({ items, setItems, date }) {
             return (
               <div
                 key={item.id}
+                id={`rem-${item.id}`}
                 className={`reminder-card${holiday ? ' reminder-card--holiday' : ''}`}
               >
                 <EmojiImg
@@ -1310,7 +1315,7 @@ function formatDose12h(time) {
 // Recuadro "Medicamentos": muestra las dosis del día agrupadas por plan activo,
 // con un check para marcar cada dosis como tomada (se guarda en el historial
 // global de medicación, compartido con el módulo de Medicación).
-function DayMedications({ dayISO }) {
+function DayMedications({ dayISO, hideWhenEmpty = false }) {
   const navigate = useNavigate()
   const [plans] = usePersistedState(medPlansKey(), [])
   const [history, setHistory] = usePersistedState(medHistoryKey(), {})
@@ -1331,6 +1336,9 @@ function DayMedications({ dayISO }) {
       return { plan, doses }
     })
     .filter((p) => p.doses.length > 0)
+
+  // En mobile la card solo aparece si hay medicamentos para el día.
+  if (hideWhenEmpty && activePlans.length === 0) return null
 
   const schedFor = (time) => `${dayISO}T${time}`
 
@@ -1468,6 +1476,8 @@ function DayMedications({ dayISO }) {
 function DayView() {
   const { year, month, day } = useParams()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const focusId = searchParams.get('focus')
   const yearNumber = Number(year)
   const monthNumber = Number(month)
   const dayNumber = Number(day)
@@ -1484,6 +1494,20 @@ function DayView() {
   )
   const [notes, setNotes] = usePersistedState(notesKey(defaultDate), [])
   const holidayReminder = reminders.find(isHolidayReminder)
+
+  // Al entrar desde la semana con ?focus=ev-<id> o rem-<id>, ubica el scroll
+  // en el evento/recordatorio marcado y lo resalta un momento.
+  useEffect(() => {
+    if (!focusId) return
+    const t = setTimeout(() => {
+      const el = document.getElementById(focusId)
+      if (!el) return
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      el.classList.add('is-focused')
+      setTimeout(() => el.classList.remove('is-focused'), 1600)
+    }, 120)
+    return () => clearTimeout(t)
+  }, [focusId, defaultDate])
 
   const refreshEvents = () => setEvents(load(eventsKey(defaultDate), []))
 
@@ -1518,8 +1542,13 @@ function DayView() {
     )
   }
 
+  const swipe = useSwipe(
+    () => goDay(1),
+    () => goDay(-1),
+  )
+
   return (
-    <div className="day-view">
+    <div className="day-view" {...(isMobile ? swipe : {})}>
       <div
         className={`day-view__header${
           holidayReminder ? ' day-view__header--holiday' : ''
@@ -1534,7 +1563,7 @@ function DayView() {
         </button>
         <div className="day-view__heading">
           <h1 className="day-view__title">
-            {WEEKDAYS_FULL[weekdayIndex]} {'\u00B7'} {dayNumber} de {MONTHS[monthNumber]} {yearNumber}
+            {WEEKDAYS_FULL[weekdayIndex]} {'\u00B7'} {dayNumber} de {MONTHS[monthNumber].slice(0, 3)} {yearNumber}
           </h1>
           {holidayReminder && (
             <span className="day-view__holiday-badge">
@@ -1622,7 +1651,7 @@ function DayView() {
             week={weekNumber}
             weekdayIndex={weekdayIndex}
           />
-          <Notes items={notes} setItems={setNotes} date={defaultDate} />
+          <DayMedications dayISO={defaultDate} hideWhenEmpty />
           <div className="day-view__col--schedule">
             <Schedule
               events={events}
@@ -1632,8 +1661,8 @@ function DayView() {
               onDelete={deleteEvent}
             />
           </div>
+          <Notes items={notes} setItems={setNotes} date={defaultDate} />
           <Meals storageKey={mealsKey(defaultDate)} />
-          <DayMedications dayISO={defaultDate} />
         </div>
       ) : (
         <div className="day-view__columns">

@@ -5,11 +5,30 @@
   flex-direction: column;
   padding: var(--space-md) var(--page-padding);
   padding-right: var(--app-pad-right);
-  padding-top: calc(var(--space-md) + env(safe-area-inset-top));
+  padding-top: calc(var(--space-md) + env(safe-area-inset-top) + var(--pwa-safe-top));
   padding-bottom: calc(var(--space-md) + env(safe-area-inset-bottom));
   max-width: var(--max-width);
   margin: 0 auto;
   overflow: hidden;
+}
+
+/* Enlace "Eliminar hábito" debajo de los botones en el modal de edición */
+.habit-modal__buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+}
+
+.habit-modal__delete {
+  display: block;
+  margin: var(--space-sm) auto 0;
+  padding: var(--space-xs) var(--space-sm);
+  background: transparent;
+  border: none;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-accent-red);
+  cursor: pointer;
 }
 
 .week-view__header {
@@ -101,7 +120,6 @@
   border-radius: var(--radius-md);
   padding: var(--space-md);
 }
-
 .mini-calendar__title {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
@@ -266,6 +284,44 @@
   border-radius: var(--radius-sm);
   padding: 2px 6px;
 }
+
+/* Selector de días reutilizado en el modal de hábito */
+.habits__day-pills {
+  display: flex;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+.habits__day-pill {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.habits__day-pill--on {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #FFFFFF;
+}
+
+/* Celda de día en el que el hábito no aplica */
+.habits__cell--na::after {
+  content: "";
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-border);
+}
+
 
 .habits__row--head .habits__cell {
   font-size: var(--font-size-xs);
@@ -546,6 +602,7 @@
     --wk-row-h: 40px;
     --wk-head-h: 46px;
     --wk-side-h: 132px;
+    --wk-addbar-h: 34px;
     --wk-col-w: 150px;
     --wk-gutter-w: 40px;
     height: auto;
@@ -560,11 +617,41 @@
     font-size: var(--font-size-xl);
   }
 
+  /* Acerca la descripción del mes (breadcrumbs) al título */
+  .week-view--mobile .week-view__title {
+    line-height: 1.15;
+  }
+
+  .week-view--mobile .week-view__heading .breadcrumbs {
+    margin-top: -4px;
+  }
+
   .week-view__nav {
     margin-left: auto;
     display: flex;
     gap: var(--space-xs);
     align-self: center;
+  }
+
+  .week-view__add-habit {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-primary);
+    background: var(--color-primary-light);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    white-space: nowrap;
+    transition: background 0.2s ease;
+  }
+
+  .week-view__add-habit:active {
+    background: var(--color-primary-soft);
+  }
+
+  .week-view__habit-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: var(--space-sm);
   }
 
   .week-view__nav-btn {
@@ -676,7 +763,7 @@
   }
 
   .week-mobile__gutter-spacer {
-    height: calc(var(--wk-head-h) + var(--wk-side-h));
+    height: calc(var(--wk-head-h) + var(--wk-side-h) + var(--wk-addbar-h));
     flex-shrink: 0;
   }
 
@@ -770,6 +857,7 @@
     display: flex;
     align-items: center;
     gap: 5px;
+    cursor: pointer;
   }
 
   .week-mobile__reminder-emoji {
@@ -830,6 +918,97 @@
     background: var(--color-text-muted);
   }
 
+  /* Hábitos y tareas por día (chequeables desde la semana) */
+  .week-mobile__checks {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: var(--color-surface);
+    border-radius: var(--radius-sm);
+    padding: 4px 6px;
+  }
+
+  .week-mobile__check-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    color: #3D3D4D;
+    line-height: 1.2;
+  }
+
+  .week-mobile__circle {
+    width: 16px;
+    height: 16px;
+    border-radius: var(--radius-full);
+    border: 1.5px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    color: transparent;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+  }
+
+  .week-mobile__circle--on {
+    background: var(--todo-check);
+    border-color: var(--todo-check);
+    color: #FFFFFF;
+  }
+
+  .week-mobile__check-text {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--font-size-xs);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .week-mobile__check-item--done .week-mobile__check-text {
+    text-decoration: line-through;
+    color: var(--color-text-muted);
+  }
+
+  .week-mobile__habit-dot {
+    flex-shrink: 0;
+    box-sizing: content-box;
+    width: 6px;
+    height: 6px;
+    padding: 5px;
+    border-radius: var(--radius-full);
+    background: var(--color-primary);
+    background-clip: content-box;
+    cursor: pointer;
+  }
+
+  /* Barra para agregar recordatorio/evento/tarea, centrada */
+  .week-mobile__addbar {
+    height: var(--wk-addbar-h);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+  }
+
+  .week-mobile__add-btn {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-primary);
+    background: var(--color-primary-light);
+    border-radius: var(--radius-sm);
+    padding: 4px 12px;
+    line-height: 1;
+  }
+
+  .week-mobile__add-btn:active {
+    background: var(--color-primary-soft);
+  }
+
   .week-mobile__schedule {
     position: relative;
     height: calc(var(--wk-row-h) * 16);
@@ -856,6 +1035,7 @@
     flex-direction: column;
     gap: 1px;
     overflow: hidden;
+    cursor: pointer;
   }
 
   .week-mobile__event--compact {

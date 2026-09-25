@@ -11,6 +11,7 @@ import {
   isYearAvailable,
 } from "../utils/calendar";
 import { getEventType, formatTime } from "../utils/events";
+import { useSwipe } from "../utils/useSwipe";
 import {
   isHolidayReminder,
   dayHasHoliday,
@@ -398,8 +399,13 @@ function MonthView() {
   const canPrevMonth = isYearAvailable(monthNumber === 0 ? yearNumber - 1 : yearNumber);
   const canNextMonth = isYearAvailable(monthNumber === 11 ? yearNumber + 1 : yearNumber);
 
+  const swipe = useSwipe(
+    () => goMonth(1),
+    () => goMonth(-1),
+  );
+
   return (
-    <div className="month-view">
+    <div className="month-view" {...(isMobile ? swipe : {})}>
       <div className="month-view__header">
         <button
           className="month-view__back"

@@ -9,9 +9,11 @@ import {
   getISOWeek,
   getWeekDates,
   getLastISOWeek,
+  habitAppliesToDay,
 } from "../utils/calendar";
 import { getEventType, formatTime } from "../utils/events";
 import { DAY_START_MIN, DAY_END_MIN } from "../utils/events";
+import { useSwipe } from "../utils/useSwipe";
 import {
   isHolidayReminder,
   dayHasHoliday,
@@ -19,7 +21,6 @@ import {
 } from "../utils/holidaysCO";
 import { EventFields } from "../components/EventModal";
 import { ReminderFields } from "../components/ReminderModal";
-import DateField from "../components/DateField";
 import { saveNewEvent } from "../utils/recurrence";
 import EmojiImg from "../components/EmojiImg";
 import Breadcrumbs from "../components/Breadcrumbs";
@@ -80,6 +81,96 @@ function MiniCalendar({ year, month, weekNumber }) {
   );
 }
 
+function HabitModal({ onClose, onSave, habit = null, onDelete = null }) {
+  const [name, setName] = useState(habit?.name ?? "");
+  const [days, setDays] = useState(
+    Array.isArray(habit?.days) ? habit.days : [0, 1, 2, 3, 4, 5, 6],
+  );
+  const isEdit = !!habit;
+
+  const toggleDay = (i) => {
+    setDays((prev) =>
+      prev.includes(i) ? prev.filter((d) => d !== i) : [...prev, i],
+    );
+  };
+
+  const commit = () => {
+    const clean = name.trim();
+    if (!clean || days.length === 0) return;
+    onSave(clean, days);
+    onClose();
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div
+        className="modal modal--form"
+        role="dialog"
+        aria-label={isEdit ? "Editar hábito" : "Nuevo hábito"}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="modal__title">{isEdit ? "Editar hábito" : "Nuevo hábito"}</h3>
+        <label className="field">
+          <span className="field__label">Nombre</span>
+          <input
+            className="field__input"
+            value={name}
+            autoFocus
+            placeholder="Nombre del hábito"
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commit();
+              if (e.key === "Escape") onClose();
+            }}
+          />
+        </label>
+        <div className="field">
+          <span className="field__label">Días de la semana</span>
+          <div className="habits__day-pills">
+            {WEEKDAYS.map((wd, i) => (
+              <button
+                key={i}
+                type="button"
+                className={`habits__day-pill${
+                  days.includes(i) ? " habits__day-pill--on" : ""
+                }`}
+                onClick={() => toggleDay(i)}
+                aria-pressed={days.includes(i)}
+                aria-label={WEEKDAYS_FULL[i]}
+              >
+                {wd}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="modal__actions modal__actions--stack">
+          <div className="habit-modal__buttons">
+            <button className="modal__btn modal__btn--cancel" onClick={onClose}>
+              Cancelar
+            </button>
+            <button
+              className="modal__btn modal__btn--primary"
+              onClick={commit}
+              disabled={!name.trim() || days.length === 0}
+            >
+              Guardar
+            </button>
+          </div>
+          {isEdit && onDelete && (
+            <button
+              type="button"
+              className="habit-modal__delete"
+              onClick={onDelete}
+            >
+              Eliminar
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function HabitsTable({
   habits,
   checks,
@@ -88,13 +179,14 @@ function HabitsTable({
   onRename,
   onAdd,
   onRemove,
+  onUpdate,
   mobile,
 }) {
   const [editingId, setEditingId] = useState(null);
   const [draft, setDraft] = useState("");
   const [adding, setAdding] = useState(false);
-  const [newName, setNewName] = useState("");
   const [confirmHabit, setConfirmHabit] = useState(null);
+  const [editingHabit, setEditingHabit] = useState(null);
 
   const startEdit = (habit) => {
     setEditingId(habit.id);
@@ -106,13 +198,6 @@ function HabitsTable({
     if (name) onRename(id, name);
     setEditingId(null);
     setDraft("");
-  };
-
-  const commitAdd = () => {
-    const name = newName.trim();
-    if (name) onAdd(name);
-    setNewName("");
-    setAdding(false);
   };
 
   const confirmRemove = () => {
@@ -203,26 +288,11 @@ function HabitsTable({
               </div>
             </div>
           ))}
-          {adding && (
-            <div className="habits-m__item">
-              <input
-                className="habits__input"
-                value={newName}
-                autoFocus
-                placeholder="Nuevo hábito"
-                onChange={(e) => setNewName(e.target.value)}
-                onBlur={commitAdd}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") commitAdd();
-                  if (e.key === "Escape") {
-                    setNewName("");
-                    setAdding(false);
-                  }
-                }}
-              />
-            </div>
-          )}
         </div>
+
+        {adding && (
+          <HabitModal onClose={() => setAdding(false)} onSave={onAdd} />
+        )}
 
         {confirmHabit && (
           <div className="modal-overlay" onClick={() => setConfirmHabit(null)}>
@@ -277,41 +347,24 @@ function HabitsTable({
         {habits.map((habit) => (
           <div key={habit.id} className="habits__row">
             <span className="habits__cell habits__cell--name">
-              {editingId === habit.id ? (
-                <input
-                  className="habits__input"
-                  value={draft}
-                  autoFocus
-                  onChange={(e) => setDraft(e.target.value)}
-                  onBlur={() => commitEdit(habit.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") commitEdit(habit.id);
-                    if (e.key === "Escape") {
-                      setEditingId(null);
-                      setDraft("");
-                    }
-                  }}
-                />
-              ) : (
-                <>
-                  <span
-                    className="habits__name-text"
-                    onClick={() => startEdit(habit)}
-                    title="Editar"
-                  >
-                    {habit.name}
-                  </span>
-                  <button
-                    className="habits__remove"
-                    onClick={() => setConfirmHabit(habit)}
-                    aria-label={`Eliminar ${habit.name}`}
-                  >
-                    ×
-                  </button>
-                </>
-              )}
+              <span
+                className="habits__name-text"
+                onClick={() => setEditingHabit(habit)}
+                title="Editar hábito"
+              >
+                {habit.name}
+              </span>
             </span>
             {WEEKDAYS.map((_, i) => {
+              if (!habitAppliesToDay(habit, i)) {
+                return (
+                  <span
+                    key={i}
+                    className="habits__cell habits__cell--day habits__cell--na"
+                    aria-hidden="true"
+                  />
+                );
+              }
               const dayOff = !!checks[`off-${habit.id}-${i}`];
               return (
                 <span key={i} className="habits__cell habits__cell--day">
@@ -334,28 +387,23 @@ function HabitsTable({
             })}
           </div>
         ))}
-        {adding && (
-          <div className="habits__row">
-            <span className="habits__cell habits__cell--name">
-              <input
-                className="habits__input"
-                value={newName}
-                autoFocus
-                placeholder="Nuevo hábito"
-                onChange={(e) => setNewName(e.target.value)}
-                onBlur={commitAdd}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") commitAdd();
-                  if (e.key === "Escape") {
-                    setNewName("");
-                    setAdding(false);
-                  }
-                }}
-              />
-            </span>
-          </div>
-        )}
       </div>
+
+      {adding && (
+        <HabitModal onClose={() => setAdding(false)} onSave={onAdd} />
+      )}
+
+      {editingHabit && (
+        <HabitModal
+          habit={editingHabit}
+          onClose={() => setEditingHabit(null)}
+          onSave={(name, days) => onUpdate(editingHabit.id, name, days)}
+          onDelete={() => {
+            onRemove(editingHabit.id);
+            setEditingHabit(null);
+          }}
+        />
+      )}
 
       {confirmHabit && (
         <div className="modal-overlay" onClick={() => setConfirmHabit(null)}>
@@ -493,9 +541,9 @@ function WeekMobile({
   checks,
   todayIndex,
   onToggle,
-  onRename,
-  onAdd,
-  onRemove,
+  onToggleTodo,
+  onAddClick,
+  onEditHabit,
 }) {
   const hourLabel = (h) => {
     const period = h < 12 ? "am" : "pm";
@@ -507,17 +555,6 @@ function WeekMobile({
 
   return (
     <div className="week-mobile">
-      <HabitsTable
-        habits={habits}
-        checks={checks}
-        todayIndex={todayIndex}
-        onToggle={onToggle}
-        onRename={onRename}
-        onAdd={onAdd}
-        onRemove={onRemove}
-        mobile
-      />
-
       <div className="week-mobile__board" data-refresh={refresh}>
         <div className="week-mobile__gutter">
           <div className="week-mobile__gutter-spacer" />
@@ -545,17 +582,15 @@ function WeekMobile({
           const reminders = sortRemindersHolidayFirst(
             load(remindersKey(dk), []).filter((r) => !r.date || r.date === dk),
           );
+          const dayHabits = habits.filter(
+            (h) => habitAppliesToDay(h, i) && !checks[`off-${h.id}-${i}`],
+          );
           const isToday = i === todayIndex;
           const isHoliday = reminders.some(isHolidayReminder);
           const dayUrl = `/year/${date.getUTCFullYear()}/month/${date.getUTCMonth()}/day/${date.getUTCDate()}`;
 
           return (
-            <div
-              key={i}
-              className="week-mobile__daycol"
-              onClick={() => navigate(dayUrl)}
-              role="button"
-            >
+            <div key={i} className="week-mobile__daycol">
               <button
                 className={`week-mobile__dayhead${
                   isToday ? " week-mobile__dayhead--today" : ""
@@ -583,6 +618,9 @@ function WeekMobile({
                             ? " week-mobile__reminder--holiday"
                             : ""
                         }`}
+                        onClick={() =>
+                          navigate(`${dayUrl}?focus=rem-${reminder.id}`)
+                        }
                       >
                         <EmojiImg
                           emoji={reminder.emoji}
@@ -598,23 +636,78 @@ function WeekMobile({
                     ))}
                   </div>
                 )}
+                {dayHabits.length > 0 && (
+                  <div className="week-mobile__checks">
+                    {dayHabits.map((habit) => {
+                      const checked = !!checks[`${habit.id}-${i}`];
+                      return (
+                        <button
+                          key={habit.id}
+                          className={`week-mobile__check-item${
+                            checked ? " week-mobile__check-item--done" : ""
+                          }`}
+                          onClick={() => onToggle(habit.id, i)}
+                        >
+                          <span
+                            className={`week-mobile__circle${
+                              checked ? " week-mobile__circle--on" : ""
+                            }`}
+                          >
+                            {checked ? "✓" : ""}
+                          </span>
+                          <span className="week-mobile__check-text">
+                            {habit.name}
+                          </span>
+                          <span
+                            className="week-mobile__habit-dot"
+                            role="button"
+                            tabIndex={0}
+                            aria-label={`Editar ${habit.name}`}
+                            title="Editar hábito"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEditHabit(habit);
+                            }}
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
                 {todos.length > 0 && (
-                  <div className="week-mobile__todos">
+                  <div className="week-mobile__checks">
                     {todos.map((todo) => (
-                      <div
+                      <button
                         key={todo.id}
-                        className={`week-mobile__todo${
-                          todo.done ? " week-mobile__todo--done" : ""
+                        className={`week-mobile__check-item${
+                          todo.done ? " week-mobile__check-item--done" : ""
                         }`}
+                        onClick={() => onToggleTodo(dk, todo.id)}
                       >
-                        <span className="week-mobile__todo-dot" />
-                        <span className="week-mobile__todo-text">
+                        <span
+                          className={`week-mobile__circle${
+                            todo.done ? " week-mobile__circle--on" : ""
+                          }`}
+                        >
+                          {todo.done ? "✓" : ""}
+                        </span>
+                        <span className="week-mobile__check-text">
                           {todo.text}
                         </span>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 )}
+              </div>
+
+              <div className="week-mobile__addbar">
+                <button
+                  className="week-mobile__add-btn"
+                  onClick={() => onAddClick(dk)}
+                  aria-label="Agregar recordatorio, evento o tarea"
+                >
+                  + Agregar
+                </button>
               </div>
 
               <div className="week-mobile__schedule">
@@ -639,6 +732,9 @@ function WeekMobile({
                           background: type.color,
                           color: type.text,
                         }}
+                        onClick={() =>
+                          navigate(`${dayUrl}?focus=ev-${event.id}`)
+                        }
                       >
                         <span className="week-mobile__event-title">
                           {event.title}
@@ -671,6 +767,8 @@ function WeekView() {
     {},
   );
   const [addModalKey, setAddModalKey] = useState(null);
+  const [habitModalOpen, setHabitModalOpen] = useState(false);
+  const [editHabit, setEditHabit] = useState(null);
   const [refresh, setRefresh] = useState(0);
 
   const weekDates = getWeekDates(yearNumber, weekNumber);
@@ -684,6 +782,12 @@ function WeekView() {
     if (next < 1 || next > maxWeek) return;
     navigate(`/year/${yearNumber}/week/${next}`);
   };
+
+  const swipe = useSwipe(
+    () => goWeek(1),
+    () => goWeek(-1),
+    { ignoreSelector: ".week-mobile__board" },
+  );
 
   const now = new Date();
   const todayIndex = weekDates.findIndex(
@@ -712,17 +816,43 @@ function WeekView() {
     setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, name } : h)));
   };
 
-  const addHabit = (name) => {
-    setHabits((prev) => [...prev, { id: `h-${Date.now()}`, name }]);
+  const addHabit = (name, days) => {
+    const clean =
+      Array.isArray(days) && days.length > 0
+        ? [...days].sort((a, b) => a - b)
+        : [0, 1, 2, 3, 4, 5, 6];
+    setHabits((prev) => [
+      ...prev,
+      { id: `h-${Date.now()}`, name, days: clean },
+    ]);
   };
 
   const removeHabit = (id) => {
     setHabits((prev) => prev.filter((h) => h.id !== id));
   };
 
+  const updateHabit = (id, name, days) => {
+    const clean =
+      Array.isArray(days) && days.length > 0
+        ? [...days].sort((a, b) => a - b)
+        : [0, 1, 2, 3, 4, 5, 6];
+    setHabits((prev) =>
+      prev.map((h) => (h.id === id ? { ...h, name, days: clean } : h)),
+    );
+  };
+
+  const toggleTodo = (dk, id) => {
+    const todos = load(todosKey(dk), []);
+    save(
+      todosKey(dk),
+      todos.map((t) => (t.id === id ? { ...t, done: !t.done } : t)),
+    );
+    setRefresh((n) => n + 1);
+  };
+
   if (isMobile) {
     return (
-      <div className="week-view week-view--mobile">
+      <div className="week-view week-view--mobile" {...swipe}>
         <div className="week-view__header">
           <button
             className="week-view__back"
@@ -765,6 +895,16 @@ function WeekView() {
           </div>
         </div>
 
+        <div className="week-view__habit-row">
+          <button
+            className="week-view__add-habit"
+            onClick={() => setHabitModalOpen(true)}
+            aria-label="Agregar hábito"
+          >
+            + Hábito
+          </button>
+        </div>
+
         <WeekMobile
           weekDates={weekDates}
           navigate={navigate}
@@ -773,9 +913,9 @@ function WeekView() {
           checks={checks}
           todayIndex={todayIndex}
           onToggle={toggle}
-          onRename={renameHabit}
-          onAdd={addHabit}
-          onRemove={removeHabit}
+          onToggleTodo={toggleTodo}
+          onAddClick={(dk) => setAddModalKey(dk)}
+          onEditHabit={(habit) => setEditHabit(habit)}
         />
 
         {addModalKey && (
@@ -783,6 +923,25 @@ function WeekView() {
             dateKey={addModalKey}
             onClose={() => setAddModalKey(null)}
             onSaved={() => setRefresh((n) => n + 1)}
+          />
+        )}
+
+        {habitModalOpen && (
+          <HabitModal
+            onClose={() => setHabitModalOpen(false)}
+            onSave={(name, days) => addHabit(name, days)}
+          />
+        )}
+
+        {editHabit && (
+          <HabitModal
+            habit={editHabit}
+            onClose={() => setEditHabit(null)}
+            onSave={(name, days) => updateHabit(editHabit.id, name, days)}
+            onDelete={() => {
+              removeHabit(editHabit.id);
+              setEditHabit(null);
+            }}
           />
         )}
       </div>
@@ -858,6 +1017,7 @@ function WeekView() {
           onRename={renameHabit}
           onAdd={addHabit}
           onRemove={removeHabit}
+          onUpdate={updateHabit}
         />
       </div>
 

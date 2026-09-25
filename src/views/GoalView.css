@@ -74,6 +74,7 @@
 .goal-view__desc {
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
+  white-space: pre-wrap;
 }
 
 .goal-view__facts {
@@ -219,6 +220,7 @@
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
   line-height: 1.4;
+  white-space: pre-wrap;
 }
 
 /* Encabezado de mes en Seguimiento (clicable → va al plan) */
@@ -381,6 +383,7 @@
 .week-plan-item__desc {
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
+  white-space: pre-wrap;
 }
 
 .week-plan-item__links {

@@ -10,7 +10,7 @@
   flex-direction: column;
   padding-left: var(--page-padding);
   padding-right: var(--page-padding);
-  padding-top: calc(var(--space-lg) + env(safe-area-inset-top));
+  padding-top: calc(var(--space-lg) + env(safe-area-inset-top) + var(--pwa-safe-top));
   padding-bottom: calc(var(--space-lg) + env(safe-area-inset-bottom));
 }
 

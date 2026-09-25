@@ -43,7 +43,7 @@
 .page {
   padding: var(--space-xl) var(--page-padding);
   padding-right: var(--app-pad-right);
-  padding-top: calc(var(--space-xl) + env(safe-area-inset-top));
+  padding-top: calc(var(--space-xl) + env(safe-area-inset-top) + var(--pwa-safe-top));
   padding-bottom: calc(var(--space-xl) + env(safe-area-inset-bottom));
 }
 
